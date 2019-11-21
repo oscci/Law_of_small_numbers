@@ -1,0 +1,420 @@
+---
+title: "bayes_vs_effsize"
+author: "DVM Bishop"
+date: "30/08/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(tidyverse)
+require(psycho) #for dprime
+```
+
+## Script to explore ways of analysing data from probability game
+Background and locations:
+Game is here:  https://gorilla.sc/admin/project/7839#
+Draft preregistration document is here:  https://osf.io/rnkhq/registrations?tab=drafts
+This was also copied onto a word document, saved on Dropbox/oscci_ms_2016-/ongoing/jackie_game 
+
+
+
+For each sample size of each trial, we have effect size and log Bayes factor.
+Question will be: are people using these to make their judgements?
+Does this change over course of the session?
+Could it be influenced by reward schedule?
+
+Simulated data were created by file 'make_gifs_datasim.R'.
+We read in a large file created this way: bigBFdata.csv
+
+```{r readtrialdata}
+mytrials<-read.csv('~/Dropbox/jackieT_project/bayesian attempt/bigBFdata.csv')
+#check observed effect sizes - these confirm they are around .3, .5, and .8, and zero
+
+mycheck<-aggregate(mytrials$obsES, list(mytrials$trueES), mean)
+names(mycheck)<-c('True ES','Observed ES')
+mycheck
+```
+We can now see how accurate a subject would be if they adopted a particular strategy for responding.
+Consider the following strategy:
+a. Response NO if the Effect Size is less than 0
+b. Response YES if the Effect size is greater than .2
+Otherwise wait to accumulate more evidence.
+We can try this on our total file of data to see how accurate someone would be if they do this.
+
+We need to add columns denoting Response (No=0, Yes=1, NA for Wait or if response already made on this trial)
+
+We can then assign a score of correct/incorrect.
+We need also to have a response rule for the case when all sample sizes have been seen and the criterion has not been met. This would be YES if effect size > .2 and NO otherwise.
+
+```{r tryEScriterion}
+mytrials$respES2<-NA #column to hold responses if effect size criterion is used
+mytrials$corrES2<-NA#column to hold accuracy of response if effect size criterion is used
+critES<-.2 #if obs effect is greater than this value, respond YES
+critESn<-.2 #if obs effect is less than this value, respond NO
+Nsizes<-6 #number of sample sizes that are presented on each trial
+
+thisrow<-0
+for (i in 1:(nrow(mytrials)/Nsizes)){
+  critflag<-0 #this flag is set when conditions are met for a response; reset for each trial
+  for (thissize in 1:Nsizes){
+    thisrow<-thisrow+1
+    if(critflag<1){ #no response is given yet, so proceed to check if criterion met
+  if(mytrials$obsES[thisrow]>critES){ #does the observed effect size exceed critical effect size?
+    critflag<-1
+    mytrials$respES2[thisrow]<-1 #for this response, record YES, and set critflag to 1 to denote response made
+  }
+      if(mytrials$obsES[thisrow]<critESn){ #is observed effect size less than critESn?
+    critflag<-1
+    mytrials$respES2[thisrow]<-0 #for this response, record NO
+      }
+    } #proceed to this point if critflag is still zero
+    if((thissize==Nsizes)&(critflag==0)){ #got to last size and still not met criterion; adopt default criterion; assume NO unless obs effect size is bigger than criterion effect size
+         mytrials$respES2[thisrow]<-1 #for this response, record YES
+         if(mytrials$trueES[thisrow]<critES){mytrials$respES2[thisrow]<-0}
+    }
+    #now decide if the response was correct or not
+   if(!is.na(mytrials$respES2[thisrow])){
+    trueeff<-0
+    if(mytrials$trueES[thisrow]>0){trueeff<-1} #true effect size in population is greater than zero
+    mytrials$corrES2[thisrow]<-0 #default response code is error
+    if(mytrials$respES2[thisrow]==trueeff) {mytrials$corrES2[thisrow]<-1} #switch to correct if resp matches trueeff
+   }
+    }
+}
+
+myacc <-aggregate(mytrials$corrES2, by=list(mytrials$trueES),
+  FUN=mean, na.rm=TRUE)
+names(myacc)<-c('True effect size','p.Correct')
+
+```
+
+Seems an asymmetry with more false positives (really null but says yes) than misses (says null when real effect)
+
+How does this compare with use of Bayes Factor.
+To give some flexibility in selection of a criterion, will make prior chunk into a function
+
+```{r flexcriterion}
+myflex<-function(mytrials,respcol,corrcol,critcol,critvalue,critvalueN,Nsizes,sizecol){
+  
+  thisrow<-0
+  for (i in 1:(nrow(mytrials)/Nsizes)){
+    critflag<-0 #this flag is set when conditions are met for a response; reset for each trial
+    for (thissize in 1:Nsizes){
+      thisrow<-thisrow+1
+      if(critflag==0){ #no response is given yet, so proceed to check if criterion met
+        if(mytrials[thisrow,criterioncol]>critvalue){ #does the observed effect size exceed critical effect size?
+          critflag<-1
+          mytrials[thisrow,responsecol]<-1 #for this response, record YES, and set critflag to 1 to denote response made
+        }
+        if(mytrials[thisrow,criterioncol]<critvalueN){ #is observed effect size less than critESn?
+          critflag<-1
+          mytrials[thisrow,responsecol]<-0 #for this response, record NO
+        }
+      } #proceed to this point if critflag is still zero
+      if((thissize==Nsizes)&(critflag==0)){ #got to last size and still not met criterion; adopt default criterion; assume NO unless obs effect size is bigger than criterion effect size
+        mytrials[thisrow,responsecol]<-1 #for this response, record YES
+        if(mytrials[thisrow,criterioncol]<critvalue){mytrials[thisrow,responsecol]<-0}
+      }
+      #now decide if the response was correct or not
+      if(!is.na(mytrials[thisrow,responsecol])){ #ignore those where no response
+        trueeff<-0 #check if true effect size is zero or greater
+        if(mytrials$trueES[thisrow]>0){trueeff<-1} #true effect size in population is greater than zero
+        mytrials[thisrow,correctcol]<-0 #default code is error
+        if(mytrials[thisrow,responsecol]==trueeff) {mytrials[thisrow,correctcol]<-1} #switch to correct if resp matches trueeff
+        mytrials[thisrow,sizecol]<-mytrials$Nsize[thisrow]
+      }
+    }
+  }
+  
+  myacc <-aggregate(mytrials[,c(sizecol,correctcol)], by=list(mytrials$trueES),
+  FUN=mean, na.rm=TRUE)
+  names(myacc)<-c('True effect size','N','p.Correct')
+  print(myacc)
+  return(mytrials)
+}
+```
+
+```{r dologBFcrit}
+summaryperf<-data.frame(matrix(ncol = 7, nrow = 100))
+colnames(summaryperf)<-c('type','critvalY','critvalN','p.corrYES','p.corrNO','meanNYES','meanNNO')
+Nsizes<-6 #number of sample sizes that are presented on each trial
+mytype<-'logBF'
+critvals<-c(1,1.5,2,2.5,3,3.5,4) #all the critical values to be tested
+critvalNs<-c(-3,-2.5,-2,-1.5,-1)#all the critical values for neg result to be tested
+#comment out next 2 lines if you want to test all values - below are single values to test the function
+critvals<-1
+critvalNs<-(-1)
+myrow<-which(is.na(summaryperf$type))[1]-1 #start writing data to first blank row
+for(critvalue in critvals){
+  for(critvalueN in critvalNs){
+
+  mytrials$resplBF<-NA #column to hold responses if effect size criterion is used
+mytrials$corrlBF<-NA#column to hold accuracy of response if effect size criterion is used
+mytrials$size<-NA #col to hold size
+responsecol<-which(names(mytrials)=='resplBF') #find column number for resp
+correctcol<-which(names(mytrials)=='corrlBF') #find column number for correct
+criterioncol<-which(names(mytrials)=='logBFH1') #column that holds the key statistic
+sizecol<-which(names(mytrials)=='size') #holds N at point when response made
+ myrow<-myrow+1
+ summaryperf$type[myrow]<-mytype
+ summaryperf$critvalY[myrow]<-critvalue
+  summaryperf$critvalN[myrow]<-critvalueN
+ mytrials<-myflex(mytrials,responsecol,correctcol,criterioncol,critvalue,critvalueN,Nsizes,sizecol)
+ w<-intersect(which(mytrials$trueES>0),which(!is.na(mytrials$corrlBF)))
+ summaryperf$p.corrYES[myrow]<-sum(mytrials[w,correctcol],na.rm=TRUE)/(nrow(mytrials)/Nsizes/2)
+  summaryperf$p.corrNO[myrow]<-sum(mytrials[-w,correctcol],na.rm=TRUE)/(nrow(mytrials)/Nsizes/2)
+ summaryperf$meanNYES[myrow]<-mean(mytrials$Nsize[w],na.rm=TRUE)
+ summaryperf$meanNNO[myrow]<-mean(mytrials$Nsize[-w],na.rm=TRUE)
+}
+}
+
+mytype<-'ES'
+
+myrow<-which(is.na(summaryperf$type))[1]-1 #start writing data to first blank row
+critvals<-c(.1,.15,.2,.25,.3,.35,.4)
+critvalNs<-c(-.3,-.25,-.2,-.15,-.1,-.05,0)
+#comment out next 2 lines for full run: lines below used for testing
+critvals<-.3
+critvalNs<-(-.1)
+for(critvalue in critvals){ #if obs effect is greater than this value, respond YES
+for(critvalueN in critvalNs){ #if obs effect is less than this value, respond NO
+
+  mytrials$respES<-NA #column to hold responses if effect size criterion is used
+mytrials$corrES<-NA#column to hold accuracy of response if effect size criterion is used
+mytrials$size<-NA#col to hold N at point of response
+responsecol<-which(names(mytrials)=='respES') #find column number for resp
+correctcol<-which(names(mytrials)=='corrES') #find column number for correct
+sizecol<-which(names(mytrials)=='size')
+criterioncol<-which(names(mytrials)=='obsES') #column that holds the key statistic
+
+ myrow<-myrow+1
+ summaryperf$type[myrow]<-mytype
+ summaryperf$critvalY[myrow]<-critvalue
+  summaryperf$critvalN[myrow]<-critvalueN
+ mytrials<-myflex(mytrials,responsecol,correctcol,criterioncol,critvalue,critvalueN,Nsizes,sizecol)
+ w<-intersect(which(mytrials$trueES>0),which(!is.na(mytrials[,correctcol])))
+ summaryperf$p.corrYES[myrow]<-sum(mytrials[w,correctcol],na.rm=TRUE)/(nrow(mytrials)/Nsizes/2)
+  summaryperf$p.corrNO[myrow]<-sum(mytrials[-w,correctcol],na.rm=TRUE)/(nrow(mytrials)/Nsizes/2)
+ summaryperf$meanNYES[myrow]<-mean(mytrials$size,na.rm=TRUE)
+ summaryperf$meanNNO[myrow]<-mean(mytrials$size,na.rm=TRUE)
+}
+}
+
+ 
+```
+
+
+I will simulate choices by a fictitious subject: these will give (a) the N at which the response was made, and (b) the choice (1 or 0).
+
+From this, we can get an obs effect size and Bayes Factor corresponding to that choice.
+
+In this first attempt, the simulation is just random: the subject stops at a random point and selects true or false at random
+
+```{r fictitiousdata}
+Elist<-c(3,5,8,0) #effect size x 10
+nsets<-c(6,6,6,18) #N sets at each effect size
+N_size <- c(20, 40, 80, 160, 320, 640) #sample sizes used
+earning<-c(-10,10,-1) #reward schedule: loss if wrong, gain if right, loss per N level
+
+mydf<-data.frame(matrix(nrow=(sum(nsets)),ncol=12))
+names(mydf)<-c('run','lettercode','trueES','sel_N','response','obsES','t','logBFH1','correct','earn','penalty','balance')
+
+newdf <- mytrials[c(rep(FALSE,5),TRUE), ] #just using existing columns in mytrials to populate start of mydf
+mydf[,1:3]<-newdf[,c(1,2,4)]
+mydf$sel_N<-sample(N_size,nrow(mydf),replace=TRUE) #random selection of a sample size
+mydf$response<-sample(c(0,1),nrow(mydf),replace=TRUE) #random selection of a response
+#we now need to look up the obs effect size and BF for this response pattern
+
+for (i in 1:nrow(mydf)){
+  thisrun<-mydf$run[i]
+  thisletter<-mydf$lettercode[i]
+  thisN<-mydf$sel_N[i]
+w<-intersect(intersect(which(mytrials$run==thisrun),which(mytrials$Nsize==thisN)),which(mytrials$lettercode==thisletter)) #Phew! I tried filter and could not get it to work!
+  mydf$obsES[i]<-mytrials$obsES[w]
+  mydf$logBFH1[i]<-mytrials$logBFH1[w]
+  mydf$t[i]<-mytrials$t[w]
+}
+```
+Do computation of cost/benefit in a separate function
+
+```{r costs}
+mycost<-function(mydf){
+for (i in 1:nrow(mydf)){
+  mydf$correct[i]<-0 #default is error
+  if ((mydf$trueES[i]>0)&(mydf$response[i]==1))
+      {mydf$correct[i]<-1}
+  if ((mydf$trueES[i]==0)&(mydf$response[i]==0))
+    {mydf$correct[i]<-1}  
+  mydf$earn_cost[i]<- earning[1]
+  if (mydf$correct[i]==1)
+  {mydf$earn_cost[i]<- earning[2]}
+  w<-which(N_size==mydf$sel_N[i])
+  mydf$penalty[i]<-(w-1)*earning[3] #can set earning [3] to zero for no cost of waiting
+}
+  return(mydf)
+  }
+```
+
+```{r countcosts}
+mydf<-mycost(mydf)
+```
+We can now check whether selection of a response is related to either effect size or t-value or Bayes Factor
+
+
+```{r compareresponse}
+
+t.test(abs(mydf$logBFH1)~mydf$response) #use absolute value of bayes factor
+t.test(mydf$obsES~mydf$response)
+t.test(mydf$t~mydf$response)
+
+
+
+```
+
+# Finding optimal strategy
+
+Possible rule. 
+Decide if log Bayes is greater than absolute value of a critical level.
+If it doesn't reach that level by biggest N, then go by whether effect size is > .2
+
+Alternative rule: just go by whether effect size is > critical ES
+
+Or whether t-value is > 1.96
+
+We'll start by making a dataframe to save results for different settings
+
+
+Now we'll create a function that for trying different settings for criterion to make decision, and save the results in mydfsummary
+
+```{r trycriterion}
+mytry<-function(mytrials,mydf,thiscol,critvalue,thiscorrectcol,mydefaultcut){
+  #we need data from mytrials, plus the original dataframe (mydf) as a dummy to overwrite
+  #mycol specifies which column is used to decide on response
+  #mycutoff specifies which cutoff
+  #mycorrectcol is the default column for decision if cutoff not reached - typically ES
+  #mydefaultcut is cutoff used with default column; typically .2
+
+mycol<-which(names(mytrials)==thiscol) #find the column with the name from thiscol
+mycorrectcol<-which(names(mytrials)==thiscorrectcol) #find the column with the name from thiscol
+
+mydf1<-mydf #start by copying mydf - we will overwrite the selections etc
+mydf1[,4:11]<-NA 
+mydf1$confident<-0 #this is a new column used to record whether the cutoff led to a decision.  If not, then have to rely on default.
+ntrial<-max(mytrials$run)
+
+for (myt in 1:ntrial){
+  startrow<-1+(myt-1)*6
+  for (thisrow in (startrow+5):startrow){ #go backwards to find earliest N meeting criteria
+    myfound<-0 #marker for whether a value meeting criterion is found
+    if(mytrials[thisrow,mycol]>critvalue){ #e.g. check if abs(logBF) greater than 3, 
+      myfound<-1
+      mydf1$confident[myt]<-1 #we have a value meeting criterion
+    mydf1$response[myt]<-1 #respond TRUE
+    mydf1$sel_N[myt]<-mytrials$Nsize[thisrow] #record the N for this selection
+    mydf1$obsES[myt]<-mytrials$obsES[thisrow] 
+    mydf1$logBFH1[myt]<-mytrials$logBFH1[thisrow]
+    mydf1$t[myt]<-mytrials$t[thisrow]
+    }
+     if(mytrials[thisrow,mycol]< -(critvalue)){ #mirror image for null hypoth
+      myfound<-1
+       mydf1$confident[myt]<-1
+       mydf1$response[myt]<-0
+    mydf1$sel_N[myt]<-mytrials$Nsize[thisrow]
+    mydf1$obsES[myt]<-mytrials$obsES[thisrow]
+    mydf1$logBFH1[myt]<-mytrials$logBFH1[thisrow]
+    mydf1$t[myt]<-mytrials$t[thisrow]}
+
+  } #finish checking all rows
+
+      
+  if(mydf1$confident[myt]==0){ 
+    thisrow<-startrow+5 #did not find any case of meeting criterion, so select highest N (640)
+    #for these trials, we we use mycorrectcol and mydefaultcut to determine response
+    mydf1$response[myt]<-0 #respond FALSE
+    mydf1$sel_N[myt]<-mytrials$Nsize[thisrow]
+    mydf1$obsES[myt]<-mytrials$obsES[thisrow]
+      mydf1$t[myt]<-mytrials$t[thisrow]
+    mydf1$logBFH1[myt]<-mytrials$logBFH1[thisrow]
+    if(mytrials[thisrow,mycorrectcol]>mydefaultcut){
+      mydf1$response[myt]<-1 #respond TRUE
+    }
+  }
+}
+mydf1$correct<-1
+w<-c(which((mydf1$response==1)&(mydf1$trueES==0)),which((mydf1$response==0)&(mydf1$trueES > 0)))
+if(length(w)>0){
+mydf1$correct[w]<-0
+}
+return(mydf1)
+}
+
+
+```
+
+```{r populatesummary}
+#Use output from mytry function to summarise results and record in mydfsummary
+mypop<-function(thisdf,mydfsummary,sumrow){
+
+myt1<-t.test(thisdf$logBFH1~thisdf$response)$statistic #use absolute value of bayes factor
+myt2<-t.test(thisdf$obsES~thisdf$response)$statistic
+myt3<-t.test(thisdf$t~thisdf$response)$statistic
+mydfsummary$type[sumrow]<-thiscol
+mydfsummary$cutoff[sumrow]<-critvalue
+mydfsummary$p.confident[sumrow]<-mean(thisdf$confident)
+mydfsummary$default[sumrow]<-thiscorrectcol
+mydfsummary$default.setting[sumrow]<-mydefaultcut
+mydfsummary$p.corr[sumrow]<-mean(thisdf$correct)
+mydfsummary$avgN[sumrow]<-mean(thisdf$sel_N)
+mydfsummary$t.ES[sumrow]<-myt2
+mydfsummary$t.t[sumrow]<-myt3
+mydfsummary$t.BF[sumrow]<-myt1
+mydfsummary$totearn[sumrow]<-sum(earning[1]*(1-thisdf$correct))+sum(earning[2]*thisdf$correct)
+mydfsummary$totalpenalty[sumrow]<-sum(thisdf$penalty)
+mydfsummary$balance[sumrow]<-mydfsummary$totearn[sumrow]+mydfsummary$totalpenalty[sumrow]
+return(mydfsummary)
+
+}
+```
+
+```{r makesummarydf}
+mydfsummary<-data.frame(matrix(nrow=100,ncol=13))
+names(mydfsummary)<-c('type','cutoff','p.confident','default','default.setting','p.corr','avgN','t.ES','t.t','t.BF','totearn','totalpenalty','balance')
+#As well as saving % correct, we'll save the t-value for comparing ES, t-value and BF for 'yes' and 'no' responses. These should mirror which variable used for comparison
+```
+
+```{r trycutoffs}
+
+bflist<-c(1,1.5,2,2.5,3)
+thiscol<-'logBFH1'
+thiscorrectcol<-'obsES' #this is the column used to make decision if mycol criterion not met
+mydefaultcut<-.2 #cutoff for mycorrectcol
+for (critvalue in bflist){
+thisdf<-mytry(mytrials,mydf,thiscol,critvalue,thiscorrectcol,mydefaultcut)
+thisdf<-mycost(thisdf)
+ sumrow<-min(which(is.na(mydfsummary$type))) #first unpopulated row
+mydfsummary<-mypop(thisdf,mydfsummary,sumrow)
+}
+
+eslist<-c(.2,.3,.5,.8)
+thiscol<-'obsES'
+for (critvalue in eslist){
+thisdf<-mytry(mytrials,mydf,thiscol,critvalue,thiscorrectcol,mydefaultcut)
+thisdf<-mycost(thisdf)
+ sumrow<-min(which(is.na(mydfsummary$type))) #first unpopulated row
+mydfsummary<-mypop(thisdf,mydfsummary,sumrow)
+
+}
+
+tlist<-c(1.65,1.96,2.06,3)
+thiscol<-'t'
+for (critvalue in tlist){
+thisdf<-mytry(mytrials,mydf,thiscol,critvalue,thiscorrectcol,mydefaultcut)
+thisdf<-mycost(thisdf)
+ sumrow<-min(which(is.na(mydfsummary$type))) #first unpopulated row
+mydfsummary<-mypop(thisdf,mydfsummary,sumrow)
+}
+```
+
+
+
