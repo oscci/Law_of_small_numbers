@@ -15,27 +15,72 @@ library("data.table")
 library("ggbeeswarm")
 library("effsize")
 library("BayesFactor")
-
+library(gtools) # for chr
 source("split_vio.R")
 
+
+# function to convert number to letter pair for values > 26
+num2alpha<-function(n){
+  i<-as.integer((n-1)/26)
+  pre<-''
+  if(i>0){
+    pre<-chr(64+i)
+  }
+  post<-chr(64+n%%26)
+if(post=='@'){post<-'Z'}
+  myletters<-paste0(pre,post)
+  return(myletters)
+}
+
 # simulate data ================================================================================================
-set.seed(5)#make data reproducible
-options(scipen = 999) #turn off sci notation
-gifmake<-0 #set to 1 for creating gifs for study; 0 if making lots of datasets for testing strategies
+
+gifmake<-1 #set to 1 for creating gifs for study; 0 if making lots of datasets for testing strategies
 Elist<-c(3,5,8,0) #effect size x 10
 
-nsets<-c(6,6,6,18) #samples when doing gifs
+nsets<-c(10,10,10,30) # N samples at each effect size for when creating gifs for Gorilla
+blocklength<-15 #sum nsets should be divisible exactly by blocklength
+
+# for testing ================================================================================================
+dotest<-1
+if(dotest==1){
+nsets<-c(4,4,4,12) #for testing
+blocklength<-6}
+#set dotest to zero once testing complete.
+# ================================================================================================
+
 if(gifmake==0){
 nsets<-c(60,60,60,180) #N sets at each effect size - here doing lots so can check accuracy rates of differnt strategies
 }
 
 N_size <- c(20, 40, 80, 160, 320, 640, 20000) #sample sizes to use
 allN<-length(N_size)-1
-thistrial<-0 #initialise counter
+thistrial<-0 #initialise counter 
 
 #make dataframe to save observed eff size and bayes factor for each N for each run
-mybf<-data.frame(matrix(nrow=(sum(nsets)*allN),ncol=7))
-names(mybf)<-c('run','lettercode','Nsize','trueES','obsES','t','BF')
+mybf<-data.frame(matrix(nrow=(sum(nsets)*allN),ncol=11))
+ names(mybf)<-c('run','lettercode','Nsize','trueES','obsES','t','BF','meanC','sdC','meanE','sdE')
+ #make spreadsheet for Gorilla
+myspread<-data.frame(matrix(nrow=(2+length(nsets)+sum(nsets)),ncol=34)) #rows need to allow for intro and breaks
+names(myspread)<-c('randomise_blocks','randomise_trials','display','ANSWER','image1','image1f','ES','EarningCorrect','EarningWrong',
+                   'skip_ref',
+                   'meanC1','sdC1','meanE1','sdE1',
+                   'meanC2','sdC2','meanE2','sdE2',
+                   'meanC3','sdC3','meanE3','sdE3',
+                   'meanC4','sdC4','meanE4','sdE4',
+                   'meanC5','sdC5','meanE5','sdE5',
+                   'meanC6','sdC6','meanE6','sdE6')
+spreadrowcount <- 2 #keep count of row number for writing to spreadsheet - will start at row 3, after demo and instructions
+myspread$display<-'beeswarms' #default
+myspread$display[1]<-'instructions'
+myspread$display[2]<-'demo'
+myspread$image1[1:2]<-'E0_A.gif'
+myspread$image1f[1:2]<-'E0_A.png'
+myspread$EarningCorrect<-10
+myspread$EarningWrong<- (-10)
+myspread$ANSWER <-'Blue=Pink' #default
+myblock<-1
+blockcount<-0
+
 
 #make dataframe to save simulated data for each run
 N= 10000
@@ -52,23 +97,37 @@ for (effsize in 1:length(Elist)){
   ntrial<-nsets[effsize]
   for (i in 1:ntrial){
     thistrial<-thistrial+1 #global counter across effect sizes, to use in mybf dataframe
+    
+    spreadrowcount<-spreadrowcount+1
+    blockcount<-blockcount+1
+    if(blockcount==blocklength)
+       {blockcount<-0
+         myblock<-myblock+1
+         myspread[spreadrowcount,]<-NA
+         myspread$display[spreadrowcount]<-'break'
+         spreadrowcount<-spreadrowcount+1 }
+    myspread$skipref[spreadrowcount]<-myblock
+    myspread$ES[spreadrowcount]<-E
+    if(E>0)
+    {myspread$ANSWER[spreadrowcount] <-'Blue>Pink'}
+    
+    
   #for each effect size, create giant population dataset in mydf, with half Exp and half Control
 
 mydf$Score <- rnorm((N*2),mean=E,sd=1) #take random normal sample with mean of E
 mydf$Score[1:N] <- rnorm(N,mean=0,sd=1) #take random normal sample with mean of zero
-mydf$count <- seq(1, 20000, by = 2) # assign all odd numbers
-mydf$count[1:N] <- seq(2, 20000, by = 2) # assign control even numbers
-
-
+mydf$count <- seq(1, 2*N, by = 2) # assign all odd numbers
+mydf$count[1:N] <- seq(2, 2*N, by = 2) # assign control even numbers
 
 
 #identify range of rows to write to for mybf
 bfstartrow<-(thistrial-1)*allN+1
 bfendrow<-thistrial*allN
 mybf[bfstartrow:bfendrow,1]<-thistrial
-mybf[bfstartrow:bfendrow,2]<-LETTERS[i]
+mybf[bfstartrow:bfendrow,2]<-num2alpha(i) #use previously defined formula (allows us to go beyond Z)
 mybf[bfstartrow:bfendrow,3]<-N_size[1:(length(N_size)-1)]
 mybf[bfstartrow:bfendrow,4]<-E
+
 
 
 # create data set which includes accumulating data for each level
@@ -80,15 +139,27 @@ jcounter<-0
       mydfL$n <- j
       datalist[[j]] <- mydfL
       if(j<max(N_size)){
-        mybf[(bfstartrow-1+jcounter),5]<- (-1)*cohen.d(mydfL$Score ~ as.factor(mydfL$Group))$estimate
+        mybf[(bfstartrow-1+jcounter),5]<- (-1)*effsize::cohen.d(mydfL$Score~as.factor(mydfL$Group))$estimate
         #multiply by -1 bcs factor takes control first, so all eff sizes are neg
+        # NB need to specify cohen.d from effsize package - otherwise conflict with psych package
         
         bf = ttestBF(x = mydfL$Score[1:(j/2)],y=mydfL$Score[((j/2)+1):j], paired=FALSE)
         myt<-t.test(x=mydfL$Score[((j/2)+1):j],y = mydfL$Score[1:(j/2)], paired=FALSE)
         mybf[(bfstartrow-1+jcounter),6]<-myt$statistic
         mybf[(bfstartrow-1+jcounter),7]<-as.data.frame(bf)$bf
+        mybf[(bfstartrow-1+jcounter),8]<-mean(mydfL$Score[((j/2)+1):j])
+        mybf[(bfstartrow-1+jcounter),10]<-mean(mydfL$Score[1:(j/2)])
+        mybf[(bfstartrow-1+jcounter),9]<-sd(mydfL$Score[((j/2)+1):j])
+        mybf[(bfstartrow-1+jcounter),11]<-sd(mydfL$Score[1:(j/2)])
       }
   }
+
+# add means and sds to spreadsheet
+myspread[spreadrowcount,seq(11,34,4)]<-mybf$meanC[bfstartrow:bfendrow]
+myspread[spreadrowcount,seq(12,34,4)]<-mybf$sdC[bfstartrow:bfendrow]
+myspread[spreadrowcount,seq(13,34,4)]<-mybf$meanE[bfstartrow:bfendrow]
+myspread[spreadrowcount,seq(14,34,4)]<-mybf$sdE[bfstartrow:bfendrow]
+
 # bind the data    
 big_data = do.call(rbind, datalist)  
 big_data$iter <- as.factor(big_data$n)
@@ -144,7 +215,7 @@ meanE<-mean(meanE$Score, na.rm= TRUE)
 # create answer plot
 q <- ggplot(truedat, aes(x= iter2, y= Score2, color= Group, fill= Group)) +
   geom_hline(yintercept = 0, linetype="dotdash", color = "#F8766D", size=1) + 
-  geom_hline(yintercept = 0, linetype="longdash", color = "#00BFC4", size=1) + 
+  geom_hline(yintercept = E, linetype="longdash", color = "#00BFC4", size=1) + 
   geom_split_violin(trim= TRUE, alpha= 0.5) +
   geom_boxplot(width = 0.1, position = position_dodge(width=0.25), outlier.alpha = 0) + 
   xlab("Sample size per condition") + ylab("Score") + ylim(-3,3)
@@ -155,78 +226,16 @@ q
 filename<-paste0('gifs_pngs/E',Elist[effsize],'_',LETTERS[i],'.png')
 ggsave(filename , dpi= 300, width= 7, height = 7)  
 }
-# # ensure that test matches full data
-# testDF <- big_data[big_data$iter == "20000",]
-# test_res <- t.test(testDF$Score~testDF$Group)$p.value
-# if (test_res < .05) {
-#   "Yes, there is a statistical difference (p< .05)"
-# } else {
-#   "Oh no, this is only a numerical, statistically non-significant difference (p> .05)"
-# }
 
 
 
-# Clear df ======================================================================================================
-
-#remove(list = ls())
-  }
-}
-#logBF is more useful, so
-
-mybf$BF<-log(mybf$BF)
-
-colnames(mybf)[7]<-c('logBFH1')
 csvname<-'bigBFdata.csv'
 if(gifmake==1){csvname<-'gifs_pngs/BFdata.csv'}
 #NB when log scale used, the evidence for null is just the same as for H1, but negative
 write.csv(mybf,csvname,row.names=FALSE)
 
-
-#Checking computation of Bayes factor for diff between means
-xall = mydfL$Score[1:(j/2)] #just using last block of data 
-yall = mydfL$Score[((j/2)+1):j]
-myN<-5
-#take first N of each
-x<-xall[1:myN]
-y<-yall[1:myN]
-myt<-t.test(x,y,alternative='greater')$statistic
-bf=ttestBF(x=x,y=y,paired=FALSE)
-bf<-as.data.frame(bf)$bf #computed bf for these data
-bft<-ttest.tstat(myt, myN, myN, nullInterval = NULL, rscale = "medium",
-                 complement = FALSE, simple = FALSE)
-heff<-2
-diff<-mean(x)-mean(y)
-sdiff<-1/sqrt(myN-1)
-score0<-(0-diff)/sdiff
-score1<-(heff-diff)/sdiff
-p0<-pt(score0,lower.tail=TRUE)
-p1<-pt(score1,lower.tail=TRUE)
-p0<-pcauchy(score0,lower.tail=TRUE)
-p1<-pcauchy(score1,lower.tail=TRUE)
-#d0<-dt(score0,df=(myN*2-1))
-#d1<-dt(score1,df=(myN*2-1))
-
-compBF<-p1/p0
-#compBFd<-d1/d0
-bf
-bft$bf
-compBF
-log(compBF)
-
-#########2nd attempt 
-mydfa<-mybf[1:20,  ]
-mydfa$bf<-exp(mydfa$logBFH1)
-mydfa$bft<-NA
-mydfa$pt0<-mydfa$pt1<-mydfa$OR<-mydfa$logOR<-NA
-estes<-1 #this agrees with the other bayes estimate
-for (i in 1:20){
-  mydfa$bft[i]<-ttest.tstat(mydfa$t[i], mydfa$Nsize[i]/2, mydfa$Nsize[i]/2, nullInterval = NULL, rscale = "medium",
-                     complement = FALSE, simple = FALSE)$bf
-  mydfa$pt0[i]<-pt(mydfa$t[i],df=(mydfa$Nsize[i]-2),lower.tail=TRUE)
-  mydfa$pt1[i]<-pt((estes-mydfa$t[i]),df=(mydfa$Nsize[i]-2),lower.tail=TRUE)
-  mydfa$OR[i]<-mydfa$pt0[i]/mydfa$pt1[i]
-  mydfa$logOR[i]<-log(mydfa$OR[i])
-  
-  
+myspread$image1f[spreadrowcount]<-paste0('E',Elist[effsize],'_',LETTERS[i],'.png')
+myspread$image1[spreadrowcount]<-paste0('E',Elist[effsize],'_',LETTERS[i],'.gif')
+myspread$randomise_trials[spreadrowcount]<-1
+  }
 }
-
