@@ -1,0 +1,192 @@
+---
+title: "Data_analyse"
+author: "DVM Bishop"
+date: "23/11/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(tidyverse)
+require(psych)
+require(psycho) #for dprime calculation
+library(beeswarm)
+options(scipen = 999)
+```
+
+## Analyse dummy data from Gorilla game
+Game is here:  https://gorilla.sc/admin/project/7839#
+
+data.csv was created with me attempting to test all response options to check RT equivalents.
+2 trials resp 1, 2 resp 2, 2 resp 3, 2 resp 4, 1 resp 5 -block 1
+1 trials resp 2, 1 resp 1, 2 resp 2, 2 resp 3, 2 resp 4, 1 resp 5 -block 2
+2 trials resp 5, 2 resp 4, 2 resp 3, 2 resp 2, 1 resp 1 -block 3
+2 trials resp 1, 2 resp 2, 2 resp 3, 2 resp 4, 1 resp 5 -block 4
+
+I forgot there was a 6th option! need to check timings for that.
+
+```{r checkRTequiv}
+docheck<-0 #only need this if want to recheck RT ranges
+if(docheck==1){
+dummydat <- read.csv('dummy data/data.csv',stringsAsFactors=FALSE)
+dummydat <-dummydat[14:nrow(dummydat),29:76]
+dummydat <-filter(dummydat,Screen.Name=='Stimulus1')
+dummydat$sel.array <- c(1,1,2,2,3,3,4,4,5,2,1,2,2,3,3,4,4,5,5,5,4,4,3,3,2,2,1,1,1,2,2,3,3,4,4,5)
+
+all.desc.stats<-psych::describeBy(dummydat$Reaction.Time,group=dummydat$sel.array)
+all.desc.stats
+}
+```
+
+This establishes RT cutoffs for identifying which screen was selected.
+These are
+screen 1 < 1500 ms
+screen 2 < 3000 ms
+screen 3 < 4500 ms
+screen 4 < 7000 ms
+screen 5 < 9000 ms #guestimate
+screen 6 > 9000 ms #guestimate
+Probably not perfect! but good enough - esp as may be responding to screen 1 when screen 2 comes up, etc.
+
+```{r readdata}
+mydat <- read.csv('dummy data/data60trials.csv',stringsAsFactors=FALSE)
+
+mydat <-filter(mydat,Screen.Name=='Stimulus1')
+mydat <-mydat[,34:83]
+mydat$block<-c(rep(1,15),rep(2,15),rep(3,15),rep(4,15)) #will need changing if n blocks or block length change
+
+#NB I had expected skip_len to be equiv to block but it isnt.
+
+mydat$sel.array<-1
+mydat$sel.array[mydat$Reaction.Time>1500]<-2
+mydat$sel.array[mydat$Reaction.Time>3000]<-3
+mydat$sel.array[mydat$Reaction.Time>4500]<-4
+mydat$sel.array[mydat$Reaction.Time>7000]<-5
+mydat$sel.array[mydat$Reaction.Time>9000]<-6
+plot(mydat$sel.array,mydat$Reaction.Time,col=(1+mydat$Correct)) #black is incorrect, red is correct
+plot(mydat$sel.array,mydat$d1,col=(1+mydat$Correct)) #black is incorrect, red is correct
+
+
+```
+
+To answer the question of whether learning is occuring, can use dprime for each block.
+Does it decline?
+
+
+```{r dprimes.block}
+blockstats<-data.frame(matrix(nrow=4,ncol=8))
+colnames(blockstats) <- c('block','hit','fa','miss','cn','dprime','beta','pcorr')
+blockstats[,1]<-1:4
+mydat$resptype<-1 #default - this is HIT
+w1<-which(mydat$Correct==1)
+w0<-which(mydat$Correct==0)
+x0<-which(mydat$ES==0)
+x1<-which(mydat$ES>0)
+mydat$resptype[intersect(w0,x0)]<-2 #false positive
+mydat$resptype[intersect(w0,x1)]<-3 #miss
+mydat$resptype[intersect(w1,x0)]<-4 #correct negative
+
+myt<-table(mydat$block,mydat$resptype)
+blockstats[,2:5]<-table(mydat$block,mydat$resptype)
+blockstats$pcorr<-(blockstats$hit+blockstats$cn)/15
+for (b in 1:4){
+sdt <- psycho::dprime(blockstats$hit[b], blockstats$fa[b], blockstats$miss[b], blockstats$cn[b])
+blockstats$dprime[b]<-sdt$dprime
+blockstats$beta[b]<-sdt$beta
+}
+
+plot(dprime ~ block,
+    data = blockstats,type='b')
+
+
+```
+
+```{r dprimes.ES}
+ESstats<-data.frame(matrix(nrow=3,ncol=8))
+colnames(ESstats) <- c('block','hit','fa','miss','cn','dprime','beta','pcorr')
+ESstats[,1]<-c(.3,.5,.8)
+
+myt<-table(mydat$ES,mydat$resptype)
+ESstats[,2:5]<-myt[2:4,]
+allfa<-myt[1,2]/3 #divide all null responses by N effect sizes
+allcn<-myt[1,4]/3
+ESstats[,3]<-allfa #divide all null responses by N effect sizes
+ESstats[,5]<-allcn
+ESstats$pcorr<-(ESstats$hit+ESstats$cn)/(ESstats$hit+ESstats$cn+ESstats$miss+ESstats$fa)
+for (b in 1:3){
+sdt <- psycho::dprime(ESstats$hit[b], ESstats$fa[b], ESstats$miss[b], ESstats$cn[b])
+ESstats$dprime[b]<-sdt$dprime
+ESstats$beta[b]<-sdt$beta
+}
+```
+
+Next we will compare positive and negative responses (regardless of accuracy) to see what factors drive responses - and whether these change over the blocks.
+First need to create new columns that hold the mean/SD for E and C distributions for the array that was on the screen when selection was made (ie sel.array)
+
+```{r respdrivers}
+N_size <- c(20, 40, 80, 160, 320, 640) #sample sizes for each array
+N_size <- N_size/2 # for computing SEM we need size for each group, rather than combined
+
+firstcol<-which(colnames(mydat)=='meanC1')#don't hard code this in case col numbers change!
+#but we can assume that all means/sds then follow with C then E and mean then sd
+#initialise cols to hold actual mean and sd values for the array that trial stopped at
+mydat$meanC<-NA
+mydat$sdC <-NA
+mydat$meanE <-NA
+mydat$sdE <-NA
+mydat$obs.ES<-NA
+mydat$obs.LL <- NA #log likelihood for ES of .3 
+
+thatcol<-which(colnames(mydat)=='meanC') #first col to write to
+for (i in 1:nrow(mydat)){
+thisfirst<-firstcol+4*(mydat$sel.array[i]-1)
+ mydat[i,thatcol:(thatcol+3)]<-mydat[i,thisfirst:(thisfirst+3)]
+ mydat$obs.ES[i]<-(mydat$meanC[i]-mydat$meanE[i])/mean(mydat$sdC[i],mydat$sdE[i])
+ myse<-sqrt(mydat$sdC[i]^2/N_size[mydat$sel.array[i]]+
+        mydat$sdE[i]^2/N_size[mydat$sel.array[i]])
+ mydat$obs.LL[i]<-log(dnorm(mydat$obs.ES[i],mean=.3,sd=myse)/
+                        dnorm(mydat$obs.ES[i],mean=0,sd=myse))
+
+ }
+
+plot(mydat$obs.ES,mydat$obs.LL,col=as.factor(mydat$Response))
+plot(mydat$obs.ES,mydat$obs.LL,col=as.factor(mydat$ES))
+#Just check that the observed means agree with the specified ES
+mymeans<-psych::describeBy(mydat$obs.ES,group=mydat$ES)
+mymeans
+
+#Now check how observed effect sizes relate to participant response
+mymeans2<-psych::describeBy(mydat$obs.ES,group=mydat$ANSWER)
+mymeans2
+ beeswarm(obs.ES ~ ANSWER,
+    data = mydat, 
+    pch = 16,col=1:2)
+ 
+  beeswarm(obs.ES ~ ANSWER*block,
+    data = mydat, 
+    pch = 16,col=1:2)
+ 
+    beeswarm(obs.LL ~ ANSWER,
+    data = mydat, 
+    pch = 16,col=1:2)
+    
+    beeswarm(obs.LL ~ ANSWER*block,
+    data = mydat, 
+    pch = 16,col=1:2)
+    
+    t.test(obs.ES~ANSWER,data=mydat)
+    t.test(obs.LL~ANSWER,data=mydat)
+    
+    beeswarm(abs(obs.LL)~block,
+             data=mydat,
+             pch=16,col=1:2)
+    
+    #The absolute obs.LL corresponds to strength of evidence, and should increase with size of samples, whereas obs.ES is not dependent on sample size and should not.
+    plot(abs(obs.LL)~sel.array,data=mydat,pch=16)
+      plot(abs(obs.ES)~sel.array,data=mydat,pch=16)
+      
+  cor(abs(mydat$obs.LL),mydat$sel.array)
+  #Interesting: the ES actually goes down - but presumably this reflects the fact that we wait for more information if it is uncertain?
+   cor(abs(mydat$obs.ES),mydat$sel.array)
+```
+
