@@ -1,8 +1,9 @@
 # Created by Adam Parker, August 2019
 # Generates the gifs showing growing beeswarms.
-# Modified by Dorothy Bishop, Sept 2019
-# Can generate datasets that are not plotted, but which are used to test strategies
+# Modified by Dorothy Bishop, Sept 2019 to add spreadsheet creation
+# Option for larger spreadsheet with datasets that are not plotted, but which are used to test strategies
 
+# Gorilla Game is here:  https://gorilla.sc/admin/project/7839#
 
 # load packages ================================================================================================
 library("ggplot2")
@@ -38,10 +39,10 @@ gifmake<-1 #set to 1 for creating gifs for study; 0 if making lots of datasets f
 Elist<-c(3,5,8,0) #effect size x 10
 
 nsets<-c(10,10,10,30) # N samples at each effect size for when creating gifs for Gorilla
-blocklength<-15 #sum nsets should be divisible exactly by blocklength
+blocklength<-15 #sum of nsets should be divisible exactly by blocklength
 
 # for testing ================================================================================================
-dotest<-1
+dotest<-0
 if(dotest==1){
 nsets<-c(4,4,4,12) #for testing
 blocklength<-6}
@@ -100,13 +101,13 @@ for (effsize in 1:length(Elist)){
     
     spreadrowcount<-spreadrowcount+1
     blockcount<-blockcount+1
-    if(blockcount==blocklength)
+    if(blockcount>blocklength)
        {blockcount<-0
          myblock<-myblock+1
          myspread[spreadrowcount,]<-NA
          myspread$display[spreadrowcount]<-'break'
          spreadrowcount<-spreadrowcount+1 }
-    myspread$skipref[spreadrowcount]<-myblock
+    myspread$skip_ref[spreadrowcount]<-myblock
     myspread$ES[spreadrowcount]<-E
     if(E>0)
     {myspread$ANSWER[spreadrowcount] <-'Blue>Pink'}
@@ -239,3 +240,5 @@ myspread$image1[spreadrowcount]<-paste0('E',Elist[effsize],'_',LETTERS[i],'.gif'
 myspread$randomise_trials[spreadrowcount]<-1
   }
 }
+myspread$display[spreadrowcount]<-'end'
+write.csv(myspread,'gorilla_bits/spreadsheet1.csv',row.names=FALSE)
