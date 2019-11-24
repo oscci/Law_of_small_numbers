@@ -1,7 +1,7 @@
 ---
-title: "Data_analyse"
+title: "Data_analysis for Balance of Evidence Game"
 author: "DVM Bishop"
-date: "23/11/2019"
+date: "24/11/2019"
 output: html_document
 ---
 
@@ -11,11 +11,38 @@ require(tidyverse)
 require(psych)
 require(psycho) #for dprime calculation
 library(beeswarm)
+library(pwr)
 options(scipen = 999)
+library(simstudy) #to simulate data
 ```
 
 ## Analyse dummy data from Gorilla game
+
 Game is here:  https://gorilla.sc/admin/project/7839#
+First we can just check the power of selecting different sample sizes (using p<.05 1-tailed, since our prediction is directional). This is mentioned in the protocol. Can use this to argue that accurate judgements unlikely with N per group < 160
+
+```{r powerttest}
+#Just check power function against Cohen tables:
+powcheck<-c(.25,.5,.8)
+for (p in powcheck){
+print(pwr.t.test(power=p,d =.3 , sig.level = .05,  type = "two.sample",alternative="two.sided"))
+  print(pwr.t.test(power=p,d =.3 , sig.level = .05,  type = "two.sample",alternative="greater"))
+}
+#Two-sided agrees with Cohen tables; 'greater' (ie one-sided) gives a lower n. All good.
+
+N_size <- c(20, 40, 80, 160, 320, 640) #sample sizes to use
+powertable<-data.frame(matrix(nrow=length(N_size),ncol=2))
+colnames(powertable)<-c('N.per.group','Power')
+powertable[,1]<-N_size/2 #each sample is half the size of the N_size variable
+for(i in 1:length(N_size)){
+  n<-N_size[i]/2
+powertable[i,2]<-round(pwr.t.test(n=n,d =.3 , sig.level = .05,  type = "two.sample",alternative="greater")$power,3)
+}
+print(powertable)
+write.csv(powertable,'powtab',row.names=FALSE)
+```
+
+Next we check the time cutoffs for the different array sizes.
 
 data.csv was created with me attempting to test all response options to check RT equivalents.
 2 trials resp 1, 2 resp 2, 2 resp 3, 2 resp 4, 1 resp 5 -block 1
@@ -30,52 +57,70 @@ docheck<-0 #only need this if want to recheck RT ranges
 if(docheck==1){
 dummydat <- read.csv('dummy data/data.csv',stringsAsFactors=FALSE)
 dummydat <-dummydat[14:nrow(dummydat),29:76]
-dummydat <-filter(dummydat,Screen.Name=='Stimulus1')
+dummydat <-dplyr::filter(dummydat,Screen.Name=='Stimulus1')
 dummydat$sel.array <- c(1,1,2,2,3,3,4,4,5,2,1,2,2,3,3,4,4,5,5,5,4,4,3,3,2,2,1,1,1,2,2,3,3,4,4,5)
 
-all.desc.stats<-psych::describeBy(dummydat$Reaction.Time,group=dummydat$sel.array)
-all.desc.stats
+all.desc.stats<-psych::describeBy(dummydat$Reaction.Time,group=dummydat$sel.array,mat=TRUE)
+print(all.desc.stats)
 }
 ```
 
-This establishes RT cutoffs for identifying which screen was selected.
-These are
-screen 1 < 1500 ms
-screen 2 < 3000 ms
-screen 3 < 4500 ms
-screen 4 < 7000 ms
-screen 5 < 9000 ms #guestimate
-screen 6 > 9000 ms #guestimate
-Probably not perfect! but good enough - esp as may be responding to screen 1 when screen 2 comes up, etc.
+This establishes RT cutoffs for identifying which array was selected.
+Provisionally, these are
+array 1 < 1500 ms
+array 2 < 3000 ms
+array 3 < 4500 ms
+array 4 < 7000 ms
+array 5 < 9000 ms #guestimate
+array 6 > 9000 ms #guestimate
+Probably not perfect! but good enough - esp as may be responding to array 1 when array 2 comes up, etc.
+
+Now we want to look at output from a real attempt at the task.
+These are both cases where all the 'true' trials have ES of .3.
+
+data_all3b.csv is DB adopting optimal strategy of waiting. 
+data_all3.csv is DB adopting strategy of responding when it looks like there's a difference. Expectation is that this will be more realistic, so will look at analysis with this.
+
+First question (Hypothesis 1) is how often participants select arrays 1-3, which are likely to give them as many wrong as right answers. Given the power computations shown above, they would be best advised to wait for array 6 every time!
 
 ```{r readdata}
-mydat <- read.csv('dummy data/data60trials.csv',stringsAsFactors=FALSE)
+mydat <- read.csv('dummy data/data_all3.csv',stringsAsFactors=FALSE)
 
-mydat <-filter(mydat,Screen.Name=='Stimulus1')
+mydat <-dplyr::filter(mydat,Screen.Name=='Stimulus1') #omit everything that is not a trial response
 mydat <-mydat[,34:83]
-mydat$block<-c(rep(1,15),rep(2,15),rep(3,15),rep(4,15)) #will need changing if n blocks or block length change
+mydat$block<-c(rep(1,15),rep(2,15),rep(3,15),rep(4,14)) #will need changing if n blocks or block length change - SHOULD BE 15 for all - something odd with original spreadsheet, so only 59 trials.
+mydat$trial<-1:nrow(mydat)
 
 #NB I had expected skip_len to be equiv to block but it isnt.
 
-mydat$sel.array<-1
+# Now do conversion of RT to selected array.
+mydat$sel.array<-1 #default
 mydat$sel.array[mydat$Reaction.Time>1500]<-2
 mydat$sel.array[mydat$Reaction.Time>3000]<-3
 mydat$sel.array[mydat$Reaction.Time>4500]<-4
 mydat$sel.array[mydat$Reaction.Time>7000]<-5
 mydat$sel.array[mydat$Reaction.Time>9000]<-6
-plot(mydat$sel.array,mydat$Reaction.Time,col=(1+mydat$Correct)) #black is incorrect, red is correct
-plot(mydat$sel.array,mydat$d1,col=(1+mydat$Correct)) #black is incorrect, red is correct
+plot(mydat$sel.array,mydat$Reaction.Time,col=(1+mydat$Correct),
+     main='Plot to check RT vs array') #black is incorrect, red is correct
+legend(5,2000, legend=c("Incorrect", "Correct"),col=c("black","red"),pch=1,cex=.75)
+
+plot(mydat$trial,mydat$sel.array,col=(1+mydat$Correct),pch=15,xlab='Trial',ylab='Array',
+     main='Array selection over time, \nwhere 1 = 20, 6 = 640') #black is incorrect, red is correct
+legend(50,1.5, legend=c("Incorrect", "Correct"),col=c("black","red"),pch=15,cex=.75)
 
 
 ```
 
-To answer the question of whether learning is occuring, can use dprime for each block.
-Does it decline?
+Next question (hypothesis 2): any sign of learning occuring, in at least some people.
+Need to compute dprime for each block.
+Does it improve over time?
+Does array selection decrease over time?
+And what about response bias (beta)? (no clear prediction for that)
 
 
 ```{r dprimes.block}
-blockstats<-data.frame(matrix(nrow=4,ncol=8))
-colnames(blockstats) <- c('block','hit','fa','miss','cn','dprime','beta','pcorr')
+blockstats<-data.frame(matrix(nrow=4,ncol=9))
+colnames(blockstats) <- c('block','hit','fa','miss','cn','dprime','beta','pcorr','meanarray')
 blockstats[,1]<-1:4
 mydat$resptype<-1 #default - this is HIT
 w1<-which(mydat$Correct==1)
@@ -94,14 +139,24 @@ sdt <- psycho::dprime(blockstats$hit[b], blockstats$fa[b], blockstats$miss[b], b
 blockstats$dprime[b]<-sdt$dprime
 blockstats$beta[b]<-sdt$beta
 }
+mytab<-psych::describeBy(mydat$sel.array,group=mydat$block,mat=TRUE)
+blockstats$meanarray<-mytab$mean
 
+plot(meanarray ~ block,
+    data = blockstats,type='b',main='Mean Selected Array',ylim=c(1,6))
 plot(dprime ~ block,
-    data = blockstats,type='b')
+    data = blockstats,type='b',main='D prime',ylim=c(-.5,2.5))
+plot(beta ~ block,
+    data = blockstats,type='b',main='beta',ylim=c(-2,2))
+
 
 
 ```
 
 ```{r dprimes.ES}
+# This chunk is a hangover from when we had several effect sizes within one block.
+# Just preserved here for historic reasons - looked at d' by effect size
+if(max(mydat$ES>.3)){ #only run this if multiple effect sizes
 ESstats<-data.frame(matrix(nrow=3,ncol=8))
 colnames(ESstats) <- c('block','hit','fa','miss','cn','dprime','beta','pcorr')
 ESstats[,1]<-c(.3,.5,.8)
@@ -118,6 +173,7 @@ sdt <- psycho::dprime(ESstats$hit[b], ESstats$fa[b], ESstats$miss[b], ESstats$cn
 ESstats$dprime[b]<-sdt$dprime
 ESstats$beta[b]<-sdt$beta
 }
+}
 ```
 
 Next we will compare positive and negative responses (regardless of accuracy) to see what factors drive responses - and whether these change over the blocks.
@@ -129,7 +185,9 @@ N_size <- N_size/2 # for computing SEM we need size for each group, rather than 
 
 firstcol<-which(colnames(mydat)=='meanC1')#don't hard code this in case col numbers change!
 #but we can assume that all means/sds then follow with C then E and mean then sd
-#initialise cols to hold actual mean and sd values for the array that trial stopped at
+
+# Initialise cols to hold actual mean and sd values for the array that trial stopped at
+# i.e. we will look up sel.array and use the mean and sd values for that array size.
 mydat$meanC<-NA
 mydat$sdC <-NA
 mydat$meanE <-NA
@@ -149,33 +207,42 @@ thisfirst<-firstcol+4*(mydat$sel.array[i]-1)
 
  }
 
-plot(mydat$obs.ES,mydat$obs.LL,col=as.factor(mydat$Response))
-plot(mydat$obs.ES,mydat$obs.LL,col=as.factor(mydat$ES))
-#Just check that the observed means agree with the specified ES
-mymeans<-psych::describeBy(mydat$obs.ES,group=mydat$ES)
-mymeans
+#Check that the observed means agree broadly with the specified ES
+mymeans<-psych::describeBy(mydat$obs.ES,group=mydat$ES,mat=TRUE)
+colnames(mymeans)[2]<-'True_ES'
+print(mymeans)
+
+# Check how ES and LL relate to response
+plot(mydat$obs.ES,mydat$obs.LL,col=as.factor(mydat$Response),pch=(4+mydat$Correct))
+abline(v=0,lty=2)
+abline(h=0,lty=2)
+legend(.5,-5, legend=c("Blue=Pink", "Blue>Pink"),col=c("black","red"),pch=4,cex=.75)
+legend(-.75,12, legend=c("Error", "Correct"),pch=c(4,5),cex=.75)
+
 
 #Now check how observed effect sizes relate to participant response
-mymeans2<-psych::describeBy(mydat$obs.ES,group=mydat$ANSWER)
+#NB ANSWER is the correct answer; Response is what participant selected.
+
+mymeans2<-psych::describeBy(mydat$obs.ES,group=mydat$Response,mat=TRUE)
 mymeans2
- beeswarm(obs.ES ~ ANSWER,
+ beeswarm(obs.ES ~ Response,
     data = mydat, 
     pch = 16,col=1:2)
  
-  beeswarm(obs.ES ~ ANSWER*block,
+  beeswarm(obs.ES ~ Response*block,
     data = mydat, 
     pch = 16,col=1:2)
  
-    beeswarm(obs.LL ~ ANSWER,
+    beeswarm(obs.LL ~ Response,
     data = mydat, 
     pch = 16,col=1:2)
     
-    beeswarm(obs.LL ~ ANSWER*block,
+    beeswarm(obs.LL ~ Response*block,
     data = mydat, 
     pch = 16,col=1:2)
     
-    t.test(obs.ES~ANSWER,data=mydat)
-    t.test(obs.LL~ANSWER,data=mydat)
+    t.test(obs.ES~Response,data=mydat)
+    t.test(obs.LL~Response,data=mydat)
     
     beeswarm(abs(obs.LL)~block,
              data=mydat,
@@ -190,3 +257,67 @@ mymeans2
    cor(abs(mydat$obs.ES),mydat$sel.array)
 ```
 
+
+## Simulated data
+
+Now we'll simulate some data so we can work out analysis for whole group.
+
+Each person's data will be run through the above analyses, to generate a file that has data on Pretest and Posttest stats test (? Adam to check what this will look like) as well as the following for each block:
+d prime
+beta
+% correct
+mean.sel.array
+t.ES  #those these would be better computed across more than one block,
+t.LL
+
+For the time being, I'll do a very simple-minded simulation which doesn't model dependencies between these, but just treats everything as random variable. 
+(In practice, dprime and % correct would be correlated, and high mean.sel.array would be expected to predict % correct).
+For half the simulated data, there is learning, so d prime increases over blocks - here I've just added a constant effect to the first half of the subjects.
+
+```{r simdata}
+nsub <-10
+nblock <-4
+
+simdat<-data.frame(matrix(nrow=nsub*nblock,ncol=6))
+colnames(simdat)<-c('ID','block','dprime','beta','p.corr','mean.sel.array')
+thisrow<-0
+for (i in 1:nsub){
+  for (b in 1:nblock){
+    thisrow<-thisrow+1
+    simdat[thisrow,1]<-i
+    simdat[thisrow,2]<-b
+    simdat$dprime[thisrow]<-rnorm(1,0,1)+2 #assume range from around 0 to 4
+    simdat$beta[thisrow]<-1+rnorm(1,0,.3) #not sure what reasonable range is!
+    simdat$p.corr[thisrow]<-sample(30:60,1)/60 #from 50% upward
+    simdat$mean.sel.array[thisrow]<-sample(1:6,1)
+     if (b/2==round(b/2)) { #only do this for blocks 2 and 4 (ie estimates for blocks1-2 and3-4)
+     simdat$t.ES[thisrow]<-rnorm(1,0,1)+1
+     simdat$t.LL[thisrow]<-rnorm(1,0,1)+1
+     }
+   }
+}
+
+#Add a true learning effect to the first half the sample by adding .1 per block to dprime and p.correct, and adding 1 to mean.sel.array for each block (2 for last block)
+
+w<-which(simdat$ID<nsub/2)
+w1<-which(simdat$block==2)
+theserows<-intersect(w,w1)
+simdat$dprime[theserows]<-simdat$dprime[theserows]+.1 #block2
+simdat$dprime[(theserows+1)]<-simdat$dprime[theserows]+.2 #block3
+simdat$dprime[(theserows+2)]<-simdat$dprime[theserows]+.3 #block4
+
+simdat$p.corr[theserows]<-simdat$p.corr[theserows]+.1 #block2
+simdat$p.corr[(theserows+1)]<-simdat$p.corr[theserows]+.2 #block3
+simdat$p.corr[(theserows+2)]<-simdat$p.corr[theserows]+.3 #block4
+#avoid out of range values (>100%)
+x<-which(simdat$p.corr>1)
+simdat$p.corr[x]<-.99
+
+simdat$mean.sel.array[theserows]<-simdat$mean.sel.array[theserows]+1 #block2
+simdat$mean.sel.array[(theserows+1)]<-simdat$mean.sel.array[theserows]+1 #block3
+simdat$mean.sel.array[(theserows+2)]<-simdat$mean.sel.array[theserows]+2#block4
+#avoid out of range values (>100%)
+x<-which(simdat$mean.sel.array>6)
+simdat$mean.sel.array[x]<-6
+
+```
