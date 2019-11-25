@@ -256,6 +256,53 @@ mymeans2
   #Interesting: the ES actually goes down - but presumably this reflects the fact that we wait for more information if it is uncertain?
    cor(abs(mydat$obs.ES),mydat$sel.array)
 ```
+## Another approach...  
+Just plot the LL for each array for each trial; can then overplot where the response occurred.
+(This would be easier if I had just saved stats comparisons for each array size when doing initial creation of spreadsheet!)
+
+```{r makeLLs}
+#first need to compute all the LL values: may as well add to data frame.
+mydat$LL1<-NA
+mydat$LL2<-NA
+mydat$LL3<-NA
+mydat$LL4<-NA
+mydat$LL5<-NA
+mydat$LL6<-NA
+thatcol<-which(colnames(mydat)=='LL1')
+firstcol<-which(colnames(mydat)=='meanC1')#don't hard code this in case col numbers change!
+for (i in 1:nrow(mydat)){
+  thatcol<-which(colnames(mydat)=='LL1')-1 #initialise first col to write to
+  for (a in 1:6){ #cycle through all 6 arrays
+  thatcol<-thatcol+1
+  thisfirst<-firstcol+4*(a-1) #identify first col to read: mean for this array size
+  myse<-sqrt(mydat[i,(firstcol+1)]^2/N_size[a]+
+        mydat[i,(firstcol+3)]^2/N_size[a])
+  mydat[i,thatcol]<-log(dnorm((mydat[i,firstcol]-mydat[i,(firstcol+2)]),mean=.3,sd=myse)/
+                        dnorm((mydat[i,firstcol]-mydat[i,(firstcol+2)]),mean=0,sd=myse))
+
+ }
+}
+
+
+```
+
+Now we'll plot the LLs for each trial, as array increases.
+Shows increasing likelihood with array size for true effect, and decreasing likelihood with array size for null effect.
+
+Also can show for each line, which array size was selected, which gives an indication of whether S operates with a particular decision cutoff.
+
+```{r plotLL}
+thatcol<-which(colnames(mydat)=='LL1')
+plot(1:6,mydat[1,thatcol:(thatcol+5)],xlim<-c(1,6),ylim<-c(-40,40),type='n',ylab='Log Likelihood',xlab='array',main='Each line is one trial')
+for (i in 1:nrow(mydat)){
+  lines(1:6,mydat[i,thatcol:(thatcol+5)],type='l',col='grey')
+  text(mydat$sel.array[i],mydat[i,thatcol-1+mydat$sel.array[i]],'x',col='red')#add a red x to show which array was selected!
+}
+abline(h=0)
+abline(h=3,lty=2)
+abline(h=-3,lty=2)
+
+```
 
 
 ## Simulated data
