@@ -37,8 +37,10 @@ if(post=='@'){post<-'Z'}
 
 gifmake<-1 #set to 1 for creating gifs for study; 0 if making lots of datasets for testing strategies
 Elist<-c(3,5,8,0) #effect size x 10
+Elist<-c(3,0) #comment out if you want all 3 effect sizes
 
 nsets<-c(10,10,10,30) # N samples at each effect size for when creating gifs for Gorilla
+nsets<-c(30,30)  #comment out if you want all 3 effect sizes
 blocklength<-15 #sum of nsets should be divisible exactly by blocklength
 
 # for testing ================================================================================================
