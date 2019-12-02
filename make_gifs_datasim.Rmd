@@ -1,0 +1,266 @@
+---
+title: "Gif create rmd"
+author: "A Parker + DVM Bishop"
+date: "2/12/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("ggplot2")
+library("gganimate")
+library("beeswarm")
+library("dplyr")
+library("animation")
+library("FSA")
+library("data.table")
+library("ggbeeswarm")
+library("effsize")
+library("BayesFactor")
+library(gtools) # for chr
+library(permute) #for shuffling effect sizes
+
+source("split_vio.R")
+set.seed(5)#make data reproducible
+options(scipen = 999) #turn off sci notation
+```
+
+## Explanation
+
+For the Gorilla game, we need gifs that show how a dataset changes as additional datapoints are sampled. This scripts creates gifs. We also create the spreadsheet that will be used to control display of trials in the Gorilla game, and we will save the data behind the gifs so we can check how participants' responses relate to the observed effect size, etc.
+
+```{r num2alpha.function}
+# convert number to letter pair for values > 26
+# after A to Z, we code runs as AA, AB etc (like Excel cols)
+# This is only needed when making a v large simulated dataset. 
+
+num2alpha<-function(n){
+  i<-as.integer((n-1)/26)
+  pre<-''
+  if(i>0){
+    pre<-chr(64+i)
+  }
+  post<-chr(64+n%%26)
+if(post=='@'){post<-'Z'}
+  myletters<-paste0(pre,post)
+  return(myletters)
+}
+```
+
+## Prepare to simulate
+Stimuli will be presented in blocks, each of which contains a mixture of two effect sizes - either zero (null) or E (true effect). We will start with E = .3. 
+
+
+```{r prepsim}
+gifmake<-1 #set to 1 for creating gifs for study; 0 if already made
+Elist<-c(3,0) #effect size x 10
+
+nsets<-c(24,24) #samples when doing gifs
+blocklength<-12 #sum of nsets should be divisible exactly by blocklength
+ntrial<-sum(nsets)
+
+N_size <- c(20, 40, 80, 160, 320, 640) #sample sizes to use
+allN<-length(N_size)
+N <-max(N_size) #on each run simulate max number
+thistrial<-0 #initialise counter 
+
+ #make spreadsheet for Gorilla
+myspread<-data.frame(matrix(nrow=(2+length(nsets)+sum(nsets)),ncol=60)) #rows need to allow for intro & end(3) breaks (length(nsets))+row for each trial (sum(nsets))
+names(myspread)<-c('trial','randomise_blocks','randomise_trials','display','ANSWER','image1','image1f','ES','EarningCorrect','EarningWrong',
+                   'skip_ref',
+                   'meanC1','sdC1','meanE1','sdE1',
+                   'meanC2','sdC2','meanE2','sdE2',
+                   'meanC3','sdC3','meanE3','sdE3',
+                   'meanC4','sdC4','meanE4','sdE4',
+                   'meanC5','sdC5','meanE5','sdE5',
+                   'meanC6','sdC6','meanE6','sdE6',
+                   'ES1','ES2','ES3','ES4','ES5','ES6',
+                   'LL1','LL2','LL3','LL4','LL5','LL6',
+                   't1','t2','t3','t4','t5','t6',
+                    'BF1','BF2','BF3','BF4','BF5','BF6')
+
+# Prepopulate spreadsheet
+myspread$display<-'beeswarms' #default
+myspread$display[1]<-'instructions'
+myspread$display[2]<-'demo'
+
+myspread$image1[1:2]<-'E5_demo.gif' #predetermined gifs for demo
+myspread$image1f[1:2]<-'E5_demo.png'
+
+myspread$EarningCorrect<-10
+myspread$EarningWrong<- (-10)
+
+myspread$ANSWER <-'Blue=Pink' #default
+
+
+#make dataframe to save simulated data for each run
+
+mydf<-data.frame(matrix(nrow=(N),ncol=2))
+colnames(mydf)<-c('Group','Score')
+mydf$Group <- 'Experimental'
+mydf$Group[1:N/2] <- 'Control'
+mydf$col<-2 #red and blue dots
+mydf$col[1:N/2]<-4
+
+```
+
+
+```{r makegif}
+makegif<-function(big_data,E,filename) {
+  
+p <- ggplot(big_data, aes(x= cnd_sample, y= Score, color= Group)) +
+  geom_beeswarm(cex = 1.5, dodge.width = .2) + 
+  xlab("Sample size per condition") + ylim(-3,3)
+p <- p + theme_bw() + theme(legend.title = element_blank()) + theme(legend.position="top") +
+  theme(text = element_text(size=15))
+#p
+# set animation values
+anim <- p + transition_states(cnd_sample,
+              transition_length = 10,
+              state_length = 60) +
+            enter_grow() + exit_shrink()
+anim <- animate(anim, fps=1, duration=12) #creates gif with 12 frames,2 of each N
+# print animation
+#anim
+
+# save,
+filename2<-paste0('gifs_pngs/E',filename,'.gif')
+anim_save(filename2, anim)
+# answer plot ==================================================================================================
+
+truedat <- big_data
+
+
+# create means for horizontal lines
+meanC<-0
+meanE<-E
+
+#Just use big_data to provide data frame, but we'll just create new values in a v big sample
+
+truedat<-rbind(big_data,big_data,big_data,big_data)
+range1<-1:(nrow(truedat)/2)
+range2<-((nrow(truedat)/2)+1):nrow(truedat)
+truedat$Group<-'Experimental'
+truedat$Group[range1]<-'Control'
+truedat$Score[range1]<-rnorm(length(range1),0,1)
+truedat$Score[range2]<-rnorm(length(range1),E,1)
+truedat$col<-2
+truedat$col[range1]<-4
+truedat$cnd_sample<-10000 # default is ultralarge sample
+truedat$cnd_sample[1:(allN-1)]<-N_size[1:(allN-1)] #retain some points coded with N_size so plot shows this range
+truedat$Score[1:allN]<-(-1000) #won't display
+truedat$cnd_sample<-as.factor(truedat$cnd_sample)
+
+
+# create answer plot
+q <- ggplot(truedat, aes(x= cnd_sample, y= Score, color= Group, fill= Group)) +
+  geom_hline(yintercept = 0, linetype="dotdash", color = "#F8766D", size=1) + 
+  geom_hline(yintercept = E, linetype="longdash", color = "#00BFC4", size=1) + 
+  geom_split_violin(trim= TRUE, alpha= 0.5) +
+  geom_boxplot(width = 0.1, position = position_dodge(width=0.25), outlier.alpha = 0) + 
+  xlab("Sample size per condition") + ylab("Score") + ylim(-3,3)
+q <- q + theme_bw() + theme(legend.title = element_blank()) + theme(legend.position="top")  +
+  theme(text = element_text(size=15))
+q
+filename3<-paste0('gifs_pngs/E',filename,'.png')
+ggsave(filename3, dpi= 300, width= 7, height = 7)  
+
+return()
+}
+
+```
+
+```{r runloop}
+# Make a list of effect sizes and shuffle them so tht there is a mixture in each block
+tempr<-c(rep(Elist[1],nsets[1]),rep(Elist[2],nsets[2])) #all effect size values as a long list
+trialE <-tempr[shuffle(tempr)] #all effect sizes in random order
+myblock<-1
+blockcount<-0
+spreadrowcount <- 2 #keep count of row number for writing to spreadsheet - will start at row 3, after demo and instructions
+#start loop here
+
+  for (thistrial in 1:ntrial){
+
+    E <- trialE[thistrial]/10 #select the next effect size from the trialE vector (ie shuffled values)
+    spreadrowcount<-spreadrowcount+1
+    blockcount<-blockcount+1
+    if(blockcount>blocklength)
+       {blockcount<-1
+         myblock<-myblock+1
+         myspread[spreadrowcount,]<-NA
+         myspread$display[spreadrowcount]<-'break'
+         spreadrowcount<-spreadrowcount+1 }
+    myspread$skip_ref[spreadrowcount]<-myblock #not sure what this variable does! It is here for historic reasons
+    myspread$ES[spreadrowcount]<-E
+    if(E>0)
+    {myspread$ANSWER[spreadrowcount] <-'Blue>Pink'}
+    myspread$trial[spreadrowcount]<-thistrial
+    
+  #for each effect size, create dataset in mydf, with half Exp and half Control
+
+mydf$Score <- rnorm(N,mean=E,sd=1) #take random normal sample with mean of E for experimentals
+mydf$Score[1:(N/2)] <- rnorm((N/2),mean=0,sd=1) #take random normal sample with mean of zero for controls
+
+# create data set which includes accumulating data for each level
+startcol<- which(colnames(myspread)=='meanC1')
+startmeans<- seq(startcol,startcol-1+(allN*4),4) #starting col for writing means for each N_size
+EScol<-which(colnames(myspread)=='ES1') #start of ES column range
+LLcol<-which(colnames(myspread)=='LL1') #although this could be computed, this is easier, and more explicit
+tcol<-which(colnames(myspread)=='t1') #although this could be computed, this is easier, and more explicit
+BFcol<-which(colnames(myspread)=='BF1') #although this could be computed, this is easier, and more explicit
+
+
+  for (j in 1:allN){ 
+   
+    myN <- N_size[j]/2 #myN is sample size per group and varies from 10 to 320
+       range1a<-1
+      range1b<-myN #control range from 1:myN
+      range2a<-(N/2)+1
+      range2b<-N/2+myN #exp range 
+# add means and sds for con then exp to spreadsheet
+     myspread[spreadrowcount,startmeans[j]]<-mean(mydf$Score[range1a:range1b])
+    myspread[spreadrowcount,(startmeans[j]+1)]<-sd(mydf$Score[range1a:range1b])
+     myspread[spreadrowcount,(startmeans[j]+2)]<-mean(mydf$Score[range2a:range2b])
+    myspread[spreadrowcount,(startmeans[j]+3)]<-sd(mydf$Score[range2a:range2b])
+# add Effect size for this sample size to spreadsheet
+      ESObs<-(-1)*effsize::cohen.d(mydf$Score[range1a:range1b],mydf$Score[range2a:range2b])$estimate
+        myspread[spreadrowcount,(EScol+j-1)]<-ESObs
+      # add Loglikelihood for this sample size to spreadsheet
+
+       myse<-sqrt(sd(mydf$Score[range1a:range1b])/myN+
+        sd(mydf$Score[range2a:range2b])/myN)
+       meandiff<-mean(mydf$Score[range2a:range2b])-mean(mydf$Score[range1a:range1b])
+       myspread[spreadrowcount,(EScol+j-1+allN)]<-log(dnorm(meandiff,mean=.3,sd=myse)/
+                        dnorm(meandiff,mean=0,sd=myse))
+       
+     # add t-value for this sample size to spreadsheet
+       myt<-t.test(x=mydf$Score[range1a:range1b],y = mydf$Score[range2a:range2b], paired=FALSE)
+       myspread[spreadrowcount,(EScol+j-1+(2*allN))]<-myt$statistic
+ 
+     # add BF for this sample size to spreadsheet
+          bf = ttestBF(x = mydf$Score[range1a:range1b],y=mydf$Score[range2a:range2b], paired=FALSE)
+         myspread[spreadrowcount,(EScol+j-1+(3*allN))] <-as.data.frame(bf)$bf
+ 
+ #Add this bit of data to big_data, with sample size code (cnd_sample)
+ #I.e. big_data has all samples on top of each other, so there will be repetitions as the data cumulates
+ add_bit<-mydf[c(range1a:range1b,range2a:range2b),]
+ add_bit$cnd_sample<-myN
+ if (j==1){big_data<-add_bit}
+   if(j>1){
+   big_data<-rbind(big_data,add_bit)
+   }
+ 
+  } #all sample sizes complete
+
+big_data$cnd_sample <- as.factor(big_data$cnd_sample)
+
+filename<-paste0('E',E*10,'_',num2alpha(thistrial))
+myspread$image1[spreadrowcount]<-paste0(filename,'.gif')
+myspread$image1f[spreadrowcount]<-paste0(filename,'.png')
+ makegif(big_data,E,filename) #take the current generated df, create gifs for samples, with final plot showin g effect size E.
+}
+myspread$display[nrow(myspread)]<-'end'
+myspread$ANSWER[nrow(myspread)]<-NA
+
+```
+
