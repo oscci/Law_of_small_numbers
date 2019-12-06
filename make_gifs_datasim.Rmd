@@ -1,7 +1,7 @@
 ---
 title: "Gif create rmd"
 author: "A Parker + DVM Bishop"
-date: "2/12/2019"
+date: "03/12/2019"
 output: html_document
 ---
 
@@ -65,7 +65,7 @@ N <-max(N_size) #on each run simulate max number
 thistrial<-0 #initialise counter 
 
  #make spreadsheet for Gorilla
-myspread<-data.frame(matrix(nrow=(2+length(nsets)+sum(nsets)),ncol=60)) #rows need to allow for intro & end(3) breaks (length(nsets))+row for each trial (sum(nsets))
+myspread<-data.frame(matrix(nrow=(4+length(nsets)+sum(nsets)),ncol=60)) #rows need to allow for intro & end(3) breaks (length(nsets))+row for each trial (sum(nsets))
 names(myspread)<-c('trial','randomise_blocks','randomise_trials','display','ANSWER','image1','image1f','ES','EarningCorrect','EarningWrong',
                    'skip_ref',
                    'meanC1','sdC1','meanE1','sdE1',
@@ -119,12 +119,12 @@ anim <- p + transition_states(cnd_sample,
               transition_length = 10,
               state_length = 60) +
             enter_grow() + exit_shrink()
-anim <- animate(anim, fps=1, duration=12) #creates gif with 12 frames,2 of each N
+anim <- animate(anim, fps=1, duration=12, renderer= gifski_renderer(loop = F)) #12 frames,2 of each N
 # print animation
 #anim
 
 # save,
-filename2<-paste0('gifs_pngs/E',filename,'.gif')
+filename2<-paste0('gifs_pngs/',filename,'.gif')
 anim_save(filename2, anim)
 # answer plot ==================================================================================================
 
@@ -156,13 +156,13 @@ truedat$cnd_sample<-as.factor(truedat$cnd_sample)
 q <- ggplot(truedat, aes(x= cnd_sample, y= Score, color= Group, fill= Group)) +
   geom_hline(yintercept = 0, linetype="dotdash", color = "#F8766D", size=1) + 
   geom_hline(yintercept = E, linetype="longdash", color = "#00BFC4", size=1) + 
-  geom_split_violin(trim= TRUE, alpha= 0.5) +
+  geom_split_violin(trim= TRUE, alpha= 0.5, width= -1) +
   geom_boxplot(width = 0.1, position = position_dodge(width=0.25), outlier.alpha = 0) + 
   xlab("Sample size per condition") + ylab("Score") + ylim(-3,3)
 q <- q + theme_bw() + theme(legend.title = element_blank()) + theme(legend.position="top")  +
   theme(text = element_text(size=15))
 q
-filename3<-paste0('gifs_pngs/E',filename,'.png')
+filename3<-paste0('gifs_pngs/',filename,'.png')
 ggsave(filename3, dpi= 300, width= 7, height = 7)  
 
 return()
@@ -254,7 +254,7 @@ BFcol<-which(colnames(myspread)=='BF1') #although this could be computed, this i
 
 big_data$cnd_sample <- as.factor(big_data$cnd_sample)
 
-filename<-paste0('E',E*10,'_',num2alpha(thistrial))
+filename<-paste0("E", E*10,'_',num2alpha(thistrial))
 myspread$image1[spreadrowcount]<-paste0(filename,'.gif')
 myspread$image1f[spreadrowcount]<-paste0(filename,'.png')
  makegif(big_data,E,filename) #take the current generated df, create gifs for samples, with final plot showin g effect size E.
@@ -262,5 +262,6 @@ myspread$image1f[spreadrowcount]<-paste0(filename,'.png')
 myspread$display[nrow(myspread)]<-'end'
 myspread$ANSWER[nrow(myspread)]<-NA
 
+write.csv(myspread, "gifs_pngs/Debug.csv")
 ```
 

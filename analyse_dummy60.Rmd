@@ -293,7 +293,7 @@ Also can show for each line, which array size was selected, which gives an indic
 
 ```{r plotLL}
 thatcol<-which(colnames(mydat)=='LL1')
-plot(1:6,mydat[1,thatcol:(thatcol+5)],xlim<-c(1,6),ylim<-c(-40,40),type='n',ylab='Log Likelihood',xlab='array',main='Each line is one trial')
+plot(1:6,mydat[1,thatcol:(thatcol+5)],xlim<-c(1,6),ylim<-c(-10,10),type='n',ylab='Log Likelihood',xlab='array',main='Each line is one trial')
 for (i in 1:nrow(mydat)){
   lines(1:6,mydat[i,thatcol:(thatcol+5)],type='l',col='grey')
   text(mydat$sel.array[i],mydat[i,thatcol-1+mydat$sel.array[i]],'x',col='red')#add a red x to show which array was selected!

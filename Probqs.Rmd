@@ -1,0 +1,343 @@
+---
+title: "probqs"
+author: "DVM Bishop"
+date: "03/12/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Probability questions
+For each question, situation is simulated to check the answer!
+
+## Q1a.
+Code N (i.e. not relevant for law of small numbers)  
+You take a sample of men from the general population and measure their height.  The mean is 70 inches and the standard deviation is 4 inches. What percentage of the sample will be expected to be more than 74 inches tall?
+ 16%
+ 5%
+ 10%
+ 25%
+ 
+ Suggested modification: You take a sample of 100 men from the general population and measure their height.  The mean is 70 inches and the standard deviation is 4 inches. What percentage of the sample will be expected to be more than 74 inches tall?
+ 
+Rationale: N does not affect the expected percentage - although the variation of the estimate will vary with N.
+But including N here so can lead to next q naturally
+
+```{r q1a}
+#NB for accurate estimate we use N = 10000
+mydata <- rnorm(10000,70,4)
+w<-which(mydata>74)
+ans<-100*length(w)/10000
+print(paste0("The answer is ",ans))
+
+```
+## Q2a
+Code N (i.e. not relevant for law of small numbers)  
+You have a sample of 1000 men with mean height of 70 inches and standard deviation of 4 inches, and a sample of 1000 women with a mean height of 65 inches and standard deviation of 4 inches. Roughly what percentage of women are taller than the average man?
+ 5%
+ 10%
+ 25%
+ 50%
+ 
+Comment: really very similar to last Q?
+```{r q2}
+myN <- 1000
+mdat <- rnorm(myN,70,4)
+fdat <- rnorm(myN,65,4)
+mmean <- mean(mdat)
+w <- length(which(fdat>mmean))
+print(paste0("The answer is ",100*w/1000,"%"))
+
+```
+
+## Q3a
+
+ 
+Suggested rewording : 
+You are responsible for the machinery at a large glass manufacturing company. 
+Staff rotate through jobs, so different people operate the machine on different days of the week.
+You have a machine that produces 1000 sheets of glass per hour.
+The person who sold it said it would produce a satisfactory product on 99.9% of runs, i.e. you'd expect only one substandard sheet in every thousand.
+It operates for 2 hours on Mondays, and for 8 hours on Tuesdays and for 12 hours on Wednesdays
+
+Over the year, the boss has noted the average number of substandard sheets per thousand varies according to day of the week. He decides to reward the team with the most weeks with no substandard sheets.  
+Is he more likely to reward the team who works on:
+
+Monday
+Tuesday
+Wednesday
+All days equally likely 
+
+Comment: Interestingly, I think this seems far more intuitive than the other extreme  I.e Monday's team have actually got a greater chance of either having very low rate of substandard, or very high rate. But it seems intuitive that with shorter time on machine they have fewer opportunities to make substandard. 
+(Both are computed below).
+
+```{r Q3a}
+
+mydat<-data.frame(matrix(NA,nrow=52,ncol=3))
+for (i in 1:52){
+mydat[i,1]<-rbinom(1,2000,.001)/2000
+mydat[i,2]<-rbinom(1,8000,.001)/8000
+mydat[i,3]<-rbinom(1,12000,.001)/12000
+}
+w1<-length(which(mydat[,1]==0))
+w2<-length(which(mydat[,2]==0))
+w3<-length(which(mydat[,3]==0))
+print(paste('Mondays: N days with no substandard:',w1))
+print(paste('Tuesdays: N days with no substandard:',w2))
+print(paste('Wednesdays: N days with no substandard:',w3))
+
+w4<-length(which(mydat[,1]>.002))
+w5<-length(which(mydat[,2]>.002))
+w6<-length(which(mydat[,3]>.002))
+print(paste('Mondays: N days with 2+ substandard per 1000:',w4))
+print(paste('Tuesdays: N days with 2+ substandard per 1000:',w5))
+print(paste('Wednesdays: N days with 2+ substandard per 1000',w6))
+```
+## Q4a
+You are choosing marbles from an opaque jar containing 100 red marbles, 100 blue marbles, and 200 white marbles, randomly mixed. You will get a prize every time you pick a red marble. If you make 100 selections, replacing the selected marble and shaking the jar each time, how often will you expect to pick a red marble?
+ 1 in two occasions
+ 1 in three occasions
+ 1 in four occasions
+ 1 in five occasions
+ 
+Comment: The simulation emphasises how much variance there is around the estimate! It often does give the wrong answer. Suggests idea that we could capitalise on this with a linked question (added as Q4a1)
+```{r Q4a}
+myselect<-vector()
+mymarbles<-c(rep(1,100),rep(2,100),rep(3,200))
+for (i in 1:100){
+  myselect<-c(myselect,sample(mymarbles,1))
+}
+myt<-table(myselect)
+names(myt)<-c('Red','Blue','White')
+myt
+myt/500
+ 
+```
+## Q4a1
+We'll continue with the scenario of picking marbles from an opaque jar containing a random mix of marbles. You replace the marble each time. 
+This time your job is to work out whether this is the same jar as before, jar A, with 100 red marbles, 100 blue marbles, and 200 white marbles, randomly mixed, or a different jar (B) with 200 red marbles, 100 blue marbles, and 100 white marbles,. 
+You pick 36 marbles and find that 12 of them are red. 
+
+What do you conclude:
+    Very probably jar A
+    Equally likely to be jar A or B
+    Very probably jar B
+    Definitely jar B
+    
+Comment: Not sure about whether to include this - quite complicated to make an easy problem from it.
+
+
+ 
+```{r Q4a1}
+myresults<-data.frame(matrix(NA,nrow=1000,ncol=3))
+mymarbles<-c(rep(1,100),rep(2,100),rep(3,200))
+for (j in 1:1000){
+  myselect<-sample(mymarbles,36)
+myresults[j,]<-table(myselect)
+}
+
+names(myresults)<-c('Red','Blue','White')
+w<-length(which(myresults$Red>11))
+print(paste('Result of 12 or more Red expected for A in ',100*w/1000,'% trials'))
+ w1<-length(which(myresults$White>11)) #use White for new freq of Red
+print(paste('Result of 12 or more Red expected for B in ',100*w1/1000,'% trials'))
+
+```
+## Q5
+In the city of Ficticium, there is generally a 10% chance it will rain on any given day in the first half of September, a 50% chance it will rain any given day in the second half of September,  a 25% chance it will rain on any given day in November, and a 30% chance it will rain on any given day in December. (September, November and December are all 30 days long). Which month is likely to have more rainy days?
+ September
+ November
+ December
+* September and December are equally likely
+```{r q5}
+myrain<-data.frame(matrix(NA,nrow=1000,ncol=3))
+names(myrain)<-c('Sep','Nov','Dec')
+for (i in 1:10000){
+sep1<-rbinom(1,15,.1)
+sep2<-rbinom(1,15,.5)
+nov<-rbinom(1,30,.25)
+dec<-rbinom(1,30,.3)
+myrain[i,1]<-sep1+sep2
+myrain[i,2]<-nov
+myrain[i,3]<-dec
+}
+print ('Mean rainy days')
+print(paste('September ',mean(myrain$Sep)))
+      print(paste('November ',mean(myrain$Nov)))
+            print(paste('December ',mean(myrain$Dec)))
+```
+## Q6a.
+At a raffle, you can pick from a green bowl with 2 winning raffle tickets and 8 worthless tickets, a yellow bowl with 10 winning tickets and 90 worthless tickets, or a red bowl with 15 winning tickets and 85 worthless tickets.  Which bowl gives you a better chance of winning?
+ Green
+ Yellow
+ Red
+ Green and Yellow give the same chance
+ 
+```{r q6a}
+greencount<-yellowcount<-redcount<-0
+for (i in 1:1000){
+green<-c(rep(1,2),rep(0,8))
+yellow<-c(rep(1,10),rep(0,90))
+red<-c(rep(1,15),rep(0,85))
+greencount<-greencount+sample(green,1)
+yellowcount<-yellowcount+sample(yellow,1)
+redcount<-redcount+sample(red,1)
+}
+print(paste('Green p = ',greencount/1000))
+print(paste('Yellow p = ',yellowcount/1000))
+print(paste('Red p = ',redcount/1000))
+```
+
+## Q7a. (reworded slightly)
+A task force is looking at characteristics of schools that have high-performing pupils. They take a measure of mathematical ability, and identify schools as 'high fliers' where 20% or more pupils get scores more than 1 SD above the population average. The smallest schools have on average 100 pupils, middle-sized schools have 250 pupils, and the largest schools have 500 pupils. 
+If there are no real differences between schools, will the size of the school affect whether it is a high-flier?
+ Yes. The smallest schools will be more likely to be a high flier 
+ No. All else being equal, school size should make no difference
+ Yes. The largest schools will be more likely to be a high flier
+ Yes. The middle-sized schools will be more likely to be a high flier
+
+```{r Q7a}
+N  = 1000 #N times sampled
+schoolsize<- c(100,250,500)
+myschool <- data.frame(matrix(NA, nrow=N, ncol=6))
+names(myschool)<-c('Small','Medium','Large','SmallHF','MediumHF','LargeHF')
+for (i in 1:N){
+  myschool[i,1]<-length(which(rnorm(schoolsize[1],0,1)>1))
+  myschool[i,2]<-length(which(rnorm(schoolsize[2],0,1)>1))
+  myschool[i,3]<-length(which(rnorm(schoolsize[3],0,1)>1))
+  for (j in 1:3){
+    myschool[i,(j+3)]<-0
+    if (myschool[i,j]/schoolsize[j]>.2){
+      myschool[i,(j+3)]<-1
+    }
+  }
+}
+print(paste('Out of ',N,' schools, this is number coded as high flier, for Small, Medium and Large respectively'))
+for (j in 1:3){
+  print(sum(myschool[,(j+3)]))
+}
+
+```
+
+## Q8a.
+(reworded to test understanding of power)
+Imagine you are a researcher studying a particular rare gene variant that is found in 0.01% of the population (1 in 10,000). You want to test the hypothesis that the variant doubles the risk of a rare disease that affects 1 in 300 people. You have access to the biobank genetic data from (almost) all residents of a large population country (30 million inhabitants), a medium population country (10 million inhabitants), and a small population country (1 million inhabitants). All else being equal, which country’s biobank data would give you the most valid answer to your research question? 
+ Smallest country
+ Medium country
+ Largest country
+ Does not matter: No difference between countries
+ 
+```{r q8a}
+myN<-c(30000000,10000000,1000000)
+for (thisn in 1:3){
+  print(paste('Population total is ',myN[thisn]))
+  truedat<-rnorm(myN[thisn],0,1)
+trueX<-length(which(truedat>3.09)) #corresponds to .001  N in population with variant
+trueN<-myN[1]-trueX #N in population without rare variant.
+#Risk of those with variant is 1 in 50, and for those without variant is 1 in 100
+trueXP <- round(trueX/150,0)
+trueXN <-trueX-trueXP
+trueNP <- round(trueN/300,0)
+trueNN <-trueN-trueNP
+tbl <- matrix(c(trueXP,trueXN,trueNP,trueNN),nrow=2)
+colnames(tbl)<-c('Rare variant','Common variant')
+rownames(tbl)<-c('Affected','Unaffected')
+print(tbl)
+print(chisq.test(tbl))
+
+}
+
+```
+
+## Q9a.
+In a squash tournament, the organisers are debating whether to have games of best of 3, 9 or 21 points.  Holding all other rules of the game constant, if A is a slightly better player than B, which scoring will give A a better chance of winning?
+ best of 3 points
+ best of 9 points
+ best of 21 points
+ Won't make any difference
+ 
+NB. Simulating this makes it clear that if A is much better than B, it really doesn't make much difference with original Ns! Fine if we simulate so that prob A winning is .6 and if we make lowest the best of 3.
+ 
+```{r q9a}
+#Assuming we can treat p(A) win as p
+#In fact, this only works if p not too high and if lowest N games is v small
+p = .6
+games<-c(3,9,21)
+
+
+  for (j in 1:3){
+    seq1 <-0
+   for (i in 1:1000){
+
+  thisg<-rbinom(games[j],games[j],p)
+  thiswin <- length(which(thisg>games[j]/2))
+  if(thiswin>games[j]/2) {seq1<-seq1+1}
+
+   }
+    print(paste0('N games is ',games[j]))
+    print(paste0('Wins in 1000 = ',sum(seq1)))
+}
+
+```
+## Q10a.
+20 percent of girls in a class of 100 have red hair, and 40 percent of the girls are taller than 60 inches.  How many red-headed girls would you expect who are taller than 60 inches?
+ 60
+ 16
+ 8
+ 5
+
+```{r q10a}
+# This gives a different answer on each run, but converges on 8 (.4*.2)
+girls <- c(rep(1,20),rep(0,80))
+tallgirls<-sample(girls,40) #random selection from girls
+tallred <- sum(tallgirls)
+print(tallred)
+```
+## Q11a. 
+Two scientists are both trying to test whether a certain new drug affects hunger in mice, by giving them the drug (group D) or a placebo (group P) and then measuring their food consumption. At the start of the experiment, the average mouse eats 10g of food pellets, with SD of 3g.
+Scientist A runs 10 studies with 10 mice in each group, and Scientist B runs 10 studies with 30 mice in each group. Unfortunately for them, a careless lab technician distributed a placebo in place of the new drug, so there should not be any effects except by chance. When the scientist looks at the results, a large effect, difference in food consumption of 3g, is seen between the two groups on one run of the experiment. Which scenario is more likely:
+
+   The run with a large difference is found in the smaller group
+   The run with a large difference is found in the larger group
+   The group difference shows group D eats more than group P
+   A large difference is equally likely D>P or P>D, with no effect of sample size
+ 
+Comment: 
+
+```{r q11a}
+n1<-10
+n2<-30
+alldiffa<-vector()
+alldiffb<-vector()
+for (i in 1:10){
+miceDa<-rnorm(n1,10,3)
+micePa<-rnorm(n1,10,3)
+miceDb<-rnorm(n2,10,3)
+micePb<-rnorm(n2,10,3)
+diffa<-mean(miceDa)-mean(micePa)
+diffb<-mean(miceDb)-mean(micePb)
+print(paste0('Mean diff n8 = ',
+             diffa))
+print(paste0('Mean diff n16 = ',
+             diffb))
+alldiffa<-c(alldiffa,diffa)
+alldiffb<-c(alldiffb,diffb)}
+print(alldiffa)
+print(alldiffb)
+```
+## q12a.
+You have suspicions that a coin may be unfair. You can decide you flip the coin either 20, 50, or 100 times to test this prediction. Which number of coin flips would provide you with the most accurate estimate? 
+  They are all equal
+  20
+  50
+  100 
+
+```{r q12a}
+myflip<-c(20,50,100)
+for (j in 1:3){
+  print(paste(rbinom(1,myflip[j],.5),' out of ',myflip[j]))
+}
+```
+
+
