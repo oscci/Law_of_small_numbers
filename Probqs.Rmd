@@ -8,21 +8,42 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+Version updated 17 Dec to incorporate feedback from pilots and other minor changes.
+
 # Probability questions
 For each question, situation is simulated to check the answer!
 
-## Q1a.
-Code N (i.e. not relevant for law of small numbers)  
-You take a sample of men from the general population and measure their height.  The mean is 70 inches and the standard deviation is 4 inches. What percentage of the sample will be expected to be more than 74 inches tall?
+Initial queries
+
+How confident are you in interpreting the results of a t-test
+   Very confident
+   Fairly confident
+   Not confident
+   Very little idea about what a t-test is
+
+How familiar are you with the idea of statistical power
+   Very familiar
+   Reasonably familiar
+   Somewhat familiar
+   Very little idea about what statistical power is
+  
+   
+
+## Q1a (N - tests elementary knowledge of normal distribution)
+You take a sample of 100 men from the general population and measure their height.  The mean is 70 inches and the standard deviation is 4 inches. What percentage of the sample will be expected to be more than 74 inches tall?
+ *16%
+ 3%
+ 50%
+ 30%
+ 
+Comment: N does not affect the expected percentage - although the variation of the estimate will vary with N.
+
+## Q1b
+A reading test is standardized on 7-year-old children in Scotland. The mean reading age is 84 months with standard deviation of 6 months.  What percentage of 7-year-olds is expected to have a reading age of 72 months or less?
  16%
- 5%
- 10%
- 25%
- 
- Suggested modification: You take a sample of 100 men from the general population and measure their height.  The mean is 70 inches and the standard deviation is 4 inches. What percentage of the sample will be expected to be more than 74 inches tall?
- 
-Rationale: N does not affect the expected percentage - although the variation of the estimate will vary with N.
-But including N here so can lead to next q naturally
+ *3%
+ 50%
+ 30%
 
 ```{r q1a}
 #NB for accurate estimate we use N = 10000
@@ -32,77 +53,103 @@ ans<-100*length(w)/10000
 print(paste0("The answer is ",ans))
 
 ```
-## Q2a
-Code N (i.e. not relevant for law of small numbers)  
-You have a sample of 1000 men with mean height of 70 inches and standard deviation of 4 inches, and a sample of 1000 women with a mean height of 65 inches and standard deviation of 4 inches. Roughly what percentage of women are taller than the average man?
- 5%
- 10%
- 25%
- 50%
- 
-Comment: really very similar to last Q?
-```{r q2}
-myN <- 1000
-mdat <- rnorm(myN,70,4)
-fdat <- rnorm(myN,65,4)
-mmean <- mean(mdat)
-w <- length(which(fdat>mmean))
-print(paste0("The answer is ",100*w/1000,"%"))
 
-```
+## Q2a (Y - tests classic 'law of small numbers')
 
-## Q3a
-
- 
-Suggested rewording : 
 You are responsible for the machinery at a large glass manufacturing company. 
 Staff rotate through jobs, so different people operate the machine on different days of the week.
 You have a machine that produces 1000 sheets of glass per hour.
 The person who sold it said it would produce a satisfactory product on 99.9% of runs, i.e. you'd expect only one substandard sheet in every thousand.
 It operates for 2 hours on Mondays, and for 8 hours on Tuesdays and for 12 hours on Wednesdays
 
-Over the year, the boss has noted the average number of substandard sheets per thousand varies according to day of the week. He decides to reward the team with the most weeks with no substandard sheets.  
-Is he more likely to reward the team who works on:
+The boss decides to give an annual reward to the team with most days with no substandard sheets.  
+Assuming no real difference in skill of the machinists, is he more likely to reward the team who works on:
 
-Monday
+*Monday
 Tuesday
 Wednesday
 All days equally likely 
 
-Comment: Interestingly, I think this seems far more intuitive than the other extreme  I.e Monday's team have actually got a greater chance of either having very low rate of substandard, or very high rate. But it seems intuitive that with shorter time on machine they have fewer opportunities to make substandard. 
-(Both are computed below).
+Comment: this is interesting, as it seems far more intuitive when asked about days with *no* substandard sheets, than if asked about days with 2 or more, though both give same answer. Because fewer opportunities to create substandard if fewer sheets produced? Is this some kind of floor effect?
 
-```{r Q3a}
+```{r Q2a}
 
-mydat<-data.frame(matrix(NA,nrow=52,ncol=3))
+mydat<-data.frame(matrix(NA,nrow=52,ncol=3)) #52 weeks in the year
 for (i in 1:52){
-mydat[i,1]<-rbinom(1,2000,.001)/2000
-mydat[i,2]<-rbinom(1,8000,.001)/8000
-mydat[i,3]<-rbinom(1,12000,.001)/12000
+mydat[i,1]<-rbinom(1,2000,.001)/2
+mydat[i,2]<-rbinom(1,8000,.001)/8
+mydat[i,3]<-rbinom(1,12000,.001)/12
 }
+
+print(paste('Mondays: mean substandard/1000:',mean(mydat$X1)))
+print(paste('Tuesdays: mean substandard/1000:',mean(mydat$X2)))
+print(paste('Wednesdays: mean substandard/1000:',mean(mydat$X3)))
+
 w1<-length(which(mydat[,1]==0))
 w2<-length(which(mydat[,2]==0))
 w3<-length(which(mydat[,3]==0))
+
 print(paste('Mondays: N days with no substandard:',w1))
 print(paste('Tuesdays: N days with no substandard:',w2))
 print(paste('Wednesdays: N days with no substandard:',w3))
 
-w4<-length(which(mydat[,1]>.002))
-w5<-length(which(mydat[,2]>.002))
-w6<-length(which(mydat[,3]>.002))
+w4<-length(which(mydat[,1]>2))
+w5<-length(which(mydat[,2]>2))
+w6<-length(which(mydat[,3]>2))
 print(paste('Mondays: N days with 2+ substandard per 1000:',w4))
 print(paste('Tuesdays: N days with 2+ substandard per 1000:',w5))
 print(paste('Wednesdays: N days with 2+ substandard per 1000',w6))
 ```
-## Q4a
-You are choosing marbles from an opaque jar containing 100 red marbles, 100 blue marbles, and 200 white marbles, randomly mixed. You will get a prize every time you pick a red marble. If you make 100 selections, replacing the selected marble and shaking the jar each time, how often will you expect to pick a red marble?
+
+## Q2b. 
+A task force is looking at characteristics of schools in its area. They take a measure of mathematical ability, and identify schools as 'failing schools' where 20% or more pupils get scores more than 1 SD below the population average. The smallest schools have on average 100 pupils, middle-sized schools have 250 pupils, and the largest schools have 500 pupils. 
+If there are no real differences between schools, will the size of the school affect whether it is a failing school?
+* Yes. The smallest schools will be more likely to be a failing school 
+ No. All else being equal, school size should make no difference
+ Yes. The largest schools will be more likely to be a failing school
+ Yes. The middle-sized schools will be more likely to be a failing school
+
+```{r Q2b}
+N  = 1000 #N times sampled
+schoolsize<- c(100,250,500)
+myschool <- data.frame(matrix(NA, nrow=N, ncol=6))
+names(myschool)<-c('Small','Medium','Large','SmallF','MediumF','LargeF')
+for (i in 1:N){
+  myschool[i,1]<-length(which(rnorm(schoolsize[1],0,1)<(-1)))
+  myschool[i,2]<-length(which(rnorm(schoolsize[2],0,1)<(-1)))
+  myschool[i,3]<-length(which(rnorm(schoolsize[3],0,1)<(-1)))
+  for (j in 1:3){
+    myschool[i,(j+3)]<-0
+    if (myschool[i,j]/schoolsize[j]>.2){
+      myschool[i,(j+3)]<-1
+    }
+  }
+}
+print(paste('Out of ',N,' schools, this is number coded as failing, for Small, Medium and Large respectively'))
+for (j in 1:3){
+  print(sum(myschool[,(j+3)]))
+}
+
+```
+
+## Q3a (Classic probability). 
+A container is full of spare change containing 100 5p coins, 100 10p coins, 200 2p coins, and 100 1p coins. The coins are randomly mixed. You will get a prize every time you pick a 5p coin. If you make 100 selections, replacing the selected coin and shaking the jar each time, how often will you expect to pick a 5p coin?
+
  1 in two occasions
+ 1 in three occasions
+ 1 in four occasions
+* 1 in five occasions
+ 
+## Q3b (classic probability)
+You are choosing marbles from an opaque jar containing 100 red marbles, 100 blue marbles, and 200 white marbles, randomly mixed. You will get a prize every time you pick a marble that is not white. If you make 100 selections, replacing the selected marble and shaking the jar each time, how often will you expect to get a prize?
+* 1 in two occasions
  1 in three occasions
  1 in four occasions
  1 in five occasions
  
-Comment: The simulation emphasises how much variance there is around the estimate! It often does give the wrong answer. Suggests idea that we could capitalise on this with a linked question (added as Q4a1)
-```{r Q4a}
+Comment: The simulation emphasises how much variance there is around the estimate! It often does give the wrong answer. Suggests idea that we could capitalise on this with a linked question?
+
+```{r Q3b}
 myselect<-vector()
 mymarbles<-c(rep(1,100),rep(2,100),rep(3,200))
 for (i in 1:100){
@@ -114,43 +161,96 @@ myt
 myt/500
  
 ```
-## Q4a1
-We'll continue with the scenario of picking marbles from an opaque jar containing a random mix of marbles. You replace the marble each time. 
-This time your job is to work out whether this is the same jar as before, jar A, with 100 red marbles, 100 blue marbles, and 200 white marbles, randomly mixed, or a different jar (B) with 200 red marbles, 100 blue marbles, and 100 white marbles,. 
-You pick 36 marbles and find that 12 of them are red. 
 
-What do you conclude:
-    Very probably jar A
-    Equally likely to be jar A or B
-    Very probably jar B
-    Definitely jar B
+## Q4a (Y: dependence of accuracy of estimate on sample size)
+You are a medical researcher who is counting different cell types in a blood sample.
+Healthy people typically have 25% type X, 25% type Y and 50% type Z. 
+
+People with disease, have 50% type X, 25% type Y and 25% type Z. 
+Doing the test for cell type is very expensive so you want to take a small sample, but it is important to give an accurate diagnosis so that the right treatment can be given.
+You take a sample of 20 cells from an individual and find 8 are of type X. 
+
+What do you do:
+    Conclude the person is healthy.
+    Conclude the person is diseased
+    Take another sample of 10 cells before deciding
+    *Take another sample of 20 cells before deciding
     
-Comment: Not sure about whether to include this - quite complicated to make an easy problem from it.
+Comment: this doesn't really have a definite answer - it's really a problem that involves cost/benefit analysis, and will also depend on the prior. But we'd say the correct answer in a high stakes situation would be take max sample - and certainly the initial sample is inadequate.
 
+```{r Q4a}
+Nselect <- 20
+  print(paste('Nselect is ',Nselect))
 
- 
-```{r Q4a1}
+Nred=8
 myresults<-data.frame(matrix(NA,nrow=1000,ncol=3))
 mymarbles<-c(rep(1,100),rep(2,100),rep(3,200))
 for (j in 1:1000){
-  myselect<-sample(mymarbles,36)
-myresults[j,]<-table(myselect)
+  myselect<-sample(mymarbles,Nselect)
+myresults[j,1]<-length(which(myselect==1))
+myresults[j,2]<-length(which(myselect==2))
+myresults[j,3]<-length(which(myselect==3))
+}
+
+names(myresults)<-c('X','Y','Z')
+wexact<-length(which(myresults$X==Nred))
+w<-length(which(myresults$X>(Nred-1)))
+print(paste('Result of exactly',Nred,' X expected for healthy in ',100*wexact/1000,'% samples'))
+print(paste('Result of ',Nred,' or more X expected for healthy in ',100*w/1000,'% samples'))
+ w1<-length(which(myresults$Z>(Nred-1))) #use Z for new freq of X
+ w1exact<-length(which(myresults$Z==Nred))
+print(paste('Result of exactly',Nred,' Z expected for diseased in ',100*w1exact/1000,'% samples'))
+
+ print(paste('Result of ',Nred,' or more Z expected for diseased in ',100*w1/1000,'% samples'))
+
+```
+
+## Q4b (dependence of accuracy of estimate on sample size)
+We'll continue with the scenario of picking marbles from an opaque jar containing a random mix of marbles. You replace the marble each time. 
+This time your job is to work out whether this is the same jar as before, jar A, with 100 red marbles, 100 blue marbles, and 200 white marbles, randomly mixed, or a different jar (B) with 200 red marbles, 100 blue marbles, and 100 white marbles,. 
+You pick 20 marbles and find that 8 of them are red. 
+You can either guess now and get £10 if you are right, or take another sample of 10 marbles and then get £9 if you are right, or take another sample of 20 marbles and get £8 if you are right. You receive no reward if you are wrong.
+
+What do you decide to do:
+    Decide now on jar A
+    Decide now on jar B
+    Take another sample of 10 marbles before deciding
+    *Take another sample of 20 marbles before deciding
+    
+Comment: Not sure about whether to include this - quite complicated to make an easy problem from it - and would it actually be a training experience!?
+
+```{r Q4b}
+Nselect=20
+Nred=8
+myresults<-data.frame(matrix(NA,nrow=1000,ncol=3))
+mymarbles<-c(rep(1,100),rep(2,100),rep(3,200))
+for (j in 1:1000){
+  myselect<-sample(mymarbles,Nselect)
+myresults[j,1]<-length(which(myselect==1))
+myresults[j,2]<-length(which(myselect==2))
+myresults[j,3]<-length(which(myselect==3))
 }
 
 names(myresults)<-c('Red','Blue','White')
-w<-length(which(myresults$Red>11))
-print(paste('Result of 12 or more Red expected for A in ',100*w/1000,'% trials'))
- w1<-length(which(myresults$White>11)) #use White for new freq of Red
-print(paste('Result of 12 or more Red expected for B in ',100*w1/1000,'% trials'))
+wexact<-length(which(myresults$Red==Nred))
+w<-length(which(myresults$Red>(Nred-1)))
+print(paste('Result of exactly',Nred,' Red expected for A in ',100*wexact/1000,'% trials'))
+print(paste('Result of ',Nred,' or more Red expected for A in ',100*w/1000,'% trials'))
+ w1<-length(which(myresults$White>(Nred-1))) #use White for new freq of Red
+ w1exact<-length(which(myresults$White==Nred))
+print(paste('Result of exactly',Nred,' Red expected for B in ',100*w1exact/1000,'% trials'))
 
+ print(paste('Result of ',Nred,' or more Red expected for B in ',100*w1/1000,'% trials'))
 ```
-## Q5
+
+## Q5a (Classic probability including averaging probabilities)
 In the city of Ficticium, there is generally a 10% chance it will rain on any given day in the first half of September, a 50% chance it will rain any given day in the second half of September,  a 25% chance it will rain on any given day in November, and a 30% chance it will rain on any given day in December. (September, November and December are all 30 days long). Which month is likely to have more rainy days?
  September
  November
  December
 * September and December are equally likely
-```{r q5}
+
+```{r q5a}
 myrain<-data.frame(matrix(NA,nrow=1000,ncol=3))
 names(myrain)<-c('Sep','Nov','Dec')
 for (i in 1:10000){
@@ -164,12 +264,21 @@ myrain[i,3]<-dec
 }
 print ('Mean rainy days')
 print(paste('September ',mean(myrain$Sep)))
-      print(paste('November ',mean(myrain$Nov)))
-            print(paste('December ',mean(myrain$Dec)))
+print(paste('November ',mean(myrain$Nov)))
+print(paste('December ',mean(myrain$Dec)))
 ```
-## Q6a.
+
+## Q5b. (standard probability)
+After reviewing sales of coffee, the barrista noted there is generally a 50% chance of selling an espresso on any day in the first week of the month. There is a 100% chance of selling an espresso on any day in the second week of the month, and a 75% chance of selling an espresso on any day in the third and fourth week of the month. In what two-week period in the month is there most sales of espresso?
+ 
+* First two weeks and second two weeks are equally likely
+ First two weeks
+ Second two weeks
+ First and fourth weeks
+
+## Q6a. (standard probability- sample size not relevant here)
 At a raffle, you can pick from a green bowl with 2 winning raffle tickets and 8 worthless tickets, a yellow bowl with 10 winning tickets and 90 worthless tickets, or a red bowl with 15 winning tickets and 85 worthless tickets.  Which bowl gives you a better chance of winning?
- Green
+ *Green
  Yellow
  Red
  Green and Yellow give the same chance
@@ -189,46 +298,53 @@ print(paste('Yellow p = ',yellowcount/1000))
 print(paste('Red p = ',redcount/1000))
 ```
 
-## Q7a. (reworded slightly)
-A task force is looking at characteristics of schools that have high-performing pupils. They take a measure of mathematical ability, and identify schools as 'high fliers' where 20% or more pupils get scores more than 1 SD above the population average. The smallest schools have on average 100 pupils, middle-sized schools have 250 pupils, and the largest schools have 500 pupils. 
-If there are no real differences between schools, will the size of the school affect whether it is a high-flier?
- Yes. The smallest schools will be more likely to be a high flier 
- No. All else being equal, school size should make no difference
- Yes. The largest schools will be more likely to be a high flier
- Yes. The middle-sized schools will be more likely to be a high flier
+## Q6b. 
+You find three bags of jelly beans which are all of a different size. In the small there are 5 red jelly beans and 20 other coloured beans. In the medium bag there are 12 red jelly beans and 38 other coloured beans. In the large bag there are 18 red jelly beans and 82 other colour beans. As red jelly beans are your favourite flavour, which size bag gives you the highest percentage of red beans?  
+
+ Small 
+* Medium
+ Large
+ They are all the same
+
+## Q7a (classic power)
+ 
+A fertiliser is trialled to see if it improves crop yields. Without the fertiliser the average yield is 100, with standard deviation of 10. It is expected that the fertiliser will boost yield by 3 points on average.
+How many plants would be needed in the treatment and control groups to be confident of demonstrating whether or not the fertiliser was effective? 
+
+  20 per group
+  50 per group
+  100 per group
+* 300 per group
 
 ```{r Q7a}
-N  = 1000 #N times sampled
-schoolsize<- c(100,250,500)
-myschool <- data.frame(matrix(NA, nrow=N, ncol=6))
-names(myschool)<-c('Small','Medium','Large','SmallHF','MediumHF','LargeHF')
-for (i in 1:N){
-  myschool[i,1]<-length(which(rnorm(schoolsize[1],0,1)>1))
-  myschool[i,2]<-length(which(rnorm(schoolsize[2],0,1)>1))
-  myschool[i,3]<-length(which(rnorm(schoolsize[3],0,1)>1))
-  for (j in 1:3){
-    myschool[i,(j+3)]<-0
-    if (myschool[i,j]/schoolsize[j]>.2){
-      myschool[i,(j+3)]<-1
-    }
-  }
-}
-print(paste('Out of ',N,' schools, this is number coded as high flier, for Small, Medium and Large respectively'))
-for (j in 1:3){
-  print(sum(myschool[,(j+3)]))
-}
-
+require(pwr)
+pwr.t.test(d = .3, sig.level = .05 , power =.95 , type = "two.sample",alternative="greater") 
 ```
 
-## Q8a.
-(reworded to test understanding of power)
-Imagine you are a researcher studying a particular rare gene variant that is found in 0.01% of the population (1 in 10,000). You want to test the hypothesis that the variant doubles the risk of a rare disease that affects 1 in 300 people. You have access to the biobank genetic data from (almost) all residents of a large population country (30 million inhabitants), a medium population country (10 million inhabitants), and a small population country (1 million inhabitants). All else being equal, which country’s biobank data would give you the most valid answer to your research question? 
+## Q7b (classic power)
+ 
+An educational intervention is trialled to see if improves children's reading. Before the study starts, children's reading age improves on average by 12 months over the year, with standard deviation of 3 months.  It is expected that children who receive the intervention will make 13 months progress over the year on average.
+How many children would be needed in the intervention and control groups to be confident of demonstrating whether or not the intervention was effective? 
+
+20 per group
+50 per group
+100 per group
+300 per group
+
+```{r Q7a}
+require(pwr)
+pwr.t.test(d = .333, sig.level = .05 , power =.95 , type = "two.sample",alternative='greater') 
+```
+## Q8a.(Y: this is a variant of classic power with proportions)
+Imagine you are a researcher studying a particular rare gene variant that is found in 0.01% of the population (1 in 10,000). You want to test the hypothesis that the variant doubles the risk of a rare disease that affects 1 in 300 people in the general population. You have access to the biobank genetic data from (almost) all residents of a large population country (30 million inhabitants), a medium population country (10 million inhabitants), and a small population country (1 million inhabitants). All else being equal, which country’s biobank data would give you the most accurate answer to your research question? 
+
  Smallest country
  Medium country
  Largest country
- Does not matter: No difference between countries
+* Does not matter: No difference between countries
  
 ```{r q8a}
+options(scipen = 999)
 myN<-c(30000000,10000000,1000000)
 for (thisn in 1:3){
   print(paste('Population total is ',myN[thisn]))
@@ -245,16 +361,23 @@ colnames(tbl)<-c('Rare variant','Common variant')
 rownames(tbl)<-c('Affected','Unaffected')
 print(tbl)
 print(chisq.test(tbl))
-
 }
 
 ```
 
-## Q9a.
+## 8b. 
+You are a biologist interested in studying a particular disease in plants. The disease affects 20% of the population (1 in 5) and leads to most plants dying. You have developed a spray that you think reduces mortality of the disease by 50%. You have to make the decision about how many plants to study to test the spray: in different centres you could gain access to 150 plants, 300 plants, or 1200 plants. Which centre would be best to conduct your research?
+
+ 150 plants
+ 300 plants
+* 1200 plants
+ Whichever centre is easiest to access
+ 
+## Q9a. (classic law of small numbers)
 In a squash tournament, the organisers are debating whether to have games of best of 3, 9 or 21 points.  Holding all other rules of the game constant, if A is a slightly better player than B, which scoring will give A a better chance of winning?
  best of 3 points
  best of 9 points
- best of 21 points
+* best of 21 points
  Won't make any difference
  
 NB. Simulating this makes it clear that if A is much better than B, it really doesn't make much difference with original Ns! Fine if we simulate so that prob A winning is .6 and if we make lowest the best of 3.
@@ -280,11 +403,20 @@ games<-c(3,9,21)
 }
 
 ```
+
+## 9b. 
+Two chess players are having a tournament. They are considering whether to play the best of 5, 11, or 17 games.  If player A is slightly better than player B, which tournament size should player B argue for, to get the best chance of winning?
+
+ 17 games
+ 11 games
+* 5 games
+ It doesn't matter: The chances are the same regardless of number of games
+ 
 ## Q10a.
-20 percent of girls in a class of 100 have red hair, and 40 percent of the girls are taller than 60 inches.  How many red-headed girls would you expect who are taller than 60 inches?
+There are 100 girls in a class, 20% have red hair and 40% are taller than 60 inches.  How many red-headed girls would you expect who are taller than 60 inches?
  60
  16
- 8
+* 8
  5
 
 ```{r q10a}
@@ -294,16 +426,25 @@ tallgirls<-sample(girls,40) #random selection from girls
 tallred <- sum(tallgirls)
 print(tallred)
 ```
-## Q11a. 
+
+##Q 10b. 
+In box of 100 CDs, 40% of the disks are have been recorded by pop artists and 60% of disks feature female vocalists. Assuming that the female vocalists are equally likely to be pop artists or not, how many CDs have been recorded by female pop vocalists? 
+
+ 12 CDs
+ 18 CDs
+* 24 CDs
+ 30 CDs
+ 
+## Q11a. (Y - risk of type II error with small samples)
 Two scientists are both trying to test whether a certain new drug affects hunger in mice, by giving them the drug (group D) or a placebo (group P) and then measuring their food consumption. At the start of the experiment, the average mouse eats 10g of food pellets, with SD of 3g.
-Scientist A runs 10 studies with 10 mice in each group, and Scientist B runs 10 studies with 30 mice in each group. Unfortunately for them, a careless lab technician distributed a placebo in place of the new drug, so there should not be any effects except by chance. When the scientist looks at the results, a large effect, difference in food consumption of 3g, is seen between the two groups on one run of the experiment. Which scenario is more likely:
+Scientist A runs 10 studies with 10 mice in each group, and Scientist B runs 10 studies with 30 mice in each group. Unfortunately for them, a careless lab technician distributed a placebo in place of the new drug, so there should not be any effects except by chance. When the scientists looks at the results, a large effect, difference in food consumption of 3g, is seen between the two groups (D and P) on one run of the experiment. Which scenario is more likely:
 
    The run with a large difference is found in the smaller group
    The run with a large difference is found in the larger group
-   The group difference shows group D eats more than group P
+*   The group difference shows group D eats more than group P
    A large difference is equally likely D>P or P>D, with no effect of sample size
  
-Comment: 
+
 
 ```{r q11a}
 n1<-10
@@ -317,27 +458,47 @@ miceDb<-rnorm(n2,10,3)
 micePb<-rnorm(n2,10,3)
 diffa<-mean(miceDa)-mean(micePa)
 diffb<-mean(miceDb)-mean(micePb)
-print(paste0('Mean diff n8 = ',
-             diffa))
-print(paste0('Mean diff n16 = ',
-             diffb))
+#print(paste0('Mean diff n8 = ',
+#             diffa))
+#print(paste0('Mean diff n16 = ',
+#             diffb))
 alldiffa<-c(alldiffa,diffa)
 alldiffb<-c(alldiffb,diffb)}
-print(alldiffa)
-print(alldiffb)
+print('Differences for each run of small group: ')
+      print(alldiffa)
+print('Differences for each run of large group: ')
+      print(alldiffb)
 ```
-## q12a.
-You have suspicions that a coin may be unfair. You can decide you flip the coin either 20, 50, or 100 times to test this prediction. Which number of coin flips would provide you with the most accurate estimate? 
-  They are all equal
-  20
-  50
-  100 
+
+## Q11b.
+Two researchers are testing the effect of oxytocin on prosocial behaviour. In their experiments, participants are given either a dose of oxytocin or a placebo. Researcher A runs 5 studies with 10 participants in each condition and Researcher B runs 5 studies with 20 participants in each condition. Unknown to the researchers, the oxytocin had been replaced by a placebo, yet a large difference (1 SD) is observed between two groups on one run of the experiment. Which is most likely: 
+
+*  The large difference is seen in a study by the researcher using groups of 10
+  The large difference is seen in a study by the researcher using groups of 20
+  The difference is a type II error, and could equally likely be seen with groups of 10 or 20
+  The difference is real - there was confusion between oxytocin and placebo
+
+ 
+## q12a. (classic probability - multiplication)
+10 percent of the children in a school have red hair. Their names are put in a hat and you are asked to pull out two of them. What is the probability that you will select two red-headed children?
+
+  20 per cent
+*  1 per cent
+  19 per cent
+  close to zero 
 
 ```{r q12a}
-myflip<-c(20,50,100)
-for (j in 1:3){
-  print(paste(rbinom(1,myflip[j],.5),' out of ',myflip[j]))
-}
+print(paste(100*.1*.1,' per cent'))
 ```
 
+## q12b. (classic probability - multiplication)
+20 percent of the 500 children in a school have a name beginning with J. Their names are put in a hat and you are asked to pull out two of them. What is the probability that you will select  two children whose name begins with J
 
+*  4 per cent
+  1 per cent
+  40 per cent
+  20 per cent 
+
+```{r q12b}
+print(paste(100*.2*.2,' per cent'))
+```
