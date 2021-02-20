@@ -19,7 +19,7 @@ This was also copied onto a word document, saved on Dropbox/oscci_ms_2016-/ongoi
 
 
 
-For each sample size of each trial, we have effect size and log Bayes factor.
+For each sample size of each trial, we have effect size and log likelihood.
 Question will be: are people using these to make their judgements?
 Does this change over course of the session?
 Could it be influenced by reward schedule?
@@ -28,14 +28,50 @@ Simulated data were created by file 'make_gifs_datasim.R'.
 We read in a large file created this way: bigBFdata.csv
 
 ```{r readtrialdata}
-mytrials<-read.csv('~/Dropbox/jackieT_project/bayesian attempt/bigBFdata.csv')
+mydir<-'~/Dropbox/jackieT_project/bayesian attempt' 
+mydir<-getwd()
+mytrials<-read.csv(paste0(mydir,'/bigBFdata.csv'))
 #check observed effect sizes - these confirm they are around .3, .5, and .8, and zero
 
 mycheck<-aggregate(mytrials$obsES, list(mytrials$trueES), mean)
 names(mycheck)<-c('True ES','Observed ES')
 mycheck
+
+mymeanC<-aggregate(mytrials$meanC, list(mytrials$trueES), mean)
+
+mysdC<-aggregate(mytrials$meanC, list(mytrials$trueES), sd)
+mymeanC$sd <- mysdC[,2]
+names(mymeanC)<-c('True ES','meanC','semC')
+mymeanC
+
+mymeanE<-aggregate(mytrials$meanE, list(mytrials$trueES), mean)
+names(mymeanE)<-c('True ES','meanE')
+mysdE<-aggregate(mytrials$meanE, list(mytrials$trueES), sd)
+mymeanE$sd <- mysdE[,2]
+names(mymeanE)<-c('True ES','meanE','semE')
+mymeanE
 ```
 We can now see how accurate a subject would be if they adopted a particular strategy for responding.
+
+I started looking at strategy based on effect size - i.e. compare means of C and E distributions, but if you know C has no effect, could also just ignore C and base strategy solely on mean of E.
+
+We can use the mean for E and compute log likelihood that it came from E or C distribution.
+
+```{r loglikelihood}
+grain=.025 #specifies width of interval for computing Nexp and Nnull
+
+mytrials$seE <- mytrials$sdE/sqrt(mytrials$Nsize)
+
+mytrials$Nnull <- Nsample*(pnorm((mytrials$meanE+(grain/2)),0,mytrials$seE,lower.tail=T)-
+                             pnorm((mytrials$meanE-(grain/2)),0,mytrials$seE,lower.tail=T))
+    #use range of observed effect for each value of myint +/- .05
+mytrials$Nexp <- Nsample*(pnorm((mytrials$meanE+(grain/2)),mytrials$trueES,mytrials$seE,lower.tail=T)-
+                             pnorm((mytrials$meanE-(grain/2)),mytrials$trueES,mytrials$seE,lower.tail=T))
+mytrials$LL <- log(mytrials$Nexp/mytrials$Nnull)
+
+plot(mytrials$meanE,mytrials$LL,col=as.factor(mytrials$Nsize))
+```
+
 Consider the following strategy:
 a. Response NO if the Effect Size is less than 0
 b. Response YES if the Effect size is greater than .2
