@@ -1,0 +1,655 @@
+---
+title: "SmallNumbers"
+author: "DVM Bishop"
+date: "30/01/2021"
+output:
+  html_document:
+    df_print: paged
+---
+
+<!--- pilot data are here:jackieT_project > data_exp_9212-v12--->
+
+<!--- Adam also wrote: I’d addressed the majority of points raised on the pre-reg a while back: https://docs.google.com/document/d/14BsWNgACJaSt7vebQma3N-otaLHFB5zsXsg4meFayVY/edit?usp=sharing. I have downloaded that file--->
+
+## Introduction
+<!--this paragraph and accompanying plot may not survive - not sure it is needed or helpful.  Idea is to just introduce the idea that interpretation of an observed effect can't be done without knowing about distribution and sample size--->
+Suppose an educator approaches a school district administrator with a new reading intervention, saying that, on a post-test children who completed the intervention read correctly four more words than children who did not. Should the administrator roll out the intervention in local schools on this basis? For anyone with statistical training, the answer has to be no: we'd need a lot more information in order to make such a decision. As well as needing to know the he design of the study and the cost of the intervention in relation to the benefit, we'd need to be convinced that the improvement in scores was not just a fluke. Two establish this, we need to know the sample size and the variation in scores.  Figure 1 shows three simulated datasets, all of which have a mean difference of four words between two groups. If we adopt conventional alpha of .05 and use null hypothesis significance testing, we would conclude that the intervention was not effective for the studies shown in panels A and C, whereas in panel B the evidence is in favour of the intervention making a difference.
+
+
+```{r makefig1, include=FALSE, echo=FALSE}
+#This chunk just generates figure 1 - it could probably be made more efficient
+require(beeswarm)
+library(RColorBrewer) #used later for 'zone of uncertainty' plots
+
+ES=4  #mean difference - can vary this - here this is in raw units
+nset <- 6 #two groups, so twice the number of demo sets
+nsub <- 100 #set to size of largest group 
+sampledat<-data.frame(matrix(NA,nrow=nsub,ncol=nset)) #dummy frame to hold simulated data on nsub cases and nset columns
+
+#prepare plot
+plotname <- paste0('threegp_ES',ES,'_N',nsub,'.jpg')
+jpeg(plotname, width = 550, height = 350) #prepare to write plot to jpeg
+
+
+#create dataframe with pairs of values
+#Pair 1 (cols 1-2) will have small sample with 1 SD difference
+#Pair 2 (cols 3-4) will have large sample with 1 SD difference
+for (i in 1:4){
+  sampledat[,i]<-rnorm(nsub,50,10)  #sample with mean 50 and SD 10 is baseline
+}
+escols <- c(2,4) #columns for group showing effect
+sampledat[,escols]<-sampledat[,escols]+ES
+#Now create pair 3 in cols 5-6: large sample with .33 SD difference
+for (i in 5:6){
+  sampledat[,i]<-rnorm(nsub,50,20)  #sample with mean 50 is baseline; double the SD here
+}
+escols <- 6 #column for group showing effect
+sampledat[,escols]<-sampledat[,escols]+ES
+
+#remove data for all but 10 of groups 1 and 2
+sampledat[11:100,1:2]<-NA
+
+mymeans<- colMeans(sampledat,na.rm=T)
+
+#Need to tweak data to ensure true mean is same for all, set to ES
+meandiff1<-ES-(mymeans[2]-mymeans[1])
+sampledat[1,2]<-sampledat[1,2]+10*meandiff1 #just tweak first datapoint for sample with only 10
+
+meandiff2<-ES-(mymeans[4]-mymeans[3])
+sampledat[1:10,4]<-sampledat[1:10,4]+10*meandiff2 #tweak first 10 datapoints for samples with  100 
+
+meandiff3<-ES-(mymeans[6]-mymeans[5])
+sampledat[1:10,6]<-sampledat[1:10,6]+10*meandiff3 #
+
+mymeans<- colMeans(sampledat,na.rm=T) #check corrected mymeans values
+
+#Make beeswarm plots for these pairs, with means marked by segments
+#Need to gather data, with group as a code
+
+mylong<-reshape(sampledat,direction="long",varying=list(colnames(sampledat)))
+colnames(mylong)<-c('Group','Score','ID')
+
+#specify grey colour for control group, and pink for experimental group
+mylong$colour <- 'cadetblue4'
+w <- which(mylong$Group%%2==0)
+mylong$colour[w]<-'deeppink'
+
+plot(rnorm(10), type="n", frame.plot=FALSE, xlim=c(1, 6.5), ylim=c(0,100), 
+     xlab="Sample", ylab="Score") #dummy plot with no axes
+beeswarm(mylong$Score~mylong$Group,pch=16,pwcol=mylong$colour,cex=.8,add=T)
+
+
+#dividing lines between pairs of datapoints
+mycounter<-0
+for (vv in seq(1,(nset),2)){
+  mycounter<-mycounter+1
+  temp<-mylong[mylong$Group %in% vv:(vv+1),]
+  myt <- t.test(temp$Score~temp$Group)
+  abline(v=vv+1.5)
+  mytext<-paste0('t = ',round(myt$statistic,2),'\np = ',round(myt$p.value,3))
+  
+  
+  text((vv+.5),80,mytext)
+  text((vv+.5),100,LETTERS[mycounter],cex=1.5)
+}
+
+for (hh in 1:nset){
+  segments((hh-.4),mymeans[hh],(hh+.4),mymeans[hh],lwd=3)
+  
+}
+dev.off()
+```
+![Figure 1. Simulated data from three pairs of Control (grey) and Experimental (pink) samples, with mean difference of 4 points between the groups. Each point is the score of one participant in the sample.](threegp_ES4_N100A.jpg)
+
+Consider first the difference between panels B and C. Here we have the same raw mean difference between samples 3/4 and 5/6, but the variance is greater in samples 5 and 6. Samples 5 and 6 were drawn from a population with SD of 20, whereas samples 3 and 4 were drawn from a population with SD of 10. Cohen's d, a standardized measure of effect size, is 4/10 = .4 for the contrast between samples 3 and 4, but it is .4/20, i.e. .2 for the contrast between samples 5 and 6.  The smaller the effect size, the larger the sample that is needed to be confident that an observed effect is systematic and unlikely to be due just due to the play of chance. 
+
+The data from panels A and B are all drawn from populations with SD of 10, but they differ in sample size: 10 per group for samples 1 and 2, and 100 per group for samples 3 and 4. In both panels, the mean group difference of 4 points corresponds to an effect size, Cohen's d, of 0.4. However, the likelihood of an effect of this size being due to chance is much greater in the smaller sample than in the larger sample, because estimates of means drawn from small samples are much noisier than than those from large samples.  
+<!--next chunk and figure leads us up to using displays more like those in the training, and so worth including, though possibly could come *after* the bit about Kahneman-->
+
+This is illustrated with simulated data in Figure 2, where each dot is a mean from a sample. All the pink samples are drawn from a population with true mean of 0.4, and all the grey samples are drawn from a population with a true mean of 0. The average effects are similar regardless of sample size, clustering around the dotted lines at 0.4 (pink) or zero (grey). The distribution of means is, however, far more variable for small sample sizes, where considerable overlap can be seen between grey and pink dots. When sample size is 20 or less, some of the means from the pink samples are lower than the average for grey samples, and some of those from grey samples are higher than those of pink samples. Separation between the grey and pink samples increases with sample size, and becomes complete when N is 160 or more. This is reflected in the values for power, shown in the Figure, indicating the probability that an experiment would yield p < .05 on a t-test for each sample size per group.
+```{r makerNdata,echo=FALSE,include=FALSE}
+
+sampledat<-data.frame(matrix(NA,nrow=nsub,ncol=nset)) #dummy frame to hold simulated data on nsub cases and nset columns
+#prepare plot
+nsub <- 100 #set to size of largest group 
+ES<-.4
+plotname <- paste0('bees_ES',ES,'_Nall.jpg')
+jpeg(plotname, width = 550, height = 350)
+
+numrange<-c(10,20,40,80,160,320)
+Nsample<-50
+
+for (n in numrange){
+  sampledat <- data.frame(matrix(NA,Nsample*2,3))
+  colnames(sampledat)<-c('N','mean','ES')
+  sampledat$N<-n
+  thisrow<-0
+  for(es in c(0,ES)){
+    for (ns in 1:Nsample){
+      thisrow<-thisrow+1
+      sampledat$mean[thisrow] <- mean(rnorm(n,es,1))
+      sampledat$ES[thisrow]<-es
+    }
+  }
+  
+  if(n==numrange[1]){ alldat<-sampledat}
+  if(n>numrange[1]){alldat<-rbind(alldat,sampledat)} #bolt on next sample size in long format
+}
+
+
+#specify grey colour for control group, and pink for experimental group
+alldat$colour <- 'cadetblue4'
+w <- which(alldat$ES==ES)
+alldat$colour[w]<-'deeppink'
+
+beeswarm(alldat$mean~alldat$N,pwcol=alldat$colour,cex=.7,pch=16,xlab='Sample size',ylab='Observed effect size')
+abline(h=.4,lty=3,lwd=2,col='deeppink')
+abline(h=0,lty=3,lwd=2,col='cadetblue4')
+text(.6,.95,'Power ->',cex=.8)
+for (n in 1:6){
+  mypower <-  power.t.test(n = numrange[n], delta = .4, sd = 1, sig.level = 0.05,
+                           type = c("two.sample"),
+                           alternative = c("one.sided"))
+  text((n+.1),.95,round(mypower$power,3),cex=.8)
+}
+dev.off()
+```
+![Figure 2. Simulated mean scores from samples of varying size, drawn from populations with either a null effect (grey) or a true effect size, Cohen's d, of 0.4 (pink). Power is the probability of obtaining p < .05 on a one-tailed t-test comparing group means for each sample size. ](bees_ES0.4_NallA.jpg)
+
+<!--This was originally the starting paragraph, and possibly would work better as start of Introduction-->
+Compared to laypeople, scientists receive extensive training to help them understand and appropriately address the uncertainty of evidence. Yet, many scientists fall short in their understanding of statistical concepts and experimental design - an underlying failure to appreciate uncertainty. One  cognitive bias demonstrated by Tversky and Kahneman (1971) is the 'belief in the law of small numbers'. This refers to the tendency to overestimate the reliability of data that come from small samples. For instance, as shown in Figure 2, if repeatedly sampling 10 people from a population of men, the mean height of the sample will be far more variable than when repeatedly sampling 160 people. People understand that sample size does not affect the expected mean value, but they tend not to appreciate that it has a large effect on the variability of the estimate, i.e., the standard error of the mean. This has implications for understanding of statistical power, and can help explain why so many studies in psychology, and indeed many other scientific disciplines, are underpowered. 
+
+In Figure 1, we considered how someone evaluating the intervention might look at the data from the perspective of a frequentist, i.e., using inferential statistics to determine the probability of the null hypothesis given the data. A drawback of this approach is that it does not quantify the relative strength of the null hypothesis vs the alternative hypothesis. In everyday situations, such as deciding on whether to implement an intervention, we need to know whether absence of evidence is evidence of absence: thus, if the scores of the treated group are not significantly higher than those of the control group, can we decisively reject the use of the treatment, or should we gather more data?
+
+To answer that question we need to adopt an alternative approach based on likelihood, computing the relative odds of the data coming from the null hypothesis (H0) or the alternative hypothesis of a true effect (H1). Figure 3 shows how a 'zone of uncertainty' (shown in cream) declines as one goes from a small sample to a large sample.  It also illustrates how the zone shrinks as the effect size for H1 becomes larger.
+
+
+
+```{r makezoneplot}
+#We'll use this function in the next plot to make 'zoneplots' showing zone of uncertainty with different sample sizes
+dozoneplot<-function(oddsframe,ES,numrangex,myint){
+  startcol<-which(colnames(oddsframe)=='logOR10')
+  endcol<-ncol(oddsframe)
+  oddmat<-t(as.matrix(oddsframe[2:nrow(oddsframe),startcol:endcol]))
+  oddall<-list(x=numrangex,y=myint,z=oddmat)
+  
+  breakpoints<-c(-1000000,-log(80),-log(40),-log(20),-log(10),-log(5),log(5),log(10),log(20),log(40),log(80),1000000)
+  
+  mypal <- brewer.pal(11, "Spectral") #11 colours max
+  
+  image(oddall,xlab='Sample N',ylab='Observed effect', col=mypal,breaks=breakpoints,
+        main=paste0('True ES for H1 = ',ES))
+  
+}
+```
+
+
+
+Compute log odds using direct computation of probabilities!
+```{r loglikelihood_computed,echo=FALSE,include=TRUE}
+
+options(scipen = 999)
+Nsample<-1000 #number of samples for computing odds
+numrangex<-seq(10,150,2) #sequence of sample sizes to model; can modify this
+
+for (ES in c(.1,.2,.3,.4,.5,.6,.7,.8,1)){ #sequence of True effect sizes to model
+  
+  grain<-.025 #this will mean we compute probabilities for effect sizes using this as step size
+  myint <- seq(-1,1,grain) #sequence of Observed effect sizes to model
+  
+  #We'll make a data frame to hold simulated data for a given effect size, so we can do a sanity check
+  oddsframe<- data.frame(matrix(NA,nrow=length(myint),ncol=(1+3*length(numrangex))))
+  colnames(oddsframe)<-c('Effect',paste0('Null',numrangex),paste0('Eff',numrangex),paste0('logOR',numrangex))
+  oddsframe$Effect<-round(myint,2)
+  for (n in 1:length(numrangex)){
+    se<-1/sqrt(numrangex[n])
+    oddscol<-n+1
+    for (i in 1:length(myint)){
+      thisi<-myint[i]
+      Nnull <- Nsample*(pnorm((thisi+(grain/2)),0,se,lower.tail=T)-pnorm((thisi-(grain/2)),0,se,lower.tail=T))
+      #use range of observed effect for each value of myint +/- .05
+      Nexp <-  Nsample*(pnorm((thisi+(grain/2)),ES,se,lower.tail=T)-pnorm((thisi-(grain/2)),ES,se,lower.tail=T))
+      
+      oddsframe[i,oddscol]<-round(Nnull,0)
+      oddsframe[i,(oddscol+length(numrangex))]<-round(Nexp,0)
+      oddsframe[i,(oddscol+2*length(numrangex))] <- log(Nexp/Nnull)
+    }
+  }
+  
+  myfilename <- paste0('oddsframex_ES_',ES,'.csv')
+  write.csv(oddsframe,myfilename)
+  dozoneplot(oddsframe,ES,numrangex,myint)
+  
+  
+}
+```
+
+To interpret these plots, it is important to distinguish between the true population effect size for H1 (shown in the header of each plot) and the effect size observed in a given study (shown on the Y axis). As shown in Figure 2, these can vary substantially when samples are small. Our goal is to determine how much confidence we can place in an observed effect as evidence for H1 vs H0 (i.e., in our example, that treatment is superior to control).
+
+<!--NB I do need to check the specific numbers corresponding to zone of uncertainty for these examples - I wrote this initially when I had plots with a much coarser grain size for N and for observed effects).-->
+
+In each plot, the colour indicates the likelihood of H1 relative to H0  for a given observed effect. Consider first the plot when there is a true effect with Cohen's d of .1. The cream area shows the range of scores where there is considerable uncertainty, with the odds of a true effect ranging from 1:5 to 5:1.  With such a small true effect size, the odds remain within the zone of uncertainty for all observed effects from -1 to 1 when the sample size is only 10 per group.  Contrast this with the colours seen when N = 80.  The zone of uncertainty now ranges from -.2 to +.2, with confidence in the null hypothesis (red tones) increasing as the observed effect becomes more negative, and confidence in the alternative hypothesis (green/blue tones) increasing as values become larger.  If we observe an effect of -.6 or less, we can be highly confident of accepting the null hypothesis (dark red, corresponding to odds of 80:1 or more in favour of the null), and with an observed effect of .7 or more, we can have high confidence in the alternative hypothesis of a true effect (dark blue, corresponding to odds of 80:1 in favour of the alternative hypothesis). 
+
+If we have a true effect of 0.6, the zone of uncertainty is much narrower for all sample sizes. With a sample size of 50 per group, we can interpret most observed effects with great confidence as supporting either the null or the alternative hypothesis.  As illustrated in Figure 2, this is because with larger samples, and larger effect sizes, the distributions for null and alternative hypotheses become separated, so we would seldom observe an effect size that is in the zone of uncertainty.  
+
+There is an important qualification to these generalisations. We have assumed that the prior probabilities of H0 or H1 being true are equal. If H1 is highly unlikely (e.g. if we are testing a phenomenon such as telepathy), we would need to re-compute likelihoods to reflect this, by weighting the expected frequencies for H1 and H0 accordingly. In effect, in Figure 2, we might have double the number of blue points, if we felt the prior odds of H0:H1 was 2:1. For the current study, however, we focus on situations where there is no prior bias in favour of H0 or H1.  
+
+The concepts illustrated with these plots are not new, but by focusing on the notion of a 'zone of uncertainty', rather than conventional approaches via statistical power or Bayes' factors, we aim to improve intuitive understanding of the importance of sample size for designing experiments, and for interpreting experimental results. In the current study, we consider whether people with scientific training demonstrate any intuitive understanding of the zone of uncertainty, by presenting them with simulated data, and asking them to judge whether they can accept H0 or H1 on the basis of the evidence, or whether they should extend the sample size. This task is embedded in a game format, where success depends on responding when the evidence for H1 or H0 is adequate, but no sooner than that.
+
+//////////INSERT METHODS BIT HERE///////////
+Include reward: currently +10 if correct and -10 if incorrect.
+NB prestation of stimuli: there are 4 possible orders, starting at spreadsheet lines 3, 24, 45, 66; these are counterbalanced to occur in 1, 2 , 3 4 block. Blocks of 20 with pause between
+
+
+## Analysis 
+
+Below, we specify a range of strategies that participants might adopt to maximise their earnings on the game. Most of these involve statistical criteria, using odds ratios, p-values or effect sizes. Of course, we do not expect participants to be explicitly aware of these values; rather our focus is on whether their intuitive sense of differences maps on to computable statistics, and whether it is possible through training to shift them from less optimal to more optimal intuitions. 
+
+For the specific example we use here, it is possible to adopt an optimal strategy by focusing solely on the distribution of scores from group E, and ignoring group C. Nevertheless, we anticipate that some participants might focus more on the difference in means between these groups. 
+
+For each participant, we will evaluate their responses to see how well they conform to one of the following strategies:
+
+A. Defer responding until the observed data for group E fall outside the zone of uncertainty.  
+B. Defer responding until the p-value associated with a t-test comparing E and C means falls in a specific range.
+C. Respond on the basis of the absolute difference between the means being at least as great as the effect size (respond Y), or zero or less (respond N) 
+D. Respond on the basis of the E group mean being at least as great as the effect size
+E. Always defer a decision until the largest sample size. 
+F. Always respond immediately - i.e., at the smallest sample size.
+
+The stimuli presented to participants were generated by a random process of selection from normal distributions with means of either zero or .3, with the selection being cumulative, so each sample includes the points from the previous sample size, plus a set of new points generated the same way. We can take each of these sequences and compute, for each strategy, the sample size at which a decision would be made, and the amount of additional reward that would be obtained, 
+
+We will illustrate the scoring of strategies.
+
+Simulated data were created by file 'make_gifs_datasim.R'.
+We read in a large file created this way: bigBFdata.csv
+
+```{r readtrialdata}
+mydir<-'~/Dropbox/jackieT_project/bayesian attempt' 
+mydir<-getwd()
+
+mytrials<-read.csv(paste0(mydir,'/bigBFdata.csv'))
+w<-which(is.na(mytrials$Nsize))
+
+mytrials <- mytrials[-w,] #remove rows with NA
+mytrials$level <- 1:length(unique(mytrials$Nsize))  #create 'level' which is just 1-6 if we use 6 values for Nsize
+```
+
+
+
+```{r checktrialdata}
+#check observed effect sizes - these confirm they are around .3, .5, and .8, and zero
+
+mycheck<-aggregate(mytrials$obsES, list(mytrials$trueES), mean)
+names(mycheck)<-c('True ES','Observed ES')
+mycheck
+
+mymeanC<-aggregate(mytrials$meanC, list(mytrials$trueES), mean)
+
+mysdC<-aggregate(mytrials$meanC, list(mytrials$trueES), sd)
+mymeanC$sd <- mysdC[,2]
+names(mymeanC)<-c('True ES','meanC','semC')
+mymeanC
+
+mymeanE<-aggregate(mytrials$meanE, list(mytrials$trueES), mean)
+names(mymeanE)<-c('True ES','meanE')
+mysdE<-aggregate(mytrials$meanE, list(mytrials$trueES), sd)
+mymeanE$sd <- mysdE[,2]
+names(mymeanE)<-c('True ES','meanE','semE')
+mymeanE
+```
+
+# Strategy A 
+Compute the log odds ratio for each trial using direct computation of probabilities!
+```{r loglikelihood_computed,echo=FALSE,include=TRUE}
+
+options(scipen = 999)
+
+ES <- .3
+grain<-.025 #this will mean we compute probabilities for effect sizes using this as step size
+myint <- seq(-1,1,grain) #sequence of Observed effect sizes to model
+
+mytrials$logodds <- NA
+rowrange<-1:nrow(mytrials)
+#rowrange <- 1:10 #for testing
+for (i in rowrange){
+  Nsample<-mytrials$Nsize[i]
+  
+  se<-1/sqrt(Nsample)
+  thisi <- mytrials$obsES[i]
+  
+  Nnull <- Nsample*(pnorm((thisi+(grain/2)),0,se,lower.tail=T)-pnorm((thisi-(grain/2)),0,se,lower.tail=T))
+  #use range of observed effect for each value of myint +/- .05
+  Nexp <-  Nsample*(pnorm((thisi+(grain/2)),ES,se,lower.tail=T)-pnorm((thisi-(grain/2)),ES,se,lower.tail=T))
+  
+  mytrials$logodds[i] <- log(Nexp/Nnull)
+  
+}
+#also add p-value, based on t-test
+mytrials$p <-1-pt(mytrials$t,(mytrials$Nsize-2))
+
+
+
+```
+
+```{r respcodefunction} 
+#function to add response to file and compute correctness and reward; 
+# This can be used with various strategies, the keycol varies, and hicut and locut are varied accordingly.
+
+myrespcode <- function(strategy,mytrials,numrange,alltrials,ES,col1,hicut,locut,polarity){
+  for (r in alltrials){
+    rowrange <- which(mytrials$run==r) #find the block of rows corresponding to this trial
+    w<-which(mytrials$keycol[rowrange]>hicut) #find those where hicut exceeded
+    if(polarity== -1){
+      w<-which(mytrials$keycol[rowrange]<hicut) #
+    }
+    ww<-which(mytrials$keycol[rowrange]<(locut)) #find those lower than locut 
+    if(polarity== -1){
+      ww<-which(mytrials$keycol[rowrange]>locut) #
+    }
+    wlength<-length(w)+length(ww)
+    if(wlength>0){
+      Astop <- min(c(w,ww)) #number sequence that is selected - first N where either is met
+    }
+    
+    if(wlength==0) {Astop<-max(length(numrange))} #if the criterion for both hicut and locut not met, respond with greatest N
+    if(strategy=='E'){Astop<-max(length(numrange))} #strategy E - always wait to highest
+      if(strategy=='F'){Astop<-1} #strategy F - always respond to 1st sample
+    Aindex<-Astop+(r-1)*length(numrange) #row index
+    mytrials[Aindex,col1]<-0 #respond No - default
+    if(Astop %in% w){  mytrials[Aindex,col1]<-ES} #hicut basis for response, so response is ES
+    #col1+1 contains the coding of the response as correct (1) or error (0)
+    mytrials[Aindex,(col1+1)]<-0 #default response is an error
+    if(mytrials[Aindex,(col1)]==mytrials$trueES[Aindex]) {mytrials[Aindex,(col1+1)] <- 1} #if ES for response agrees with true ES, then response is correct
+    #col1+2 contains the value of the reward
+    mytrials[Aindex,(col1+2)]<-punish[Astop] #default reward is zero - corresponds to wrong response
+    if(mytrials[Aindex,(col1+1)]==1){mytrials[Aindex,(col1+2)]<-rewards[Astop]} #apply reward scheme
+    #reward scheme declines with Nsize; if 6 values, then it is 6,5,4,3,2,1 for correct response at 20,40,80,160,320,640 respectively
+  }
+  return(mytrials)
+}
+```
+
+
+```{r makestrategydf}
+rewards <- c(1,1,1,1,1,1)
+punish <- c(0,0,0,0,0,0)
+nrun <- max(mytrials$run)
+
+
+alltrials <- 1:max(mytrials$run) #we work through each chunk of rows for each trial
+
+#strategy A: response when abs logodds > 4
+mytrials$keycol<-mytrials$logodds
+#create new columns to hold results for this strategy
+mytrials$respA <-NA
+mytrials$corrA <-NA
+mytrials$rewardA <- NA
+
+col1<-which(colnames(mytrials)=='respA') #get number code - to ensure function writes to correct column
+hicut<-4
+locut <- -4 #cutoffs for making decision on log odds
+polarity <- 1 #look for greater than hicut or less than locut
+strategy<- 'A'
+mytrials<-myrespcode(strategy,mytrials,numrange,alltrials,ES,col1,hicut,locut,polarity)
+
+#strategy B: response when p<.05 or > .95
+
+mytrials$keycol<-mytrials$p
+#create new columns to hold results for this strategy
+mytrials$respB <-NA
+mytrials$corrB <-NA
+mytrials$rewardB <- NA
+col1<-which(colnames(mytrials)=='respB') #get number of column - to ensure function writes to correct column
+hicut<-.05
+locut <- .95  #cutoffs for making decision on log odds
+polarity<- -1 #look for less than hicut or greater than locut
+strategy <- 'B'
+mytrials<-myrespcode(strategy,mytrials,numrange,alltrials,ES,col1,hicut,locut,polarity)
+
+#C. Respond on the basis of the absolute difference between the means being at least as great as the effect size (respond Y), or zero or less (respond N) 
+mytrials$keycol<-mytrials$obsES
+#create new columns to hold results for this strategy
+mytrials$respC <-NA
+mytrials$corrC <-NA
+mytrials$rewardC <- NA
+col1<-which(colnames(mytrials)=='respC') #get number of column - to ensure function writes to correct column
+hicut<-.3
+locut <- 0  #cutoffs for making decision on log odds
+polarity<- 1 #look for less than hicut or greater than locut
+strategy <- 'C'
+mytrials<-myrespcode(strategy,mytrials,numrange,alltrials,ES,col1,hicut,locut,polarity)
+
+#D. Respond on the basis of the E group mean being at least as great as the effect size or less than 0
+mytrials$keycol<-mytrials$meanE
+#create new columns to hold results for this strategy
+mytrials$respD <-NA
+mytrials$corrD <-NA
+mytrials$rewardD <- NA
+col1<-which(colnames(mytrials)=='respD') #get number of column - to ensure function writes to correct column
+hicut<-.3
+locut <- 0  #cutoffs for making decision on log odds
+polarity<- 1 #look for less than hicut or greater than locut
+strategy <- 'D'
+mytrials<-myrespcode(strategy,mytrials,numrange,alltrials,ES,col1,hicut,locut,polarity)
+
+
+#E. Always defer a decision until the largest sample size, and then select depending on whether observed ES is closer to .3 or 0
+mytrials$keycol<-mytrials$obsES
+  #create new columns to hold results for this strategy
+mytrials$respE <-NA
+mytrials$corrE <-NA
+mytrials$rewardE  <- NA
+col1<-which(colnames(mytrials)=='respE') #get number of column - to ensure function writes to correct column
+hicut<-.15
+locut <- .15 #
+polarity <-  1 #look for more than hicut or less than locut
+strategy <- 'E'
+mytrials<-myrespcode(strategy,mytrials,numrange,alltrials,ES,col1,hicut,locut,polarity)
+
+#F. Always decide on basis of obsES on first N 
+mytrials$keycol<-mytrials$obsES
+  #create new columns to hold results for this strategy
+mytrials$respF <-NA
+mytrials$corrF <-NA
+mytrials$rewardF  <- NA
+col1<-which(colnames(mytrials)=='respF') #get number of column - to ensure function writes to correct column
+hicut<-.15
+locut <- .15 #
+polarity <-  1 #look for more than hicut or less than locut
+strategy <- 'F'
+mytrials<-myrespcode(strategy,mytrials,numrange,alltrials,ES,col1,hicut,locut,polarity)
+
+
+#Summarise results of strategies
+strategies <- data.frame(matrix(NA,nrow=6,ncol=4))
+colnames(strategies)<-c('strategy','meancorr','meanstep','meanreward')
+strategies[,1]<-LETTERS[1:6]
+
+col1<-which(colnames(mytrials)=='corrA')
+strategies[,2]<-colMeans(mytrials[,c(col1,(col1+3),(col1+6),(col1+9),(col1+12),(col1+15))],na.rm=T)
+col1<-col1+1
+
+strategies[,4]<-colMeans(mytrials[,c(col1,(col1+3),(col1+6),(col1+9),(col1+12),(col1+15))],na.rm=T)
+
+#for level we need to exclude all but the rows where a response - this will vary depending on strategy
+Afinals <- mytrials[!is.na(mytrials$respA),]
+strategies[1,3]<-mean(Afinals$level)
+Bfinals <- mytrials[!is.na(mytrials$respB),]
+strategies[2,3]<-mean(Bfinals$level)
+Cfinals <- mytrials[!is.na(mytrials$respC),]
+strategies[3,3]<-mean(Cfinals$level)
+Dfinals <- mytrials[!is.na(mytrials$respD),]
+strategies[4,3]<-mean(Dfinals$level)
+strategies[5,3]<-6
+strategies[6,3]<-1
+
+```
+
+```{r comparepilot}
+datadir <- "~/Dropbox/jackieT_project/data_exp_9212-v12/"
+myfile <- 'data_exp_9212-v12_task-udzw.csv'
+dat1 <- read.csv(paste0(datadir,myfile))
+myfile <- 'data_exp_9212-v12_task-qk8g.csv'
+dat2 <- read.csv(paste0(datadir,myfile))
+fullpilotdat<- rbind(dat1,dat2)
+
+dbtry <-0
+if(dbtry==1){
+   fullpilotdat<-read.csv('gorilla_results/dorothy_feb2021.csv') #to read my test data - but need some tweaks then to make it work, e.g. need to add an ID
+   colnames(fullpilotdat)[87:92]<-c('ES1','ES2','ES3','ES4','ES5','ES6')
+   fullpilotdat$Participant.Public.ID <-'dorothy'
+}
+
+
+#crunch data down to remove all but key columns and rows
+pilotdat <- fullpilotdat[fullpilotdat$Screen.Name=='Stimulus1',]
+allcols<-colnames(pilotdat)
+wantcols<-c('Participant.Public.ID','Spreadsheet.Row','Trial.Number','Reaction.Time',
+            'Response','Correct','ES','EarningCorrect','EarningWrong','meanC1','meanE1',
+            'meanC2','meanE2','meanC3','meanE3','meanC4','meanE4','meanC5','meanE5','meanC6','meanE6',
+            'ES1' ,'ES2','ES3','ES4','ES5','ES6',
+            'LL1' ,'LL2','LL3','LL4','LL5','LL6',
+            't1' ,'t2','t3','t4','t5','t6')
+pilotdat<-pilotdat[,wantcols]
+pilotdat$choice<-as.factor(pilotdat$Response)
+levels(pilotdat$choice)<-c(1,2)
+
+
+pilotdat$ID <-as.factor(pilotdat$Participant.Public.ID)
+levels(pilotdat$ID)<-paste0('s',1:length(levels(pilotdat$ID))) #need to add 's' to avoid confusion because these are not created in numeric order
+
+pilotdat$Reaction.Time <- as.integer(pilotdat$Reaction.Time)
+pilotdat$Trial.Number<-as.numeric(pilotdat$Trial.Number)
+pilotdat$half <- 1
+pilotdat$half[pilotdat$Trial.Number > 40]<-2
+#convert RT to choice
+mybreaks<-c(0,2000,4000,6000,8000,10000,Inf)
+pilotdat$number <- as.numeric(cut(pilotdat$Reaction.Time,
+                     breaks=mybreaks,
+                     labels=1:6))
+#just check this worked!
+aggregate(pilotdat$Reaction.Time ,by= list(pilotdat$number),FUN=mean)
+
+#Now we assemble the other relevant information for this trial
+
+startmeans <- which(colnames(pilotdat)=='meanC1')
+startES <-which(colnames(pilotdat)=='ES1')
+startLL <-which(colnames(pilotdat)=='LL1')
+startt <-which(colnames(pilotdat)=='t1')
+for (i in 1:nrow(pilotdat)){
+  mynum<-pilotdat$number[i]
+  pilotdat$Cmean[i] <- pilotdat[i,(startmeans-2+2*mynum)]
+  pilotdat$Emean[i] <- pilotdat[i,(startmeans-1+2*mynum)]
+  pilotdat$ESobs[i] <- pilotdat[i,(startES-1+mynum)]
+   pilotdat$LL[i] <- pilotdat[i,(startLL-1+mynum)]
+   if(pilotdat$LL[i]==Inf){pilotdat$LL[i] <-500} #how to handle infinity values? Here put to 500
+    pilotdat$t[i] <- pilotdat[i,(startt-1+mynum)]
+}
+#code ES suitable to use it as colour
+pilotdat$EScol <- 1
+pilotdat$EScol[pilotdat$ES==0] <-2
+
+myag <- aggregate(pilotdat$Correct,b=list(pilotdat$ES,pilotdat$Correct,pilotdat$ID),FUN=length)
+colnames(myag)<-c('TrueEff','Correct','ID','N')
+
+myag2 <- aggregate(pilotdat$number,b=list(pilotdat$ES,pilotdat$Correct,pilotdat$ID),FUN=mean)
+colnames(myag2)<-c('TrueEff','Correct','ID','Step')
+myag3 <- aggregate(pilotdat$LL,b=list(pilotdat$ES,pilotdat$Correct,pilotdat$ID),FUN=mean)
+colnames(myag3)<-c('TrueEff','Correct','ID','LL')
+myag4 <- aggregate(pilotdat$ESobs,b=list(pilotdat$ES,pilotdat$Correct,pilotdat$ID),FUN=mean)
+colnames(myag4)<-c('TrueEff','Correct','ID','ESobs')
+
+myag<-cbind(myag,myag2[,4],myag3[,4],myag4[,4])
+colnames(myag)[5:7]<-c('Step','LL','ESObs')
+
+nsub<-length(levels(pilotdat$ID))
+subs<-unique(pilotdat$ID)
+
+myag$p.corr <- NA
+#work out p.correct and write against first row for subjecct
+#NB some may make no errors in one category so can't assume 4 rows in myag for all
+for (i in 1:nsub){
+  w<-which(myag$ID==subs[i])
+  ww<-intersect(w,which(myag$Correct==1))
+  myag$p.corr[w[1]]<-sum(myag$N[ww])/sum(myag$N[w])
+}
+
+nitem<-nrow(pilotdat)/nsub
+subsummary<-data.frame(matrix(NA,nrow=nsub,ncol=4))
+subsummary$id<-1:nsub
+
+
+
+pilotdat$corrpch <- 15 #pch code for correct/incorrect are blob and x
+pilotdat$corrpch[pilotdat$Correct==0]<-4
+
+
+pdf("subplotsx.pdf",width=6, height=6)
+par(mfrow=c(3,3))
+mypcorr<-vector()
+for (n in 1:nsub){
+  mypcorr[n]<-myag$p.corr[myag$ID==subs[n]][1]
+}
+
+for (n in 1:nsub){ #order them by accuracy
+  
+subdat<-pilotdat[pilotdat$ID==subs[n],]
+plot(subdat$Trial.Number,subdat$LL,col=(subdat$EScol),pch=subdat$corrpch,main=subs[n],type='b',ylim=c(-20,20))
+abline(h=0,lty=2)
+
+plot(subdat$Trial.Number,subdat$ESobs,col=(subdat$EScol),pch=subdat$corrpch,main=subs[n],type='b',ylim=c(-1,1))
+abline(h=0,lty=2)
+text(20,.8,paste0('p.correct: ',mypcorr[n]))
+plot(subdat$Trial.Number,subdat$number,col=(subdat$EScol),pch=subdat$corrpch,main=subs[n],type='b',ylim=c(1,6))
+
+}
+dev.off()
+```
+
+```{r byhalf}
+tdf <- data.frame(matrix(NA,nrow=nsub,ncol=11))
+colnames(tdf)<-c('ID','pcorr','meanstep1','meanstep2','pnumber.half','pabsLL.half','pCorr.half','pESresp0.half',
+                 'pESresp1.half','pLLresp0.half','pLLresp1.half')
+tdf$ID <-subs[1:nsub]
+
+for (n in 1:nsub){
+  print(paste('subject ',subs[n],': correct ',mypcorr[n]))
+  subdat<-pilotdat[pilotdat$ID==subs[n],]
+ t1<- t.test(subdat$number~subdat$half,alternative='less')
+ t2<- t.test(abs(subdat$LL)~subdat$half,alternative='less')
+  t3<- t.test(subdat$Correct~subdat$half,alternative='less')
+  t4 <- t.test(subdat$ESobs[subdat$Response=='Blue=Pink']~subdat$half[subdat$Response=='Blue=Pink'])
+  t5 <- t.test(subdat$ESobs[subdat$Response=='Blue>Pink']~subdat$half[subdat$Response=='Blue>Pink'])
+  t6 <- t.test(subdat$LL[subdat$Response=='Blue=Pink']~subdat$half[subdat$Response=='Blue=Pink'])
+  t7 <- t.test(subdat$LL[subdat$Response=='Blue>Pink']~subdat$half[subdat$Response=='Blue>Pink'])
+
+ tdf$pcorr[n]<-round(mypcorr[n],3)
+ tdf$meanstep1[n] <-round(t1$estimate[1],2)
+  tdf$meanstep2[n] <-round(t1$estimate[2],2)
+ tdf$pnumber.half[n] <-round(t1$p.value,3)
+  tdf$pabsLL.half[n] <-round(t2$p.value,3)
+  tdf$pCorr.half[n] <-round(t3$p.value,3)
+   tdf$pESresp0.half[n] <-round(t4$p.value,3)
+    tdf$pESresp1.half[n]<-round(t5$p.value,3)
+    tdf$pLLresp0.half[n] <-round(t6$p.value,3)
+    tdf$pLLresp1.half[n]<-round(t7$p.value,3)
+}
+
+tdf<-tdf[order(tdf$pcorr),]
+
+write.csv(tdf,'tsummary.csv',row.names =F)
+```
+
+```{r chanceperformance}
+
+for (n in 41:50){
+  pp <- 1-pbinom(n, 80, .5, lower.tail = TRUE, log.p = FALSE)
+  print(pp)
+  
+}
+
+#47/80 is above chance at .05
+47/80
+#This is .5875 correct
+```
+
