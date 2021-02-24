@@ -1,6 +1,6 @@
 ---
 title: "SmallNumbers"
-author: "DVM Bishop"
+author: "DVM Bishop/Adam Parker"
 date: "30/01/2021"
 output:
   html_document:
@@ -11,6 +11,21 @@ output:
 
 <!--- Adam also wrote: I’d addressed the majority of points raised on the pre-reg a while back: https://docs.google.com/document/d/14BsWNgACJaSt7vebQma3N-otaLHFB5zsXsg4meFayVY/edit?usp=sharing. I have downloaded that file--->
 
+```{r setup, include=F, echo=F}
+require(beeswarm)
+library(RColorBrewer) #used later for 'zone of uncertainty' plots
+tabnumber <- 0 #for counting tables.
+fignumber <- 0 #for counting figures
+library(dplyr)
+library(yarrr)
+library(ggplot2)
+library(lme4)
+library(MASS)
+library(effects)
+library(simr)
+```
+
+
 ## Introduction
 <!--this paragraph and accompanying plot may not survive - not sure it is needed or helpful.  Idea is to just introduce the idea that interpretation of an observed effect can't be done without knowing about distribution and sample size--->
 Suppose an educator approaches a school district administrator with a new reading intervention, saying that, on a post-test children who completed the intervention read correctly four more words than children who did not. Should the administrator roll out the intervention in local schools on this basis? For anyone with statistical training, the answer has to be no: we'd need a lot more information in order to make such a decision. As well as needing to know the he design of the study and the cost of the intervention in relation to the benefit, we'd need to be convinced that the improvement in scores was not just a fluke. Two establish this, we need to know the sample size and the variation in scores.  Figure 1 shows three simulated datasets, all of which have a mean difference of four words between two groups. If we adopt conventional alpha of .05 and use null hypothesis significance testing, we would conclude that the intervention was not effective for the studies shown in panels A and C, whereas in panel B the evidence is in favour of the intervention making a difference.
@@ -18,8 +33,7 @@ Suppose an educator approaches a school district administrator with a new readin
 
 ```{r makefig1, include=FALSE, echo=FALSE}
 #This chunk just generates figure 1 - it could probably be made more efficient
-require(beeswarm)
-library(RColorBrewer) #used later for 'zone of uncertainty' plots
+
 
 ES=4  #mean difference - can vary this - here this is in raw units
 nset <- 6 #two groups, so twice the number of demo sets
@@ -173,7 +187,7 @@ dozoneplot<-function(oddsframe,ES,numrangex,myint){
   oddmat<-t(as.matrix(oddsframe[2:nrow(oddsframe),startcol:endcol]))
   oddall<-list(x=numrangex,y=myint,z=oddmat)
   
-  breakpoints<-c(-1000000,-log(80),-log(40),-log(20),-log(10),-log(5),log(5),log(10),log(20),log(40),log(80),1000000)
+  breakpoints<-c(-1000000,-log(80),-log(40),-log(20),-log(10),-log(4),log(4),log(10),log(20),log(40),log(80),1000000)
   
   mypal <- brewer.pal(11, "Spectral") #11 colours max
   
@@ -190,11 +204,11 @@ Compute log odds using direct computation of probabilities!
 
 options(scipen = 999)
 Nsample<-1000 #number of samples for computing odds
-numrangex<-seq(10,150,2) #sequence of sample sizes to model; can modify this
+numrangex<-seq(10,320,2) #sequence of sample sizes to model; can modify this
 
-for (ES in c(.1,.2,.3,.4,.5,.6,.7,.8,1)){ #sequence of True effect sizes to model
+for (ES in c(.1,.3,.5)){ #sequence of True effect sizes to model
   
-  grain<-.025 #this will mean we compute probabilities for effect sizes using this as step size
+  grain<-.025 #this will mean we compute probabilities for effect sizes using this as array size
   myint <- seq(-1,1,grain) #sequence of Observed effect sizes to model
   
   #We'll make a data frame to hold simulated data for a given effect size, so we can do a sanity check
@@ -305,7 +319,7 @@ Compute the log odds ratio for each trial using direct computation of probabilit
 options(scipen = 999)
 
 ES <- .3
-grain<-.025 #this will mean we compute probabilities for effect sizes using this as step size
+grain<-.025 #this will mean we compute probabilities for effect sizes using this as array size
 myint <- seq(-1,1,grain) #sequence of Observed effect sizes to model
 
 mytrials$logodds <- NA
@@ -372,7 +386,7 @@ myrespcode <- function(strategy,mytrials,numrange,alltrials,ES,col1,hicut,locut,
 
 ```{r makestrategydf}
 rewards <- c(1,1,1,1,1,1)
-punish <- c(0,0,0,0,0,0)
+punish <- c(-1,-1,-1,-1,-1,-1)
 nrun <- max(mytrials$run)
 
 
@@ -462,7 +476,7 @@ mytrials<-myrespcode(strategy,mytrials,numrange,alltrials,ES,col1,hicut,locut,po
 
 #Summarise results of strategies
 strategies <- data.frame(matrix(NA,nrow=6,ncol=4))
-colnames(strategies)<-c('strategy','meancorr','meanstep','meanreward')
+colnames(strategies)<-c('strategy','meancorr','meanarray','meanreward')
 strategies[,1]<-LETTERS[1:6]
 
 col1<-which(colnames(mytrials)=='corrA')
@@ -485,7 +499,10 @@ strategies[6,3]<-1
 
 ```
 
+
+
 ```{r comparepilot}
+tabnumber <-tabnumber +1
 datadir <- "~/Dropbox/jackieT_project/data_exp_9212-v12/"
 myfile <- 'data_exp_9212-v12_task-udzw.csv'
 dat1 <- read.csv(paste0(datadir,myfile))
@@ -493,7 +510,7 @@ myfile <- 'data_exp_9212-v12_task-qk8g.csv'
 dat2 <- read.csv(paste0(datadir,myfile))
 fullpilotdat<- rbind(dat1,dat2)
 
-dbtry <-0
+dbtry <-0 #set to 0 to read all pilots
 if(dbtry==1){
    fullpilotdat<-read.csv('gorilla_results/dorothy_feb2021.csv') #to read my test data - but need some tweaks then to make it work, e.g. need to add an ID
    colnames(fullpilotdat)[87:92]<-c('ES1','ES2','ES3','ES4','ES5','ES6')
@@ -516,7 +533,13 @@ levels(pilotdat$choice)<-c(1,2)
 
 
 pilotdat$ID <-as.factor(pilotdat$Participant.Public.ID)
+
+
 levels(pilotdat$ID)<-paste0('s',1:length(levels(pilotdat$ID))) #need to add 's' to avoid confusion because these are not created in numeric order
+sublookup <- as.data.frame(cbind(pilotdat$ID,pilotdat$Participant.Public.ID))
+sublookup <- sublookup[!duplicated(sublookup$V1),]
+colnames(sublookup)<-c('Number','code')
+write.csv(sublookup,'sublookup.csv',row.names=F)
 
 pilotdat$Reaction.Time <- as.integer(pilotdat$Reaction.Time)
 pilotdat$Trial.Number<-as.numeric(pilotdat$Trial.Number)
@@ -524,11 +547,23 @@ pilotdat$half <- 1
 pilotdat$half[pilotdat$Trial.Number > 40]<-2
 #convert RT to choice
 mybreaks<-c(0,2000,4000,6000,8000,10000,Inf)
-pilotdat$number <- as.numeric(cut(pilotdat$Reaction.Time,
+pilotdat$array <- as.numeric(cut(pilotdat$Reaction.Time,
                      breaks=mybreaks,
                      labels=1:6))
+#need to find optimal array - i.e. the one where absLL> LLcutoff
+#LLcutoff can be specified as we choose
+LLcutoff <- 3
+L1 <- which(colnames(pilotdat)=='LL1')
+pilotdat$optarray<-NA
+for (j in 1:nrow(pilotdat)){
+  optimal <- which(abs(pilotdat[j,L1:(L1+5)])>LLcutoff)
+  ifelse(length(optimal)==0,optimal <-6,optimal<-optimal[1])
+  pilotdat$optarray[j]<-optimal
+  
+}
+pilotdat$arraydiff<-pilotdat$array-pilotdat$optarray
 #just check this worked!
-aggregate(pilotdat$Reaction.Time ,by= list(pilotdat$number),FUN=mean)
+aggregate(pilotdat$Reaction.Time ,by= list(pilotdat$array),FUN=mean)
 
 #Now we assemble the other relevant information for this trial
 
@@ -537,7 +572,7 @@ startES <-which(colnames(pilotdat)=='ES1')
 startLL <-which(colnames(pilotdat)=='LL1')
 startt <-which(colnames(pilotdat)=='t1')
 for (i in 1:nrow(pilotdat)){
-  mynum<-pilotdat$number[i]
+  mynum<-pilotdat$array[i]
   pilotdat$Cmean[i] <- pilotdat[i,(startmeans-2+2*mynum)]
   pilotdat$Emean[i] <- pilotdat[i,(startmeans-1+2*mynum)]
   pilotdat$ESobs[i] <- pilotdat[i,(startES-1+mynum)]
@@ -547,20 +582,20 @@ for (i in 1:nrow(pilotdat)){
 }
 #code ES suitable to use it as colour
 pilotdat$EScol <- 1
-pilotdat$EScol[pilotdat$ES==0] <-2
+pilotdat$EScol[pilotdat$ES==0] <-4.5
 
 myag <- aggregate(pilotdat$Correct,b=list(pilotdat$ES,pilotdat$Correct,pilotdat$ID),FUN=length)
 colnames(myag)<-c('TrueEff','Correct','ID','N')
 
-myag2 <- aggregate(pilotdat$number,b=list(pilotdat$ES,pilotdat$Correct,pilotdat$ID),FUN=mean)
-colnames(myag2)<-c('TrueEff','Correct','ID','Step')
+myag2 <- aggregate(pilotdat$array,b=list(pilotdat$ES,pilotdat$Correct,pilotdat$ID),FUN=mean)
+colnames(myag2)<-c('TrueEff','Correct','ID','array')
 myag3 <- aggregate(pilotdat$LL,b=list(pilotdat$ES,pilotdat$Correct,pilotdat$ID),FUN=mean)
 colnames(myag3)<-c('TrueEff','Correct','ID','LL')
 myag4 <- aggregate(pilotdat$ESobs,b=list(pilotdat$ES,pilotdat$Correct,pilotdat$ID),FUN=mean)
 colnames(myag4)<-c('TrueEff','Correct','ID','ESobs')
 
 myag<-cbind(myag,myag2[,4],myag3[,4],myag4[,4])
-colnames(myag)[5:7]<-c('Step','LL','ESObs')
+colnames(myag)[5:7]<-c('array','LL','ESObs')
 
 nsub<-length(levels(pilotdat$ID))
 subs<-unique(pilotdat$ID)
@@ -584,7 +619,9 @@ pilotdat$corrpch <- 15 #pch code for correct/incorrect are blob and x
 pilotdat$corrpch[pilotdat$Correct==0]<-4
 
 
-pdf("subplotsx.pdf",width=6, height=6)
+pdfname <- 'subplots.pdf'
+if(dbtry==1){pdfname<-'dbtry.pdf'}
+pdf(pdfname,width=6, height=6)
 par(mfrow=c(3,3))
 mypcorr<-vector()
 for (n in 1:nsub){
@@ -599,45 +636,109 @@ abline(h=0,lty=2)
 
 plot(subdat$Trial.Number,subdat$ESobs,col=(subdat$EScol),pch=subdat$corrpch,main=subs[n],type='b',ylim=c(-1,1))
 abline(h=0,lty=2)
-text(20,.8,paste0('p.correct: ',mypcorr[n]))
-plot(subdat$Trial.Number,subdat$number,col=(subdat$EScol),pch=subdat$corrpch,main=subs[n],type='b',ylim=c(1,6))
+text(20,.8,paste0('p.correct: ',round(mypcorr[n],3)),cex=.8)
 
+tt<-t.test(subdat$array[1:20], mu = 4, alternative = "greater")
+plot(subdat$Trial.Number,subdat$array,col=(subdat$EScol),pch=subdat$corrpch,main=subs[n],type='b',ylim=c(1,6))
+text(15,1.5,paste0('p half1 index> 4: ',round(tt$p.value,3)),cex=.8)
+
+#Is E or ES a better predictor of accuracy?
+#Need to divide by trueES - not getting v far with this
+ESag <- aggregate(subdat$ESobs, by = list(subdat$ES,subdat$Correct),FUN=mean)
+Eag <- aggregate(subdat$Emean, by = list(subdat$ES,subdat$Correct),FUN=mean)
 }
 dev.off()
+
+
+
+
 ```
 
 ```{r byhalf}
-tdf <- data.frame(matrix(NA,nrow=nsub,ncol=11))
-colnames(tdf)<-c('ID','pcorr','meanstep1','meanstep2','pnumber.half','pabsLL.half','pCorr.half','pESresp0.half',
-                 'pESresp1.half','pLLresp0.half','pLLresp1.half')
+tdf <- data.frame(matrix(NA,nrow=nsub,ncol=21))
+colnames(tdf)<-c('ID','pcorr','meanarray1','meanarray2','parray.half','meanarraydiff1','meanarraydiff2','parraydiff.half','meanabsLL1','meanabsLL2','pabsLL.half','meanpcorr1',
+                 'meanpcorr2','pcorr.half','pESresp0.half',
+                 'pESresp1.half','pLLresp0.half','pLLresp1.half') #last 3 are just pvalues for 1st vs 2nd half
 tdf$ID <-subs[1:nsub]
 
 for (n in 1:nsub){
   print(paste('subject ',subs[n],': correct ',mypcorr[n]))
   subdat<-pilotdat[pilotdat$ID==subs[n],]
- t1<- t.test(subdat$number~subdat$half,alternative='less')
- t2<- t.test(abs(subdat$LL)~subdat$half,alternative='less')
-  t3<- t.test(subdat$Correct~subdat$half,alternative='less')
-  t4 <- t.test(subdat$ESobs[subdat$Response=='Blue=Pink']~subdat$half[subdat$Response=='Blue=Pink'])
-  t5 <- t.test(subdat$ESobs[subdat$Response=='Blue>Pink']~subdat$half[subdat$Response=='Blue>Pink'])
-  t6 <- t.test(subdat$LL[subdat$Response=='Blue=Pink']~subdat$half[subdat$Response=='Blue=Pink'])
-  t7 <- t.test(subdat$LL[subdat$Response=='Blue>Pink']~subdat$half[subdat$Response=='Blue>Pink'])
+ t1<- t.test(subdat$array~subdat$half,alternative='less')
+  t2<- t.test(subdat$arraydiff~subdat$half) #needs to be 2tailed
+ t3<- t.test(abs(subdat$LL)~subdat$half,alternative='less')
+  t4<- t.test(subdat$Correct~subdat$half,alternative='less')
+  t5 <- t.test(subdat$ESobs[subdat$Response=='Blue=Pink']~subdat$half[subdat$Response=='Blue=Pink'])
+  t6 <- t.test(subdat$ESobs[subdat$Response=='Blue>Pink']~subdat$half[subdat$Response=='Blue>Pink'])
+  t7 <- t.test(subdat$LL[subdat$Response=='Blue=Pink']~subdat$half[subdat$Response=='Blue=Pink'])
+  t8 <- t.test(subdat$LL[subdat$Response=='Blue>Pink']~subdat$half[subdat$Response=='Blue>Pink'])
+  t9 <- t.test(subdat$Emean~subdat$half)
 
  tdf$pcorr[n]<-round(mypcorr[n],3)
- tdf$meanstep1[n] <-round(t1$estimate[1],2)
-  tdf$meanstep2[n] <-round(t1$estimate[2],2)
- tdf$pnumber.half[n] <-round(t1$p.value,3)
-  tdf$pabsLL.half[n] <-round(t2$p.value,3)
-  tdf$pCorr.half[n] <-round(t3$p.value,3)
-   tdf$pESresp0.half[n] <-round(t4$p.value,3)
-    tdf$pESresp1.half[n]<-round(t5$p.value,3)
+ tdf$meanarray1[n] <-round(t1$estimate[1],2)
+  tdf$meanarray2[n] <-round(t1$estimate[2],2)
+ tdf$parray.half[n] <-round(t1$p.value,3)
+  tdf$meanarraydiff1[n] <-round(t2$estimate[1],2)
+  tdf$meanarraydiff2[n] <-round(t2$estimate[2],2)
+ tdf$parraydiff.half[n] <-round(t2$p.value,3)
+ 
+  tdf$meanabsLL1[n] <-round(t3$estimate[1],2)
+  tdf$meanabsLL2[n] <-round(t3$estimate[2],2)
+  tdf$pabsLL.half[n] <-round(t3$p.value,3)
+    tdf$meanpcorr1[n] <-round(t4$estimate[1],2)
+  tdf$meanpcorr2[n] <-round(t4$estimate[2],2)
+  tdf$pcorr.half[n] <-round(t4$p.value,3)
+   tdf$pESresp0.half[n] <-round(t5$p.value,3)
+    tdf$pESresp1.half[n]<-round(t7$p.value,3)
     tdf$pLLresp0.half[n] <-round(t6$p.value,3)
-    tdf$pLLresp1.half[n]<-round(t7$p.value,3)
+    tdf$pLLresp1.half[n]<-round(t8$p.value,3)
+    
+    tdf$meanE1[n] <-round(t9$estimate[1],2)
+  tdf$meanE2[n] <-round(t9$estimate[2],2) 
+  tdf$pE.half[n] <-round(t9$p.value,3)
+    
+    
 }
+#with this assignment of rewards, perfect correlation between pcorr and reward
+tdf$reward1 <- (10*tdf$meanpcorr1*40)-(10*(1-tdf$meanpcorr1)*40)
+tdf$reward2 <- (10*tdf$meanpcorr2*40)-(10*(1-tdf$meanpcorr2)*40)
+plot(tdf$reward1,tdf$reward2)
+abline(h=0)
+abline(v=0)
+
+c1<-round(cor(tdf$reward1,tdf$meanarraydiff1),3)
+c2<-round(cor(tdf$reward2,tdf$meanarraydiff2),3)
+par(mfrow=c(1,2))
+plot(tdf$reward1,tdf$meanarraydiff1)
+text(100,-2,paste0('r = ',c1))
+plot(tdf$reward2,tdf$meanarraydiff2)
+text(100,-2,paste0('r = ',c2))
+par(mfrow=c(1,1))
+
 
 tdf<-tdf[order(tdf$pcorr),]
 
+if(nrow(tdf)>1){
 write.csv(tdf,'tsummary.csv',row.names =F)
+
+t.test(tdf$meanpcorr1,tdf$meanpcorr2,pairwise=T)
+t.test(tdf$meanabsLL1,tdf$meanabsLL2,pairwise=T)
+t.test(tdf$meanarray1,tdf$meanarray2,pairwise=T)
+t.test(tdf$meanarraydiff1,tdf$meanarraydiff2,pairwise=T)
+
+t.test(tdf$meanarraydiff1,mu=0)
+t.test(tdf$meanarraydiff2,mu=0)
+}
+
+#how reliable is the meanarraydiff measure?
+rr = cor(tdf$meanarraydiff1,tdf$meanarraydiff2)
+plot(tdf$meanarraydiff1,tdf$meanarraydiff2,main=paste0('r = ',round(rr,3)))
+
+rx = cor(tdf$meanarray1,tdf$meanarray2)
+plot(tdf$meanarray1,tdf$meanarray2,main=paste0('rx = ',round(rr,3)))
+
+plot(tdf$meanarray1,tdf$meanarraydiff1) #virtually the same, but not 100%!
+plot(tdf$meanarray2,tdf$meanarraydiff2) #virtually the same, but not 100%!
 ```
 
 ```{r chanceperformance}
@@ -651,5 +752,233 @@ for (n in 41:50){
 #47/80 is above chance at .05
 47/80
 #This is .5875 correct
+
+
+#binomial probs for 2nd half only
+for (n in 21:29){
+  pp <- 1-pbinom(n, 40, .5, lower.tail = TRUE, log.p = FALSE)
+  print(pp)
+  
+}
+
+
+#25/40 is above chance at .05
+#This is .625 correct
 ```
+
+# Pilot testing
+The task was piloted with 21 people recruited via Prolific [Adam to add more here?]. 
+Results are summarised in Table `r tabnumber`. With 80 items, a score of 47 (58.7%) correct indicates better than chance (binomial probability = .046). Six of the pilot participants did not perform above chance; one of these low performers did show a significant improvement across the two halves of the session, achieving 68% correct in the second half. The highest performing participant achieved 80%. Overall, the pilot data suggested the task might be too difficult to show learning, and it was accordingly decided to change the displays of distributions to include bars corresponding to the means for the two groups. Informal piloting with colleagues suggested this led to an increase in accuracy.  
+It was also possible within the pilot data to look for evidence of learning an optimal strategy. The session was divided into two halves (blocks 1-2 vs blocks 3-4) to test for improvement with exposure to the task. At the individual level, only one participant showed a significant improvement in accuracy across the two halves that met Bonferroni-corrected p-value of .0023. At the group level, pairwise t-tests comparing the two halves in terms of (a) percent correct; (b) the array-size at the response, and (c) the absolute log likelihood at the point of response showed no reliable differences between the two halves. Scrutiny of individual cases for evidence of response strategies suggested that a few participants had started to wait longer to respond as the session proceeded, but the evidence was not compelling, and others showed the opposite effect, starting to respond earlier over time. 
+These participants also completed the probability quizzes that preceded and followed the training session. If changes during training were meaningful, we might expect to see more improvement on Law of Small Numbers items for those participants who had shown signs of waiting longer to response over time. 
+
+
+
+
+Here data is read in and prepared.
+
+```{r read, include=TRUE}
+# read in pre and post data
+datadir <- "~/Dropbox/jackieT_project/data_exp_9212-v12/"
+pre_data_A <- read.csv(paste0(datadir,"data_exp_9212-v12_questionnaire-16y2.csv"), header= TRUE,  na.strings = "NA")
+pre_data_B <- read.csv(paste0(datadir,"data_exp_9212-v12_questionnaire-v85y.csv"), header= TRUE,  na.strings = "NA")
+post_data_A <- read.csv(paste0(datadir,"data_exp_9212-v12_questionnaire-wtux.csv"), header= TRUE,  na.strings = "NA")
+post_data_B <- read.csv(paste0(datadir,"data_exp_9212-v12_questionnaire-eg9n.csv"), header= TRUE,  na.strings = "NA")
+# create new variables coding time point
+pre_data_A$time <- 1
+pre_data_B$time <- 1
+post_data_A$time <- 2
+post_data_B$time <- 2
+# create a new variable to code list
+pre_data_A$list <- "A"
+pre_data_B$list <- "B"
+post_data_A$list <- "A"
+post_data_B$list <- "B"
+# merge two data frames
+qdata <- bind_rows(pre_data_A, post_data_A, pre_data_B, post_data_B)
+# create factor variables
+qdata$subject <- as.factor(qdata$Participant.Private.ID)
+qdata$item <- as.factor(qdata$Question.Key)
+qdata$time <- as.factor(qdata$time)
+  levels(qdata$time) <- c("Pre", "Post")
+```
+
+Code the correct answers.
+
+```{r codeQs, include=TRUE}
+# select only numerical responses
+qdata <- qdata[qdata$Response == "1" |
+                                         qdata$Response == "2" |
+                                         qdata$Response == "3" |
+                                         qdata$Response == "4",]
+# code question accuracy
+qdata  <- 
+  qdata %>%
+    mutate(accuracy = ifelse(Question.Key == "1a-quantised" & Response =="1", 1, 
+                      ifelse(Question.Key == "1b-quantised" & Response =="1", 1,
+                      ifelse(Question.Key == "2a-quantised" & Response =="1", 1,
+                      ifelse(Question.Key == "2b-quantised" & Response =="1", 1,
+                      ifelse(Question.Key == "3a-quantised" & Response =="4", 1,
+                      ifelse(Question.Key == "3b-quantised" & Response =="1", 1,
+                      ifelse(Question.Key == "4a-quantised" & Response =="4", 1,
+                      ifelse(Question.Key == "4b-quantised" & Response =="4", 1,
+                      ifelse(Question.Key == "5a-quantised" & Response =="4", 1,
+                      ifelse(Question.Key == "5b-quantised" & Response =="1", 1,        
+                      ifelse(Question.Key == "6a-quantised" & Response =="1", 1,
+                      ifelse(Question.Key == "6b-quantised" & Response =="2", 1,      
+                      ifelse(Question.Key == "7a-quantised" & Response =="4", 1,      
+                      ifelse(Question.Key == "7b-quantised" & Response =="4", 1,     
+                      ifelse(Question.Key == "8a-quantised" & Response =="3", 1,      
+                      ifelse(Question.Key == "8b-quantised" & Response =="3", 1,    
+                      ifelse(Question.Key == "9a-quantised" & Response =="3", 1,    
+                      ifelse(Question.Key == "9b-quantised" & Response =="3", 1,   
+                      ifelse(Question.Key == "10a-quantised" & Response =="3", 1,      
+                      ifelse(Question.Key == "10b-quantised" & Response =="3", 1,       
+                      ifelse(Question.Key == "11a-quantised" & Response =="1", 1,      
+                      ifelse(Question.Key == "11b-quantised" & Response =="1", 1,      
+                      ifelse(Question.Key == "12a-quantised" & Response =="2", 1, 
+                      ifelse(Question.Key == "12b-quantised" & Response =="1", 1, 0)))))))))))))))))))))))))
+# code question type
+qdata  <- 
+  qdata %>%
+    mutate(Prob = ifelse(Question.Key == "2a-quantised" | Question.Key == "2b-quantised" | 
+                         Question.Key == "4a-quantised" | Question.Key == "4b-quantised" | 
+                         Question.Key == "7a-quantised" | Question.Key == "7b-quantised" | 
+                         Question.Key == "8a-quantised" | Question.Key == "8b-quantised" | 
+                         Question.Key == "9a-quantised" | Question.Key == "9b-quantised" | 
+                         Question.Key == "11a-quantised" | Question.Key == "11b-quantised",
+                         "SampleSize", "Probability"))
+qdata$Prob <- as.factor(qdata$Prob)
+```
+
+```{r mapsubcodes}
+sublookup <- read.csv("sublookup.csv") #these are codes from training session - need to be matched to same people
+qdata$subID <-NA
+for (i in 1:nrow(sublookup)){
+  w<-which(qdata$Participant.Public.ID ==sublookup$code[i] )
+  qdata$subID[w] <- paste0('s',sublookup$Number[i])
+}
+```
+
+
+```{r getqmeans}
+qag <- aggregate(qdata$accuracy, by=list(qdata$time,qdata$Prob,qdata$subID),FUN=mean)
+colnames(qag)<-c('prepost','type','ID','qscore')
+tdf$PreProbQ <-NA
+tdf$PostProbQ <-NA
+tdf$PreNumQ <-NA
+tdf$PostNumQ <-NA
+startcol<-which(colnames(tdf)=='PreProbQ')
+for (i in 1:nrow(tdf)){
+  w<-which(qag$ID==tdf$ID[i])
+  tdf[i,startcol:(startcol+3)]<-qag$qscore[w]
+ 
+}
+t.test(tdf$PreProbQ,tdf$PostProbQ,paired=T)
+t.test(tdf$PreNumQ,tdf$PostNumQ,paired=T)
+
+tdf$DiffProbQ <- tdf$PostProbQ-tdf$PreProbQ
+tdf$DiffNumQ <- tdf$PostNumQ-tdf$PreNumQ
+tdf$Diffpcorr <- tdf$meanpcorr2-tdf$meanpcorr1
+tdf$Diffarray <- tdf$meanarray2-tdf$meanarray1
+tdf$Diffarraydiff <- tdf$meanarraydiff2-tdf$meanarraydiff1  #difference from optimal array
+
+
+mycol <-which(colnames(tdf)=='DiffProbQ')
+cor(tdf[,mycol:(mycol+4)])
+
+plot(tdf$Diffpcorr,tdf$DiffNumQ)
+plot(tdf$Diffarray,tdf$DiffNumQ)
+plot(tdf$Diffpcorr,tdf$DiffProbQ)
+plot(tdf$Diffarray,tdf$DiffProbQ)
+
+plot(tdf$Diffarray,tdf$Diffpcorr)
+
+plot(tdf$meanarray2,tdf$meanpcorr2)
+
+plot(tdf$meanarray1,tdf$meanpcorr1)
+
+plot(tdf$pcorr,tdf$PreNumQ)
+plot(tdf$pcorr,tdf$PostNumQ)
+plot(tdf$pcorr,tdf$PreProbQ)
+plot(tdf$pcorr,tdf$PostProbQ)
+
+beestring<-c(tdf$PreProbQ,tdf$PostProbQ,tdf$PreNumQ,tdf$PostNumQ)
+codestring<-c(rep(1,nsub),rep(2,nsub),rep(3,nsub),rep(4,nsub))
+beeswarm(beestring~codestring,pwcol=codestring)
+cor(tdf$PreProbQ,tdf$PostProbQ)
+plot(tdf$PreProbQ,tdf$PostProbQ)
+cor(tdf$PreNumQ,tdf$PostNumQ)
+plot(tdf$PreNumQ,tdf$PostNumQ)
+```
+Question is whether Post score on Number questions is predicted by pcorr on training, or array in training, after allowing for Pre score.
+
+```{r predictQgain}
+mod_predictNum <- lm(PostNumQ ~ PreNumQ+pcorr,data=tdf)
+summary(mod_predictNum)
+mod_predictProb <- lm(PostProbQ ~ PreProbQ+pcorr,data=tdf)
+summary(mod_predictProb)
+```
+check answers to qs
+
+```{r qdatainspect}
+qdata$item<-droplevels(qdata$item)
+qt <- table(qdata$item,qdata$Response)
+qdf <- as.data.frame(unclass(qt))
+qtype <- table(qdata$item,qdata$Prob)
+qdf<-cbind(qdf,unclass(qtype))
+qdf$Probability[qdf$Probability>0]<-1
+qdf<-qdf[,1:ncol(qdf)-1]
+orderq <- c(7,9,11,13,15,17,19,21,23,1,3,5,
+            8,10,12,14,16,18,20,22,24,2,4,6)
+qdf <- qdf[orderq,]
+
+qdf$Answer <- c(1,1,4,4,4,1,4,3,3,3,1,2,2,1,1,4,1,2,4,3,3,3,1,1)
+colnames(qdf)[1:5]<-c('R1','R2','R3','R4','Probquest')
+qdf$perc.c<-NA
+for (i in 1:nrow(qdf)){
+  qdf$perc.c[i] <- qdf[i,qdf$Answer[i]]/21
+}
+
+write.csv(qdf,'questresults.csv')
+
+
+
+```
+
+
+```{r optimalLL}
+#strategies all based on LL, but we vary the abs size
+myLLseq <-seq(.25,5,.25) #seq of LL to evaluate
+LLcolstart<- which(colnames(pilotdat)=='LL1')
+for (myLL in myLLseq){
+#add new columns to hold results - these will be renamed later
+pilotdat$x <- NA #initialise col to hold arrayindex
+pilotdat$x2 <- 0 #initialise col to hold accuracy -default is error
+for (n in 1:nrow(pilotdat)){
+  LLbit <- pilotdat[n,LLcolstart:(LLcolstart+length(numrange))]
+  wx<-which(abs(LLbit)>myLL)
+  if(length(wx)==0) {wx <-length(numrange)} #LL not exceeded so take last value
+  wx<-wx[1]
+  pilotdat$x[n]<-wx #first array to exceed absLL
+  resp<-0 # default response is null
+  if (LLbit[wx]>0){resp <-1 } #LL is positive, so respond True
+  trueES<-0
+  if (pilotdat$ES[n]>0) {trueES <-1}
+  if(trueES==resp){pilotdat$x2[n]<- 1} #correct response if ES and response match
+  
+}
+thiscol<-ncol(pilotdat)-1 #index for first new added column
+
+colnames(pilotdat)[thiscol]<- paste0('arrayi_',myLL)
+colnames(pilotdat)[(thiscol+1)]<- paste0('acc_',myLL)
+}
+
+ais <- colMeans(pilotdat[seq(53,92,2)])
+aicorrs <- colMeans(pilotdat[seq(54,92,2)])
+
+plot(myLLseq,ais)
+plot(myLLseq,aicorrs)
+```
+
 
