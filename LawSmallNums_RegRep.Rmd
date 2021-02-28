@@ -1,0 +1,1212 @@
+---
+title: 'Stage 1 Registered Report: Can we shift belief in the ''Law of Small Numbers''?'
+author: "D V M Bishop, Jackie Thompson & Adam Parker"
+date: "27/02/2021"
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+---
+
+
+```{r setup, include=FALSE,echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(beeswarm)
+require(tidyverse)
+library(RColorBrewer) #used later for 'zone of uncertainty' plots
+tabnumber <- 0 #for counting tables.
+fignumber <- 0 #for counting figures
+library(dplyr)
+library(yarrr)
+library(ggplot2)
+library(lme4)
+library(MASS)
+library(effects)
+library(simr)
+library("ggbeeswarm")
+library(pwr)
+library(flextable)
+```
+Acknowledgment: We thank Paul Thompson for statistical advice.  This work was supported by Wellcome Trust Programme Grant no. 082498/Z/07/Z.
+
+## Abstract
+The term 'law of small numbers' was coined in 1971 by Tversky and Kahneman, who noted that even statistically-trained people were poor at judging how variability of mean estimates declined with sample size. This cognitive bias, which we term 'sampling variation blindness' can make it difficult to gain an intuitive appreciation of statistical power. In this study, we consider whether training with simulated datasets could help people overcome this bias. Up to 156 people will be recruited for an online training session with 80 trials, each of which involves viewing a gif that displays beeswarm plots from two samples that doubles in size in six steps, with arrays going from 10 to 320 per group. They are told that the pink group is a control with mean 0 and SD of 1, and the blue group is a comparison group drawn either from the same population as the pink group, or from a population with mean effect size of .3. Their task is to respond either 'blue = pink' or 'blue > pink' as soon as they are confident. They have feedback on each trial, earning points for correct responses and losing them for incorrect responses. Before and after training, subjects are given parallel forms of a 12-item quiz testing knowledge of statistics and probability, including six items testing whether they show sampling variation blindness. We hypothesise that explicit exposure to displays that illustrate how sample size affects mean estimates will counteract sampling variation blindness. Accordingly, we predict that subjects' gains in accuracy during training will be associated with waiting to respond until larger array sizes, and those who show such gains will also show improvement specifically on quiz items relating to sampling variation blindness. 
+
+## Keywords:  statistical reasoning, power, online training, sampling variation blindness
+
+
+## Introduction
+<!--this paragraph and accompanying plot may not survive - not sure it is needed or helpful.  Idea is to just introduce the idea that interpretation of an observed effect can't be done without knowing about distribution and sample size--->
+Compared to laypeople, scientists receive extensive training to help them understand and appropriately address the uncertainty of evidence. Yet, many scientists fall short in their understanding of statistical concepts and experimental design— an underlying failure to appreciate uncertainty. One particular cognitive bias demonstrated by Tversky and Kahneman (1971) is the 'belief in the law of small numbers'. This refers to the tendency to overestimate the reliability of data that come from small samples - which we shall term 'sampling variation blindness'. For instance, as shown in Figure 1, if repeatedly sampling 10 people from a population of men, the mean height of the sample will be far more variable than when repeatedly sampling 100 people. People understand that sample size does not affect the expected mean value, but they tend not to appreciate that it has a large effect on the standard error of the mean. This has implications for understanding of statistical power, and can help explain why so many studies in psychology, and indeed many other scientific disciplines, are underpowered.  
+
+
+
+
+```{r makefig1, include=FALSE, echo=FALSE}
+#This chunk just generates figure 1 - it could probably be made more efficient
+fignumber <- fignumber + 1
+set.seed(2)
+mymean <- 178 #mean  - can vary this - here this is in raw units
+mysd <- 10 
+nsim <- 6
+plotname <- paste0('Fig1.jpg')
+jpeg(plotname, width = 600, height = 350)
+par(mfrow=c(1,2))
+for (i in c(10,100)){
+    thisdat<-rnorm(i*nsim,mymean,mysd)
+    thisset <- rep(1:nsim,i)
+    alldat<-data.frame(cbind(thisdat,thisset))
+    colnames(alldat)<-c('Height','Set')
+    beeswarm(thisdat~thisset,cex=.75,pch=16,col='darkgrey',ylim=c(160,200),xlab='Sample',ylab='Height (cm)',main=paste0('Sample size ',i))
+    mymeans<-aggregate(alldat$Height,by=list(alldat$Set),FUN=mean)
+    for (n in 1:nsim){
+    segments((n-.3),mymeans$x[n],(n+.3),mymeans$x[n],lwd=2)
+    }
+    abline(h=mymean,lty=2)
+}
+
+
+dev.off()
+```
+![Figure 'r fignumber`. Six samples of simulated male height with sample size of 10 or 100. Each point represents height of one male, drawn from population with mean 178 cm and SD 10 cm. The horizontal bar represents the sample mean.](Fig1.jpg)
+
+In 1962, Cohen embarked on a project of explaining the need for statistical power, providing tools to help people compute power and documenting the extent of underpowered studies in social psychology, with the aim of reducing waste in research efforts. However, 27 years later, Sedlmeier and Gigerenzer (Sedlmeier & Gigerenzer, 1989) reported that things had not changed at all, and in 2018 a review concluded that low power remains as a major factor explaining poor replicability of highly cited studies in psychology (Stanley et al., 2018). It would seem that if we are to tackle the problem of wasteful and misleading underpowered studies, we need to find ways to overcome sampling variation blindness. Informally, we have found that exposing students to simulations that allow them to visualize the variation between samples of various sizes appears to counteract over-reliance on small samples to evaluate hypotheses. Here we aim to test formally whether a short session of exposure to simulated data can achieve better understanding, and whether that generalizes beyond the training set-up.  
+
+## Training study
+The current study explores whether exposing people to simulated datasets can help them develop a more intuitive sense of the relationship between variability of estimates and sample size. We developed an online task that mimics the real-world process of gathering and interpreting data in the life and social sciences. In this task, subjects (i.e. scientists) will visually compare the distribution of simulated datasets and assess whether the samples come from a population where there is either a true effect (samples drawn from populations with differing means) or null effect (samples drawn from the same population). Potentially, the size of the effect in the population can be experimentally manipulated, but for the current study we focus on cases where the true effect size is Cohen’s d = .3. This effect size was selected because, from our observations, it is on the one hand fairly typical of the kind of effect size obtained in many areas of psychology and biomedicine, and on the other hand shows a dramatic increase in the confidence with which results can be interpreted as favouring the true or null hypothesis as sample size increases (Figure `r (fignumber+1)`).  
+
+```{r makerNdata,echo=FALSE,include=FALSE}
+fignumber <- fignumber+1
+nsub <- 100 #set to size of largest group 
+numrange<-c(10,20,40,80,160,320)
+nset <- length(numrange)
+sampledat<-data.frame(matrix(NA,nrow=nsub,ncol=nset)) #dummy frame to hold simulated data on nsub cases and nset columns
+#prepare plot
+
+ES<-.3
+plotname <- paste0('bees_ES',ES,'_Nall.jpg')
+jpeg(plotname, width = 550, height = 350)
+
+
+Nsample<-50
+
+for (n in numrange){
+  sampledat <- data.frame(matrix(NA,Nsample*2,3))
+  colnames(sampledat)<-c('N','mean','ES')
+  sampledat$N<-n
+  thisrow<-0
+  for(es in c(0,ES)){
+    for (ns in 1:Nsample){
+      thisrow<-thisrow+1
+      sampledat$mean[thisrow] <- mean(rnorm(n,es,1))
+      sampledat$ES[thisrow]<-es
+    }
+  }
+  
+  if(n==numrange[1]){ alldat<-sampledat}
+  if(n>numrange[1]){alldat<-rbind(alldat,sampledat)} #bolt on next sample size in long format
+}
+
+
+#specify grey colour for control group, and pink for experimental group
+alldat$colour <- 'cadetblue4'
+w <- which(alldat$ES==ES)
+alldat$colour[w]<-'deeppink'
+
+beeswarm(alldat$mean~alldat$N,pwcol=alldat$colour,cex=.7,pch=16,xlab='Sample size',ylab='Observed effect size')
+abline(h=.4,lty=3,lwd=2,col='deeppink')
+abline(h=0,lty=3,lwd=2,col='cadetblue4')
+text(.55,-.75,'Power:',cex=.8)
+for (samplesize in 1:6){
+  mypower <-  power.t.test(n = numrange[samplesize], delta = ES, sd = 1, sig.level = 0.05,
+                           type = c("two.sample"),
+                           alternative = c("one.sided"))
+  text((samplesize),-.75,round(mypower$power,3),cex=.8)
+}
+dev.off()
+```
+![Figure `r fignumber`. Simulated mean scores from samples of varying size, drawn from populations with either a null effect (grey) or a true effect size, Cohen's d, of `r ES` (pink). Power is the probability of obtaining p < .05 on a one-tailed t-test comparing group means for each sample size. ](bees_ES0.3_Nall.jpg)
+
+
+Subjects will initially be presented with underpowered samples: they can either respond immediately (true effect or no effect) or can wait to see the sample size increase. Subjects' subjective uncertainty is indexed by how long they wait to see more data. Ultimately, this paradigm not only measures perceptions of uncertainty; it is designed to help subjects develop an intuitive sense of the uncertainty underlying even convincing-looking mean differences from small sample sizes. 
+
+We will also examine the potential of this task to enhance subjects' statistical reasoning by administering a pre- and post-task quiz testing statistical reasoning using both conventional probability questions and questions that assess sampling variation blindness.  
+
+Specific hypotheses are:  
+Hypothesis 1: In line with early work by Tversky and Kahneman (1971), people will be overconfident about estimates based on small samples.  We predict that we will demonstrate this in the statistics quiz, and also with our new task, showing that typically people make decisions based on samples where the number of data points is too small to give clear evidence.  
+Hypothesis 2: Repeated exposure to a training task with feedback can reduce overconfidence in small samples. Accordingly, we predict that, on average, accuracy will increase throughout the course of the training, and will be associated with waiting longer to view evidence from larger arrays.  
+Hypothesis 3: Learning will generalize beyond the training task. Individual differences in learning on the training task will predict improvement on a statistical quiz, specifically for items that are designed to assess sampling variation blindness.   
+
+# Method
+
+## Subjects
+We will recruit up to 156 subjects via the online research platform Prolific and social media platforms. Individuals will complete the statistics quiz and judgement task online at a time and place of their choosing. The study will be implemented using Gorilla, a cloud-based research tool for behavioural studies. Subjects will be paid £5 for their time; the study will take approximately 30 minutes to complete.  
+
+Our inclusion criteria include: (1) age of 18 years or over, (2) have studied life or social sciences for at least one term at undergraduate (bachelor’s degree) level.  
+
+The maximum sample size of 156 is determined from a power calculation indicating that this is the largest sample required to detect a small effect size across all analyses. We will, however, apply a Bayesian stopping rule at sequential stages in data collection. We will compute Bayes Factors for each analysis where a model is compared against a null denominator model. While Bayes Factors fall between 1/3 or 3 we will continue with data collection. If the Bayes Factors yield evidence in favour of the alternative or null hypothesis for all analyses, we will stop data collection.  
+
+## Design
+Within-task learning will be assessed in a within-subjects design with one factor with two levels (study half; each with 40 trials). To avoid any confound between specific training items and sequence in training, predetermined blocks each of 20 items, A, B, C and D will be presented in counterbalanced order, so that each block is presented equally often in first, second, third or fourth position in the sequence.  
+
+In addition, transfer of training will be assessed using a statistics quiz, with parallel forms administered in a within-subjects pre-post-test design.  
+
+### Statistics quiz
+The statistics quiz (Appendix 1) was designed for this study. It has two parallel forms, each of which contains 12 multiple-choice items with 4 choices each. Six items test knowledge of general probability (P-items) and six test knowledge of how sample size determines accuracy (S-items). The parallel forms are counterbalanced, so half the subjects receive form 1 at pretest and form 2 at post-test, and half receive the opposite order. The main dependent variable is number of items correct for each item type, but the pattern of error responses will also be reported. A previous version of the quiz was piloted with 21 subjects, confirming that the difficulty level is appropriate, avoiding ceiling effects, and that accuracy on items of type S is lower than that for type P. On the basis of pilot testing, some items were reworded for clarity.
+
+
+### Online training
+**Instructions** After the statistics quiz pre-test, subjects are introduced to the game, as follows: NEED TO ADD INSTRUCTIONS HERE  - NB I think we should say something explicit as follows:
+'Please note: this study does NOT involve any deception. The feedback you get will be accurate, even if it is sometimes surprising.'
+
+**Training items**
+Gifs for training items were generated by a purpose-designed R script which is available here (osf ref). For each item, samples of observations were selected in a cumulative fashion, such that, for instance, the sample with 20 observations per group included the sample with 10 observations per group, plus an additional 10 observations.  The array sizes doubled with each step, corresponding to 10, 20, 40, 80, 160 and 320 observations per group.  
+
+All items included a pink sample from a population with mean of zero and SD of one, plus a blue sample. For the blue sample, half the items were drawn from the same population as the pink sample (i.e. null effect) and half were drawn from a population with mean of 0.3 and SD of one (i.e., true effect). Figure 3 illustrates a set of samples shown side by side for a trial with a true effect.  The observations were depicted in a beeswarm plot in either pink or blue. Items for pilot testing showed only the datapoints corresponding to the two datasets, but, as discussed below, for the current experiment, we added the sample mean shown as a horizontal bar.  `r fignumber<-fignumber+1`
+
+![Figure `r fignumber`. Sample item from the training set. The pair of distributions corresponding to each sample size is presented in a gif one at a time sequentially for 2 seconds.](demoitem.jpg)
+
+Items from each figure were animated so that each pair of pink-blue observations at a given array size was shown for 2 s, and then faded out as the next array size appeared.  With this method, response latencies can be directly converted to the array size at the point of response, i.e. responses under 2 s correspond to array size of 10 per group, those under 4 s to an array size of 20 per group, and so on.  
+
+Subjects receive feedback after each response, in the form of a display showing points earned or lost, plus total points so far, and a violin plot showing the full distribution from which the points were drawn `r fignumber <- fignumber + 1` (see Figure fignumber).  
+
+(Figure 4 to be added here - screen with feedback)  
+
+The main dependent measures from the training trials are condition (i.e., whether there was a null or true effect on that trial), coding of each response as correct (1) or incorrect (0), and response latency, which is converted to array size, as described above. For data analysis, array size (10, 20, 40, 80, 160, 320) is converted to array index, ranging from 1 to 6.  In addition, stored with each array is the observed effect size on that trial, and the log likelihood of a true vs null effect obtained from the observed data.  
+
+As shown in the power values in Figure 2, with an effect size (Cohen's d) of .3, participants need to wait for an array of at least 80 per group (index 4) to have a reasonable chance of success (above 50%) for detecting a true effect, and would be well-advised to wait for the largest array (index 6), which would virtually guarantee success. Note that in this study, we use a simple reward system that does not penalise participants for waiting for the larger arrays: the only reason for making a selection earlier would be to minimise the time spent doing the study. 
+
+On the basis of the power analysis, we could just do a simple count of how commonly subjects responded when the array index was less than 4, i.e. when the chances of detecting a true effect were below .5. However, the trial by trial variation allows us to do a rather more sensitive analysis, testing how the evidence available on a specific trial is used.`r fignumber <- fignumber+1`  Figure `r fignumber` illustrates the logic. The figure shows how evidence accumulates over a series of trials. 
+
+```{r readspreadsheet,include=FALSE,echo=FALSE}
+
+
+plotname <- paste0('accumulateLL.jpg')
+jpeg(plotname, width = 650, height = 350)
+demospread <- read.csv('gorilla_spreadsheets/spreadsheet1.csv')
+demospread$trueES <- demospread$ES+1
+demospread$trueES[demospread$trueES==1.3]<-2
+levels(demospread$trueES)<-c(2,1)
+par(mfrow=c(1,2))
+mycols<-c('red','blue')
+#plot obs ES
+EScol1 <- which(colnames(demospread)=='ObsE1')
+  plot(1:nset,demospread[3,EScol1:(EScol1+nset-1)],type='b',pch=LETTERS[1],ylim=c(-1,1),col=mycols[demospread$trueES[3]],xlab='Array index',ylab='Observed Effect size')
+for (n in 8:12){
+    lines(1:nset,demospread[n,EScol1:(EScol1+nset-1)],type='b',pch=LETTERS[(n-6)],col=mycols[demospread$trueES[n]])
+  
+  }
+abline(h=.3,lty=2)
+abline(h=0,lty=2)
+
+#plot LL
+LLcol1 <- which(colnames(demospread)=='LL1')
+
+  plot(1:nset,demospread[3,LLcol1:(LLcol1+nset-1)],type='b',pch=LETTERS[1],ylim=c(-12,12),col=mycols[demospread$trueES[3]],xlab='Array index',ylab='Log Likelihood')
+for (n in 8:12){
+    lines(1:nset,demospread[n,LLcol1:(LLcol1+nset-1)],type='b',pch=LETTERS[(n-6)],col=mycols[demospread$trueES[n]])
+  }
+abline(h=3,lty=2)
+abline(h=-3,lty=2)
+
+
+
+dev.off()
+```
+![Figure `r fignumber`. Changes in observed effect size (left panel) and log likelihood (right panel) as evidence accumulates for 6 trials of the learning task, labelled A to G. Blue denotes trials with true effect size of .3, and red denotes null trials. Array indices 1 to 6 correspond to sample sizes of 10, 20, 40, 80, 160 and 320 per group. ](accumulateLL.jpg)
+Figure `r fignumber` shows the contrast between observed effect sizes, which show more variation at small array indices, and log likelihood, where trials with true and null effects diverge as array index increases.  Considering first the observed effect sizes, it is clear that if a subject relied on this information to make decisions at small array indices, they would make many errors. Two of the True trials, B and C, have negative effect sizes at array indices 1 and 2, and one of the null trials, D, has an effect size greater than .3 in the first array. Log likelihood values are shown in the right-hand panel, with dotted lines denoting cutoff of +/- 3.  A log likelihood of 3 indicates that the True Hypothesis is 20 times more likely to have generated the observed data than the Null Hypothesis, and a log likelihood of -3 indicates that the Null Hypothesis is 20 times more likely than the True Hypothesis. The trials shown in Figure `r fignumber` indicate that a strategy of responding True when log likelihood exceeds 3 and Null when it is less than -3 is not infallible (e.g., trial B has log likelihood below -3 at array index 3, yet comes from a distribution with true effect size of .3). Nevertheless, we can use this approach to compute accuracy levels that would arise from adopting different strategies over all trials, and it is clear that reliance on responding when absolute log likelihood exceeds 3 is a close to optimal strategy for achieving success without needing to wait until the final array. 
+
+Of course, a problem for subjects is that they cannot estimate log likelihood directly from the information they are presented with. It seems more likely that, on the basis of feedback, they may simply learn that they are more likely to be accurate if they wait to see more data, in which case, they might decide to base their judgement on observed effect size, once the array index gets to 5 or above. By observing the pattern of responses, we may be able to determine if a subject adopts a specific strategy, and if so, whether they place reliance on observed effect size, array index, or log likelihood. 
+
+
+
+
+
+## Pilot data  
+`r tabnumber <- tabnumber+1`
+Pilot data were collected with 21 participants recruited via Prolific, using a version of the training task that showed the beeswarm plots for the two groups, but omitted the horizontal line corresponding to the mean. Results are summarised in Appendix 2, Table `r tabnumber`. With 40 items, a score of 25 (62.5%) correct indicates better than chance (binomial probability = .040). Eight of the pilot participants did not perform above chance in the first half; two of these low performers did show a significant improvement in the second half. The highest performing participant achieved 88% correct in the second half.  Overall, the pilot data suggested the task might be too difficult to show learning, and it was accordingly decided to change the displays of distributions to include bars corresponding to the means for the two groups. Informal piloting with colleagues suggested this led to an increase in accuracy.  
+
+At the group level, pairwise t-tests comparing the two halves in terms of (a) percent correct and (b) the array-size at the response showed no reliable differences between the two halves. Scrutiny of individual cases for evidence of response strategies suggested that a few participants had started to wait longer to respond as the session proceeded, but the evidence was not compelling, and others showed the opposite effect, starting to respond earlier over time. In general, high performers were those who waited for large arrays from the outset, rather than those who changed strategy in the course of training.
+
+
+```{r readpilot, include=F, echo=F}
+#We'll use the trials in the pilot
+datadir <- "~/Dropbox/jackieT_project/data_exp_9212-v12/"
+myfile <- 'data_exp_9212-v12_task-udzw.csv'
+dat1 <- read.csv(paste0(datadir,myfile))
+myfile <- 'data_exp_9212-v12_task-qk8g.csv'
+dat2 <- read.csv(paste0(datadir,myfile))
+fullpilotdat<- rbind(dat1,dat2)
+
+dbtry <-0 #set to 0 to read all pilots
+if(dbtry==1){
+   fullpilotdat<-read.csv('gorilla_results/dorothy_feb2021.csv') #to read my test data - but need some tweaks then to make it work, e.g. need to add an ID
+   colnames(fullpilotdat)[87:92]<-c('ES1','ES2','ES3','ES4','ES5','ES6')
+   fullpilotdat$Participant.Public.ID <-'dorothy'
+}
+
+
+#crunch data down to remove all but key columns and rows
+pilotdat <- fullpilotdat[fullpilotdat$Screen.Name=='Stimulus1',]
+allcols<-colnames(pilotdat)
+wantcols<-c('Participant.Public.ID','Spreadsheet.Row','Trial.Number','Reaction.Time',
+            'Response','Correct','ES','EarningCorrect','EarningWrong','meanC1','meanE1',
+            'meanC2','meanE2','meanC3','meanE3','meanC4','meanE4','meanC5','meanE5','meanC6','meanE6',
+            'ES1' ,'ES2','ES3','ES4','ES5','ES6',
+            'LL1' ,'LL2','LL3','LL4','LL5','LL6',
+            't1' ,'t2','t3','t4','t5','t6')
+pilotdat<-pilotdat[,wantcols]
+pilotdat$choice<-as.factor(pilotdat$Response)
+levels(pilotdat$choice)<-c(1,2)
+```
+
+```{r pilotanalyse, include=F, echo=F}
+
+pilotdat$ID <-as.factor(pilotdat$Participant.Public.ID)
+
+
+levels(pilotdat$ID)<-paste0('s',1:length(levels(pilotdat$ID))) #need to add 's' to avoid confusion because these are not created in numeric order
+sublookup <- as.data.frame(cbind(pilotdat$ID,pilotdat$Participant.Public.ID))
+sublookup <- sublookup[!duplicated(sublookup$V1),]
+colnames(sublookup)<-c('Number','code')
+write.csv(sublookup,'sublookup.csv',row.names=F)
+
+pilotdat$Reaction.Time <- as.integer(pilotdat$Reaction.Time)
+pilotdat$Trial.Number<-as.numeric(pilotdat$Trial.Number)
+pilotdat$half <- 1
+pilotdat$half[pilotdat$Trial.Number > 40]<-2
+#convert RT to choice
+mybreaks<-c(0,2000,4000,6000,8000,10000,Inf)
+pilotdat$array <- as.numeric(cut(pilotdat$Reaction.Time,
+                     breaks=mybreaks,
+                     labels=1:6))
+#need to find optimal array - i.e. the one where absLL> LLcutoff
+#LLcutoff can be specified as we choose
+LLcutoff <- 3
+L1 <- which(colnames(pilotdat)=='LL1')
+pilotdat$optarray<-NA
+for (j in 1:nrow(pilotdat)){
+  optimal <- which(abs(pilotdat[j,L1:(L1+5)])>LLcutoff)
+  ifelse(length(optimal)==0,optimal <-6,optimal<-optimal[1])
+  pilotdat$optarray[j]<-optimal
+  
+}
+pilotdat$arraydiff<-pilotdat$array-pilotdat$optarray
+#just check this worked!
+aggregate(pilotdat$Reaction.Time ,by= list(pilotdat$array),FUN=mean)
+
+#Now we assemble the other relevant information for this trial
+
+startmeans <- which(colnames(pilotdat)=='meanC1')
+startES <-which(colnames(pilotdat)=='ES1')
+startLL <-which(colnames(pilotdat)=='LL1')
+startt <-which(colnames(pilotdat)=='t1')
+for (i in 1:nrow(pilotdat)){
+  mynum<-pilotdat$array[i]
+  pilotdat$Cmean[i] <- pilotdat[i,(startmeans-2+2*mynum)]
+  pilotdat$Emean[i] <- pilotdat[i,(startmeans-1+2*mynum)]
+  pilotdat$ESobs[i] <- pilotdat[i,(startES-1+mynum)]
+   pilotdat$LL[i] <- pilotdat[i,(startLL-1+mynum)]
+   if(pilotdat$LL[i]==Inf){pilotdat$LL[i] <-500} #how to handle infinity values? Here put to 500
+    pilotdat$t[i] <- pilotdat[i,(startt-1+mynum)]
+}
+#code ES suitable to use it as colour
+pilotdat$EScol <- 1
+pilotdat$EScol[pilotdat$ES==0] <-4.5
+
+myag <- aggregate(pilotdat$Correct,b=list(pilotdat$ES,pilotdat$Correct,pilotdat$ID),FUN=length)
+colnames(myag)<-c('TrueEff','Correct','ID','N')
+
+myag2 <- aggregate(pilotdat$array,b=list(pilotdat$ES,pilotdat$Correct,pilotdat$ID),FUN=mean)
+colnames(myag2)<-c('TrueEff','Correct','ID','array')
+myag3 <- aggregate(pilotdat$LL,b=list(pilotdat$ES,pilotdat$Correct,pilotdat$ID),FUN=mean)
+colnames(myag3)<-c('TrueEff','Correct','ID','LL')
+myag4 <- aggregate(pilotdat$ESobs,b=list(pilotdat$ES,pilotdat$Correct,pilotdat$ID),FUN=mean)
+colnames(myag4)<-c('TrueEff','Correct','ID','ESobs')
+
+myag<-cbind(myag,myag2[,4],myag3[,4],myag4[,4])
+colnames(myag)[5:7]<-c('array','LL','ESObs')
+
+nsub<-length(levels(pilotdat$ID))
+subs<-unique(pilotdat$ID)
+
+myag$p.corr <- NA
+#work out p.correct and write against first row for subjecct
+#NB some may make no errors in one category so can't assume 4 rows in myag for all
+for (i in 1:nsub){
+  w<-which(myag$ID==subs[i])
+  ww<-intersect(w,which(myag$Correct==1))
+  myag$p.corr[w[1]]<-sum(myag$N[ww])/sum(myag$N[w])
+}
+
+nitem<-nrow(pilotdat)/nsub
+subsummary<-data.frame(matrix(NA,nrow=nsub,ncol=4))
+subsummary$id<-1:nsub
+
+
+
+pilotdat$corrpch <- 15 #pch code for correct/incorrect are blob and x
+pilotdat$corrpch[pilotdat$Correct==0]<-4
+
+
+pdfname <- 'subplots.pdf'
+if(dbtry==1){pdfname<-'dbtry.pdf'}
+pdf(pdfname,width=6, height=6)
+par(mfrow=c(3,3))
+mypcorr<-vector()
+for (n in 1:nsub){
+  mypcorr[n]<-myag$p.corr[myag$ID==subs[n]][1]
+}
+
+for (n in 1:nsub){ #order them by accuracy
+  
+subdat<-pilotdat[pilotdat$ID==subs[n],]
+plot(subdat$Trial.Number,subdat$LL,col=(subdat$EScol),pch=subdat$corrpch,main=subs[n],type='b',ylim=c(-20,20))
+abline(h=0,lty=2)
+
+plot(subdat$Trial.Number,subdat$ESobs,col=(subdat$EScol),pch=subdat$corrpch,main=subs[n],type='b',ylim=c(-1,1))
+abline(h=0,lty=2)
+text(20,.8,paste0('p.correct: ',round(mypcorr[n],3)),cex=.8)
+
+tt<-t.test(subdat$array[1:20], mu = 4, alternative = "greater")
+plot(subdat$Trial.Number,subdat$array,col=(subdat$EScol),pch=subdat$corrpch,main=subs[n],type='b',ylim=c(1,6))
+text(15,1.5,paste0('p half1 index> 4: ',round(tt$p.value,3)),cex=.8)
+
+#Is E or ES a better predictor of accuracy?
+#Need to divide by trueES - not getting v far with this
+ESag <- aggregate(subdat$ESobs, by = list(subdat$ES,subdat$Correct),FUN=mean)
+Eag <- aggregate(subdat$Emean, by = list(subdat$ES,subdat$Correct),FUN=mean)
+}
+dev.off()
+
+
+
+
+```
+
+```{r byhalf, include=F, echo=F}
+tdf <- data.frame(matrix(NA,nrow=nsub,ncol=21))
+colnames(tdf)<-c('ID','pcorr','meanarray1','meanarray2','parray.half','meanarraydiff1','meanarraydiff2','parraydiff.half','meanabsLL1','meanabsLL2','pabsLL.half','meanpcorr1',
+                 'meanpcorr2','pcorr.half','pESresp0.half',
+                 'pESresp1.half','pLLresp0.half','pLLresp1.half') #last 3 are just pvalues for 1st vs 2nd half
+tdf$ID <-subs[1:nsub]
+
+for (n in 1:nsub){
+  print(paste('subject ',subs[n],': correct ',mypcorr[n]))
+  subdat<-pilotdat[pilotdat$ID==subs[n],]
+ t1<- t.test(subdat$array~subdat$half,alternative='less')
+  t2<- t.test(subdat$arraydiff~subdat$half) #needs to be 2tailed
+ t3<- t.test(abs(subdat$LL)~subdat$half,alternative='less')
+  t4<- t.test(subdat$Correct~subdat$half,alternative='less')
+  t5 <- t.test(subdat$ESobs[subdat$Response=='Blue=Pink']~subdat$half[subdat$Response=='Blue=Pink'])
+  t6 <- t.test(subdat$ESobs[subdat$Response=='Blue>Pink']~subdat$half[subdat$Response=='Blue>Pink'])
+  t7 <- t.test(subdat$LL[subdat$Response=='Blue=Pink']~subdat$half[subdat$Response=='Blue=Pink'])
+  t8 <- t.test(subdat$LL[subdat$Response=='Blue>Pink']~subdat$half[subdat$Response=='Blue>Pink'])
+  t9 <- t.test(subdat$Emean~subdat$half)
+
+ tdf$pcorr[n]<-round(mypcorr[n],3)
+ tdf$meanarray1[n] <-round(t1$estimate[1],2)
+  tdf$meanarray2[n] <-round(t1$estimate[2],2)
+ tdf$parray.half[n] <-round(t1$p.value,3)
+  tdf$meanarraydiff1[n] <-round(t2$estimate[1],2)
+  tdf$meanarraydiff2[n] <-round(t2$estimate[2],2)
+ tdf$parraydiff.half[n] <-round(t2$p.value,3)
+ 
+  tdf$meanabsLL1[n] <-round(t3$estimate[1],2)
+  tdf$meanabsLL2[n] <-round(t3$estimate[2],2)
+  tdf$pabsLL.half[n] <-round(t3$p.value,3)
+    tdf$meanpcorr1[n] <-round(t4$estimate[1],2)
+  tdf$meanpcorr2[n] <-round(t4$estimate[2],2)
+  tdf$pcorr.half[n] <-round(t4$p.value,3)
+   tdf$pESresp0.half[n] <-round(t5$p.value,3)
+    tdf$pESresp1.half[n]<-round(t7$p.value,3)
+    tdf$pLLresp0.half[n] <-round(t6$p.value,3)
+    tdf$pLLresp1.half[n]<-round(t8$p.value,3)
+    
+    tdf$meanE1[n] <-round(t9$estimate[1],2)
+  tdf$meanE2[n] <-round(t9$estimate[2],2) 
+  tdf$pE.half[n] <-round(t9$p.value,3)
+    
+    
+}
+#with this assignment of rewards, perfect correlation between pcorr and reward
+tdf$reward1 <- (10*tdf$meanpcorr1*40)-(10*(1-tdf$meanpcorr1)*40)
+tdf$reward2 <- (10*tdf$meanpcorr2*40)-(10*(1-tdf$meanpcorr2)*40)
+plot(tdf$reward1,tdf$reward2)
+abline(h=0)
+abline(v=0)
+
+c1<-round(cor(tdf$reward1,tdf$meanarraydiff1),3)
+c2<-round(cor(tdf$reward2,tdf$meanarraydiff2),3)
+par(mfrow=c(1,2))
+plot(tdf$reward1,tdf$meanarraydiff1)
+text(100,-2,paste0('r = ',c1))
+plot(tdf$reward2,tdf$meanarraydiff2)
+text(100,-2,paste0('r = ',c2))
+par(mfrow=c(1,1))
+
+
+tdf<-tdf[order(tdf$pcorr),]
+
+if(nrow(tdf)>1){
+write.csv(tdf,'tsummary.csv',row.names =F)
+
+t.test(tdf$meanpcorr1,tdf$meanpcorr2,pairwise=T)
+t.test(tdf$meanabsLL1,tdf$meanabsLL2,pairwise=T)
+t.test(tdf$meanarray1,tdf$meanarray2,pairwise=T)
+t.test(tdf$meanarraydiff1,tdf$meanarraydiff2,pairwise=T)
+
+t.test(tdf$meanarraydiff1,mu=0)
+t.test(tdf$meanarraydiff2,mu=0)
+}
+
+#how reliable is the meanarraydiff measure?
+rr = cor(tdf$meanarraydiff1,tdf$meanarraydiff2)
+plot(tdf$meanarraydiff1,tdf$meanarraydiff2,main=paste0('r = ',round(rr,3)))
+
+rx = cor(tdf$meanarray1,tdf$meanarray2)
+plot(tdf$meanarray1,tdf$meanarray2,main=paste0('rx = ',round(rr,3)))
+
+plot(tdf$meanarray1,tdf$meanarraydiff1) #virtually the same, but not 100%!
+plot(tdf$meanarray2,tdf$meanarraydiff2) #virtually the same, but not 100%!
+```
+
+```{r chanceperformance, include=F, echo=F}
+
+for (n in 41:50){
+  pp <- 1-pbinom(n, 80, .5, lower.tail = TRUE, log.p = FALSE)
+  print(pp)
+  
+}
+
+#47/80 is above chance at .05
+47/80
+#This is .5875 correct
+
+
+#binomial probs for 2nd half only
+for (n in 21:29){
+  pp <- 1-pbinom(n, 40, .5, lower.tail = TRUE, log.p = FALSE)
+  print(pp)
+  
+}
+
+
+#25/40 is above chance at .05
+#This is .625 correct
+```
+
+
+
+
+
+
+
+
+
+
+
+```{r readquest, include=F, echo=FALSE}
+# read in pre and post data
+datadir <- "~/Dropbox/jackieT_project/data_exp_9212-v12/"
+pre_data_A <- read.csv(paste0(datadir,"data_exp_9212-v12_questionnaire-16y2.csv"), header= TRUE,  na.strings = "NA")
+pre_data_B <- read.csv(paste0(datadir,"data_exp_9212-v12_questionnaire-v85y.csv"), header= TRUE,  na.strings = "NA")
+post_data_A <- read.csv(paste0(datadir,"data_exp_9212-v12_questionnaire-wtux.csv"), header= TRUE,  na.strings = "NA")
+post_data_B <- read.csv(paste0(datadir,"data_exp_9212-v12_questionnaire-eg9n.csv"), header= TRUE,  na.strings = "NA")
+# create new variables coding time point
+pre_data_A$time <- 1
+pre_data_B$time <- 1
+post_data_A$time <- 2
+post_data_B$time <- 2
+# create a new variable to code list
+pre_data_A$list <- "A"
+pre_data_B$list <- "B"
+post_data_A$list <- "A"
+post_data_B$list <- "B"
+# merge two data frames
+qdata <- bind_rows(pre_data_A, post_data_A, pre_data_B, post_data_B)
+# create factor variables
+qdata$subject <- as.factor(qdata$Participant.Private.ID)
+qdata$item <- as.factor(qdata$Question.Key)
+qdata$time <- as.factor(qdata$time)
+  levels(qdata$time) <- c("Pre", "Post")
+```
+
+Code the correct answers.
+
+```{r codeQs, include=FALSE,echo=FALSE}
+# select only numerical responses
+qdata <- qdata[qdata$Response == "1" |
+                                         qdata$Response == "2" |
+                                         qdata$Response == "3" |
+                                         qdata$Response == "4",]
+# code question accuracy
+qdata  <- 
+  qdata %>%
+    mutate(accuracy = ifelse(Question.Key == "1a-quantised" & Response =="1", 1, 
+                      ifelse(Question.Key == "1b-quantised" & Response =="1", 1,
+                      ifelse(Question.Key == "2a-quantised" & Response =="1", 1,
+                      ifelse(Question.Key == "2b-quantised" & Response =="1", 1,
+                      ifelse(Question.Key == "3a-quantised" & Response =="4", 1,
+                      ifelse(Question.Key == "3b-quantised" & Response =="1", 1,
+                      ifelse(Question.Key == "4a-quantised" & Response =="4", 1,
+                      ifelse(Question.Key == "4b-quantised" & Response =="4", 1,
+                      ifelse(Question.Key == "5a-quantised" & Response =="4", 1,
+                      ifelse(Question.Key == "5b-quantised" & Response =="1", 1,        
+                      ifelse(Question.Key == "6a-quantised" & Response =="1", 1,
+                      ifelse(Question.Key == "6b-quantised" & Response =="2", 1,      
+                      ifelse(Question.Key == "7a-quantised" & Response =="4", 1,      
+                      ifelse(Question.Key == "7b-quantised" & Response =="4", 1,     
+                      ifelse(Question.Key == "8a-quantised" & Response =="3", 1,      
+                      ifelse(Question.Key == "8b-quantised" & Response =="3", 1,    
+                      ifelse(Question.Key == "9a-quantised" & Response =="3", 1,    
+                      ifelse(Question.Key == "9b-quantised" & Response =="3", 1,   
+                      ifelse(Question.Key == "10a-quantised" & Response =="3", 1,      
+                      ifelse(Question.Key == "10b-quantised" & Response =="3", 1,       
+                      ifelse(Question.Key == "11a-quantised" & Response =="1", 1,      
+                      ifelse(Question.Key == "11b-quantised" & Response =="1", 1,      
+                      ifelse(Question.Key == "12a-quantised" & Response =="2", 1, 
+                      ifelse(Question.Key == "12b-quantised" & Response =="1", 1, 0)))))))))))))))))))))))))
+# code question type
+qdata  <- 
+  qdata %>%
+    mutate(Prob = ifelse(Question.Key == "2a-quantised" | Question.Key == "2b-quantised" | 
+                         Question.Key == "4a-quantised" | Question.Key == "4b-quantised" | 
+                         Question.Key == "7a-quantised" | Question.Key == "7b-quantised" | 
+                         Question.Key == "8a-quantised" | Question.Key == "8b-quantised" | 
+                         Question.Key == "9a-quantised" | Question.Key == "9b-quantised" | 
+                         Question.Key == "11a-quantised" | Question.Key == "11b-quantised",
+                         "SampleSize", "Probability"))
+qdata$Prob <- as.factor(qdata$Prob)
+```
+
+```{r mapsubcodes,include=FALSE,echo=FALSE}
+sublookup <- read.csv("sublookup.csv") #these are codes from training session - need to be matched to same people
+qdata$subID <-NA
+for (i in 1:nrow(sublookup)){
+  w<-which(qdata$Participant.Public.ID ==sublookup$code[i] )
+  qdata$subID[w] <- paste0('s',sublookup$Number[i])
+}
+```
+
+
+```{r getqmeans,include=FALSE,echo=FALSE}
+qag <- aggregate(qdata$accuracy, by=list(qdata$time,qdata$Prob,qdata$subID),FUN=mean)
+colnames(qag)<-c('prepost','type','ID','qscore')
+tdf$PreProbQ <-NA
+tdf$PostProbQ <-NA
+tdf$PreNumQ <-NA
+tdf$PostNumQ <-NA
+startcol<-which(colnames(tdf)=='PreProbQ')
+for (i in 1:nrow(tdf)){
+  w<-which(qag$ID==tdf$ID[i])
+  tdf[i,startcol:(startcol+3)]<-qag$qscore[w]
+ 
+}
+t.test(tdf$PreProbQ,tdf$PostProbQ,paired=T)
+t.test(tdf$PreNumQ,tdf$PostNumQ,paired=T)
+
+tdf$DiffProbQ <- tdf$PostProbQ-tdf$PreProbQ
+tdf$DiffNumQ <- tdf$PostNumQ-tdf$PreNumQ
+tdf$Diffpcorr <- tdf$meanpcorr2-tdf$meanpcorr1
+tdf$Diffarray <- tdf$meanarray2-tdf$meanarray1
+tdf$Diffarraydiff <- tdf$meanarraydiff2-tdf$meanarraydiff1  #difference from optimal array
+
+
+mycol <-which(colnames(tdf)=='DiffProbQ')
+cor(tdf[,mycol:(mycol+4)])
+
+plot(tdf$Diffpcorr,tdf$DiffNumQ)
+plot(tdf$Diffarray,tdf$DiffNumQ)
+plot(tdf$Diffpcorr,tdf$DiffProbQ)
+plot(tdf$Diffarray,tdf$DiffProbQ)
+
+plot(tdf$Diffarray,tdf$Diffpcorr)
+
+plot(tdf$meanarray2,tdf$meanpcorr2)
+
+plot(tdf$meanarray1,tdf$meanpcorr1)
+
+plot(tdf$pcorr,tdf$PreNumQ)
+plot(tdf$pcorr,tdf$PostNumQ)
+plot(tdf$pcorr,tdf$PreProbQ)
+plot(tdf$pcorr,tdf$PostProbQ)
+
+beestring<-c(tdf$PreProbQ,tdf$PostProbQ,tdf$PreNumQ,tdf$PostNumQ)
+codestring<-c(rep(1,nsub),rep(2,nsub),rep(3,nsub),rep(4,nsub))
+beeswarm(beestring~codestring,pwcol=codestring)
+cor(tdf$PreProbQ,tdf$PostProbQ)
+plot(tdf$PreProbQ,tdf$PostProbQ)
+cor(tdf$PreNumQ,tdf$PostNumQ)
+plot(tdf$PreNumQ,tdf$PostNumQ)
+```
+Question is whether Post score on Number questions is predicted by pcorr on training, or array in training, after allowing for Pre score.
+
+```{r predictQgain,include=FALSE,echo=FALSE}
+mod_predictNum <- lm(PostNumQ ~ PreNumQ+pcorr,data=tdf)
+summary(mod_predictNum)
+mod_predictProb <- lm(PostProbQ ~ PreProbQ+pcorr,data=tdf)
+summary(mod_predictProb)
+```
+check answers to qs
+
+```{r qdatainspect,include=FALSE,echo=FALSE}
+qdata$item<-droplevels(qdata$item)
+qt <- table(qdata$item,qdata$Response)
+qdf <- as.data.frame(unclass(qt))
+qtype <- table(qdata$item,qdata$Prob)
+qdf<-cbind(qdf,unclass(qtype))
+qdf$Probability[qdf$Probability>0]<-1
+qdf<-qdf[,1:ncol(qdf)-1]
+orderq <- c(7,9,11,13,15,17,19,21,23,1,3,5,
+            8,10,12,14,16,18,20,22,24,2,4,6)
+qdf <- qdf[orderq,]
+
+qdf$Answer <- c(1,1,4,4,4,1,4,3,3,3,1,2,2,1,1,4,1,2,4,3,3,3,1,1)
+colnames(qdf)[1:5]<-c('R1','R2','R3','R4','Probquest')
+qdf$perc.c<-NA
+for (i in 1:nrow(qdf)){
+  qdf$perc.c[i] <- qdf[i,qdf$Answer[i]]/21
+}
+
+write.csv(qdf,'questresults.csv')
+
+
+
+```
+
+
+```{r optimalLL,include=FALSE,echo=FALSE}
+#strategies all based on LL, but we vary the abs size
+myLLseq <-seq(.25,5,.25) #seq of LL to evaluate
+LLcolstart<- which(colnames(pilotdat)=='LL1')
+for (myLL in myLLseq){
+#add new columns to hold results - these will be renamed later
+pilotdat$x <- NA #initialise col to hold arrayindex
+pilotdat$x2 <- 0 #initialise col to hold accuracy -default is error
+for (n in 1:nrow(pilotdat)){
+  LLbit <- pilotdat[n,LLcolstart:(LLcolstart+length(numrange))]
+  wx<-which(abs(LLbit)>myLL)
+  if(length(wx)==0) {wx <-length(numrange)} #LL not exceeded so take last value
+  wx<-wx[1]
+  pilotdat$x[n]<-wx #first array to exceed absLL
+  resp<-0 # default response is null
+  if (LLbit[wx]>0){resp <-1 } #LL is positive, so respond True
+  trueES<-0
+  if (pilotdat$ES[n]>0) {trueES <-1}
+  if(trueES==resp){pilotdat$x2[n]<- 1} #correct response if ES and response match
+  
+}
+thiscol<-ncol(pilotdat)-1 #index for first new added column
+
+colnames(pilotdat)[thiscol]<- paste0('arrayi_',myLL)
+colnames(pilotdat)[(thiscol+1)]<- paste0('acc_',myLL)
+}
+
+ais <- colMeans(pilotdat[seq(53,92,2)])
+aicorrs <- colMeans(pilotdat[seq(54,92,2)])
+
+plot(myLLseq,ais,ylab='array index')
+plot(myLLseq,aicorrs,ylab='proportion correct')
+```
+
+These participants also completed the probability quizzes that preceded and followed the training session. If changes during training were meaningful, we might expect to see more improvement on S-items (those testing sampling variance blindness) for those participants who had shown signs of waiting for larger arrays as the session proceeded. There was no indication that this was the case (correlation between the difference in array from Half1 to Half2, and the difference in Quiz scores for Pre vs Posttest was .388 for P-questions and .083 for S-questions; neither correlation was different from zero). The correlation between improvement in proportion correct on training and the pre-post quiz difference was marginally statistically significant for S-questions (r = .432, CI 0 to .728) and not for P-questions (-.337), which is consistent with the idea that those who improve on training also show improvements on S-items. The small sample size and the marginal nature of the result mean that the finding is far from compelling, but this result justifies further study to see if this association replicates in a larger sample. 
+
+## Analysis plan
+### Exclusionary criteria
+If subjects do not complete the post-task quiz they will still be included in the main analysis of learning effects, but replacement subjects will be recruited to ensure a sufficient sample size for the pre-post training analysis of the quiz results.  
+In our pilot data, no subjects scored above 80%, but it is anticipated that the updated version of training (showing the mean bar) will be easier, and it is possible that some will obtain scores that are so high that no learning effect will be detectable. If there are subjects who score above 90% in the first half of training, they will be removed from the main analysis and treated separately. It is predicted that these would be people with a good prior understanding of sample size effects, and accordingly should be superior to other subjects on the S-items at both pre-test and post-test.  
+
+## Data analysis
+Hypothesis 1: Responses will reflect overconfidence in small samples.
+This hypothesis will be tested using data both from the Pretest statistical quiz and the training task. On the pretest statistical quiz, it is expected that the majority of subjects will fail to select the correct response on items that assess awareness of the importance of sample size, and when they do so, will either respond that sample size is not important, or, when asked to select an optimal sample size, will select one that is smaller than required.  
+In the training task, we predict that responses in the first half of training will tend to be non-optimal, made when the array size is small enough to make an error likely. The array index at which a response is made for all subjects will be compared with a value of 5, using a directional one-sample t-tets, with the prediction that most participants will make responses at earlier array indices than this.
+
+Hypothesis 2: Overconfidence in small samples will decline with training
+This prediction will be tested by assessing whether array index at the point of selection is higher for the second than the first half of the training session, using a one-tailed test. In addition, it is anticipated that within each session half there will be a positive correlation between accuracy and array index, indicating that subjects are able to use the additional information in larger sample sizes to guide their responding.
+
+Hypothesis 3: Generalisation of learning
+Here the prediction is that individual differences in learning on the training task will predict improvement on the statistical quiz, specifically for items that are designed to assess sampling variability blindness. 
+
+<!---I'm still struggling here with optimal analysis.--->
+A linear mixed model will be used, whereby each quiz item is coded as P or S, and each subject's response coded as 0 or 1. The dependent measure is the response to post-test quiz items, and predictors are response on pre-test items, and percentage correct on the first and second halves of training. It is predicted that, for S-items, there will be an improvement in scores from pre-test to post-test.
+
+Further exploratory analysis will be used to determine whether individual differences in training effects are related to improvement in performance on S-items. In addition, the response profiles on the training task will be scrutinised for those subjects who do show learning, with the aim of determining whether they are sensitive to log likelihood, or whether they simply learn a strategy of waiting for a larger array size.   
+
+## Interpretation of pattern of results
+We can refer to the pattern of results on the training task and the quiz as N, I or Y, indicating null result, inconclusive, or prediction confirmed. 
+The first possible pattern is NN: neither the training task nor the quiz shows any improvement in sampling variation blindness. If this pattern were observed, we would consider modifying the task. There are various ways one could do this: by changing the visual display, or by changing the reward schedule. It would, of course, also be possible to extend the training, although this might require having more than one session. In effect, this study could then act as a baseline against which to evaluate other approaches to training.  
+If results on one or both measures are inconclusive, this could reflect insufficient training/quiz items, and or sample heterogeneity. If the sample is heterogeneous, with a subset responding to the training, we would expect to see a relationship between gains on training and gains on the S-items on the quiz. We would also aim in future work to identify characteristics of those who improved with training. 
+We may find that we find significant improvements with training, but null or inconclusive results on the quiz, indicating a lack of generalisation. If so, we will explore individual S-items in the quiz, to see whether there is any indication of improvement on a subset of items, and whether they have particular characteristics. We may, for instance, see evidence of selective improvement on items assessing understanding of the relationship between sample size and statistical power.
+The converse pattern might be obtained, with improvement on the s-items of the quiz but null or inconclusive findings on the training task. This might justify a further study which uses two training sessions, making it possible to look for gains due to training that occur after a delay.  
+Finally, if we are able to show an improvement with this short training session, with generalisation to S-items on the quiz, then it would still be of interest to do further studies with modified forms of presentation, to identify the optimum conditions for training. Potentially, this kind of training could readily be incorporated into courses on research methods, and evaluated for its impact on subsequent experimental practices of the trainees.
+
+# Appendix 1
+## Estimation Quiz
+
+Subjects receive version A or B (counterbalanced) at pre-test and post-test. P-items and S-items are presented intermixed: P-items test understanding of probability, S-items test sampling variability blindness. Items with the same number in version A and B are intended to be analogous but use different contexts. The brief descriptor accompanying each item below is not presented as part of the quiz. An asterisk denotes the correct response.  For S-items, x denotes the anticipated response(s) for those susceptible to sampling variability blindness.
+
+<!---modified from Probqs_edit_from_feedback.rmd--->
+### Initial queries (session 1 only)
+
+i. How confident are you in interpreting the results of a t-test?  
+a) Very confident  
+b) Fairly confident  
+c) Not confident  
+d) Very little idea about what a t-test is  
+  
+ii. How familiar are you with the idea of statistical power?  
+a) Very familiar  
+b) Reasonably familiar  
+c) Somewhat familiar  
+d) Very little idea about what statistical power is  
+   
+### P-items
+#### P1A (tests elementary knowledge of normal distribution)
+You take a sample of 100 men from the general population and measure their height.  The mean is 70 inches and the standard deviation is 4 inches. What percentage of the sample will be expected to be more than 74 inches tall?  
+a) *16%  
+b) 2%  
+c) 50%  
+d) 30%  
+ 
+#### P1B  
+A reading test is standardized on 7-year-old children in Scotland. The mean reading age is 84 months with standard deviation of 6 months.  What percentage of 7-year-olds is expected to have a reading age of 72 months or less?  
+a) 16%  
+b) *2%  
+c) 50%  
+d) 30%  
+
+```{r q1a, include=F,echo=F}
+#All quiz items simulated to check accuracy
+#NB for accurate estimate we use N = 10000
+mydata <- rnorm(10000,70,4)
+w<-which(mydata>74)
+ans1<-100*length(w)/10000
+print(paste0("The answer is ",ans1))
+
+mydata <- rnorm(10000,84,6)
+w<-which(mydata<72)
+ans2<-100*length(w)/10000
+print(paste0("The answer is ",ans2))
+
+```
+#### P2A (Basic probability). 
+A container is full of spare change containing 100 10p coins, 100 5p coins, 200 2p coins, and 100 1p coins. The coins are randomly mixed. You will get a prize every time you pick a 5p coin. If you make 100 selections, replacing the selected coin and shaking the jar each time, how often will you expect to pick a 5p coin?  
+
+a) 1 in two occasions  
+b) 1 in three occasions  
+c) 1 in four occasions  
+d) *1 in five occasions  
+ 
+#### P2B 
+You are choosing marbles from an opaque jar containing 100 red marbles, 100 blue marbles, and 200 white marbles, randomly mixed. You will get a prize every time you pick a marble that is not white. If you make 100 selections, replacing the selected marble and shaking the jar each time, how often will you expect to get a prize?  
+
+a) *1 in two occasions
+b) 1 in three occasions
+c) 1 in four occasions
+d) 1 in five occasions
+ 
+
+```{r P2B,include=F,echo=F}
+myselect<-vector()
+mymarbles<-c(rep(1,100),rep(2,100),rep(3,200))
+for (i in 1:100){
+  myselect<-c(myselect,sample(mymarbles,1))
+}
+myt<-table(myselect)
+names(myt)<-c('Red','Blue','White')
+myt
+myt/500
+ 
+```
+
+#### P3A (Classic probability including averaging probabilities)
+In the city of Ficticium, there is generally a 10% chance it will rain on any given day in the first half of September, a 50% chance it will rain any given day in the second half of September,  a 25% chance it will rain on any given day in November, and a 30% chance it will rain on any given day in December. (September, November and December are all 30 days long). Which month is likely to have more rainy days?  
+a) September  
+b)  November  
+c)  December  
+d) *September and December are equally likely  
+
+```{r P3A, include=F, echo=F}
+myrain<-data.frame(matrix(NA,nrow=1000,ncol=3))
+names(myrain)<-c('Sep','Nov','Dec')
+for (i in 1:10000){
+sep1<-rbinom(1,15,.1)
+sep2<-rbinom(1,15,.5)
+nov<-rbinom(1,30,.25)
+dec<-rbinom(1,30,.3)
+myrain[i,1]<-sep1+sep2
+myrain[i,2]<-nov
+myrain[i,3]<-dec
+}
+print ('Mean rainy days')
+print(paste('September ',mean(myrain$Sep)))
+print(paste('November ',mean(myrain$Nov)))
+print(paste('December ',mean(myrain$Dec)))
+```
+
+#### P3B. 
+After reviewing sales of coffee, the barista noted there is generally a 50% chance of selling an espresso on any day in the first week of the month. There is a 100% chance of selling an espresso on any day in the second week of the month, and a 75% chance of selling an espresso on any day in the third and fourth week of the month. In what two-week period in the month is there most sales of espresso?  
+ 
+a) *First two weeks and second two weeks are equally likely   
+b) First two weeks  
+c) Second two weeks  
+d) First and fourth weeks  
+
+#### P4A. (basic probability)
+At a raffle, you can pick from a green bowl with 2 winning raffle tickets and 8 worthless tickets, a yellow bowl with 10 winning tickets and 90 worthless tickets, or a red bowl with 15 winning tickets and 85 worthless tickets.  Which bowl gives you a better chance of winning?  
+a) *Green  
+b) Yellow  
+c) Red  
+d) Green and Yellow give the same chance  
+ 
+```{r P4A, include=F,echo=F}
+greencount<-yellowcount<-redcount<-0
+for (i in 1:1000){
+green<-c(rep(1,2),rep(0,8))
+yellow<-c(rep(1,10),rep(0,90))
+red<-c(rep(1,15),rep(0,85))
+greencount<-greencount+sample(green,1)
+yellowcount<-yellowcount+sample(yellow,1)
+redcount<-redcount+sample(red,1)
+}
+print(paste('Green p = ',greencount/1000))
+print(paste('Yellow p = ',yellowcount/1000))
+print(paste('Red p = ',redcount/1000))
+```
+
+#### P4B. 
+You find three bags of jelly beans. There is a small bag with 5 red jelly beans and 20 other coloured beans. There is a  medium bag with 12 red jelly beans and 38 other coloured beans. Finally, there is a large bag with 18 red jelly beans and 82 other colour beans. As red jelly beans are your favourite flavour, which size bag gives you the highest percentage of red beans?   
+
+a) Small  
+b) *Medium  
+c) Large  
+d) They are all the same  
+
+#### P5A. (conjoint probability)
+There are 100 girls in a class, 20% have red hair and 40% are taller than 60 inches.  How many red-headed girls would you expect who are taller than 60 inches?  
+a) 60  
+b) 16  
+c) *8  
+d) 5  
+
+```{r P5A,echo=F,include=F}
+# This gives a different answer on each run, but converges on 8 (.4*.2)
+girls <- c(rep(1,20),rep(0,80))
+tallgirls<-sample(girls,40) #random selection from girls
+tallred <- sum(tallgirls)
+print(tallred)
+```
+
+#### P5B
+In box of 100 CDs, 40% of the disks are have been recorded by pop artists and 60% of disks feature female vocalists. Assuming that the female vocalists are equally likely to be pop artists or not, how many CDs have been recorded by female pop vocalists?   
+
+a) 12 CDs  
+b) 18 CDs  
+c) *24 CDs  
+d) 30 CDs  
+ 
+#### P6A (classic probability - multiplication)
+10 percent of the children in a school have red hair. Their names are put in a hat and you are asked to pull out two of them. What is the probability that you will select two red-headed children?  
+
+a)  20 per cent  
+b) *1 per cent  
+c)  19 per cent  
+d)  close to zero   
+
+```{r q12a, include=F, echo=F}
+print(paste(100*.1*.1,' per cent'))
+```
+
+#### P6B. 
+20 percent of the 500 children in a school have a name beginning with J. Their names are put in a hat and you are asked to pull out two of them. What is the probability that you will select  two children whose name begins with J?  
+
+a) *4 per cent  
+b)  1 per cent  
+c)  40 per cent  
+d)  20 per cent   
+
+```{r P6B,include=F,echo=F}
+print(paste(100*.2*.2,' per cent'))
+```
+
+### S-items 
+#### S1A (frequency of extreme scores in small samples)
+
+History courses in the UK are rated on a Student Survey, which has an overall satisfaction rating on a score of 1 (low) to 5 (high). The mean rating overall is 3.5, with SD of 1. Those who have an average rating above 4.0 are given a gold star in league tables. There are 60 courses altogether, which can be divided according to size into small (less than 10 students), medium (between 10-50 students) and large (50+ students). If there are no real differences in student satisfaction, will the number of students affect the likelihood of getting a gold star?  
+
+a) Yes. Large courses have a better chance of getting a gold star  
+b) Yes. Medium-sized courses have a better chance of getting a gold star  
+c) *Yes. Small courses have a better chance of getting a gold star  
+d) x No. The number of students makes no difference.  
+
+```{r S1A, echo=F, include=F}
+size <- c(5,30,60)
+
+for (u in 1:3){
+  ustring<-NA
+  for (v in 1:50){
+mydat<-rnorm(size[u],3.5,1)
+ustring<-c(ustring,mean(mydat))
+n[u]<-length(which(ustring>4))
+}
+}
+
+
+
+```
+
+#### S1B. 
+A task force is looking at characteristics of schools in its area. They take a measure of mathematical ability, and identify schools as 'failing schools' where 20% or more pupils get scores more than 1 SD below the population average. The smallest schools have on average 100 pupils, middle-sized schools have 250 pupils, and the largest schools have 500 pupils. 
+If there are no real differences between schools, will the size of the school affect whether it is a failing school?  
+a) *Yes. The smallest schools will be more likely to be a failing school  
+b)  No. All else being equal, school size should make no difference  
+c)  Yes. The largest schools will be more likely to be a failing school  
+d)  Yes. The middle-sized schools will be more likely to be a failing school  
+
+```{r S1B,include=F, echo=F}
+N  = 1000 #N times sampled
+schoolsize<- c(100,250,500)
+myschool <- data.frame(matrix(NA, nrow=N, ncol=6))
+names(myschool)<-c('Small','Medium','Large','SmallF','MediumF','LargeF')
+for (i in 1:N){
+  myschool[i,1]<-length(which(rnorm(schoolsize[1],0,1)<(-1)))
+  myschool[i,2]<-length(which(rnorm(schoolsize[2],0,1)<(-1)))
+  myschool[i,3]<-length(which(rnorm(schoolsize[3],0,1)<(-1)))
+  for (j in 1:3){
+    myschool[i,(j+3)]<-0
+    if (myschool[i,j]/schoolsize[j]>.2){
+      myschool[i,(j+3)]<-1
+    }
+  }
+}
+print(paste('Out of ',N,' schools, this is number coded as failing, for Small, Medium and Large respectively'))
+for (j in 1:3){
+  print(sum(myschool[,(j+3)]))
+}
+
+```
+
+
+
+#### S2A (dependence of accuracy of estimate on sample size, proportions)
+You are a forensic scientist who is trying to establish the sex of a skeleton. You have a sample of bone; you know that when you classify the cells men typically have 33% type X and 67% type Y. 
+Women typically have 50% type X and 50% type Y. 
+
+Doing the test for cell type is very expensive so you do not want to test more cells than necessary, but it is important to get the right answer. 
+You take a sample of 24 cells from an individual and find 8 are of type X. 
+
+Should you:  
+a)    x Conclude the skeleton is male  
+b)    x Add more cells to give a sample of 48 cells before deciding  
+c)   *Add more cells to give a sample of 100 cells before deciding  
+d)     Add more cells to give a sample of 200 cells before deciding  
+    
+
+
+```{r S2A,include=F,echo=F}
+p1=.33
+p2=.5
+#conventional power analysis
+
+#h is effect size, which is 2*arcsin(sqrt(p1))-2*arcsin(sqrt(p2))
+h<-2*asin(sqrt(p1))-2*asin(sqrt(p2))
+
+pwr.p.test(h=h,n=24,sig.level=.05)
+pwr.p.test(h=h,n=48,sig.level=.05)
+pwr.p.test(h=h,n=100,sig.level=.05)
+pwr.p.test(h=h,n=200,sig.level=.05)
+```
+
+#### S2B 
+
+A naturalist notices a new disease affecting parrots. She has 20 specimens with the disease, 14 of which are male. It is important to know whether males are more susceptible than females to the disease, as this will affect how it is treated.
+
+Should she:  
+ a)  x Conclude that males are more susceptible to the disease than females  
+ b)   Conclude that there is no difference in susceptibility for males and females  
+ c)   x Gather more cases to give a sample size of 40 before deciding  
+ d)   *Gather more cases to give a sample size of 100 before deciding  
+
+
+```{r S2B,include=F,echo=F}
+h=2*asin(sqrt(.7))-2*asin(sqrt(.5))
+#h is effect size, which is 2*arcsin(sqrt(p1))-2*arcsin(sqrt(p2))
+
+
+pwr.p.test(h=h,n=20,sig.level=.05)
+pwr.p.test(h=h,n=40,sig.level=.05)
+pwr.p.test(h=h,n=100,sig.level=.05)
+
+```
+
+
+#### S3A (dependence of power on sample size)
+ 
+A fertiliser is trialled to see if it improves crop yields. Without the fertiliser the average yield is 100, with standard deviation of 10. It is expected that the fertiliser will boost yield by 3 points on average.
+How many plants would be needed in the treatment and control groups to be confident of demonstrating whether or not the fertiliser was effective?  
+
+a)  20 per group  
+b) 50 per group  
+c)  100 per group  
+d) *300 per group   
+
+```{r Q7a, include=F, echo=F}
+require(pwr)
+pwr.t.test(d = .3, sig.level = .05 , power =.95 , type = "two.sample",alternative="greater") 
+```
+  
+#### S3B. 
+You have been asked to test a treatment for obesity. People in the trial have a mean body mass index (BMI) of 35, with SD of 5. The developer argues that the treatment will reduce BMI by 2 points on average, but you are dubious as to whether it has any effect. Assuming you have a control group given a placebo and an experimental group given the treatment, what sample size should you select to give a fair test of the treatment? 
+
+a) x20 per group  
+b) x50 per group 
+c) *100 per group
+d) 500 per group
+
+```{r S3b, include=F, echo=F}
+require(pwr)
+myp<-pwr.t.test(d = .4, sig.level = .05 , power =.9 , type = "two.sample",alternative="greater") 
+```
+
+
+#### S4A.(power with proportions)
+Imagine you are a researcher studying a particular rare gene variant that is found in 0.01% of the population (1 in 10,000). You want to test the hypothesis that the variant doubles the risk of a rare disease that affects 1 in 300 people in the general population. You have access to the biobank genetic data from (almost) all residents of a large population country (30 million inhabitants), a medium population country (10 million inhabitants), and a small population country (1 million inhabitants). All else being equal, which country’s biobank data would give you the most accurate answer to your research question?  
+
+a) Smallest country  
+b) Medium country  
+c) *Largest country  
+d) x Does not matter: No difference between countries  
+ 
+```{r q8a, include=F, echo=F}
+options(scipen = 999)
+myN<-c(30000000,10000000,1000000)
+for (thisn in 1:3){
+  print(paste('Population total is ',myN[thisn]))
+  truedat<-rnorm(myN[thisn],0,1)
+trueX<-length(which(truedat>3.09)) #corresponds to .001  N in population with variant
+trueN<-myN[1]-trueX #N in population without rare variant.
+#Risk of those with variant is 1 in 50, and for those without variant is 1 in 100
+trueXP <- round(trueX/150,0)
+trueXN <-trueX-trueXP
+trueNP <- round(trueN/300,0)
+trueNN <-trueN-trueNP
+tbl <- matrix(c(trueXP,trueXN,trueNP,trueNN),nrow=2)
+colnames(tbl)<-c('Rare variant','Common variant')
+rownames(tbl)<-c('Affected','Unaffected')
+print(tbl)
+print(chisq.test(tbl))
+}
+
+```
+
+#### S4B.  
+You are a biologist interested in studying a particular disease in plants. The disease affects 20% of the population (1 in 5) and leads to most plants dying. You have developed a spray that you think reduces mortality of the disease by 50%. You have to make the decision about how many plants to study to test the spray: in different centres you could gain access to 150 plants, 300 plants, or 1200 plants. Which centre would be best to conduct your research?  
+
+a) 150 plants  
+b) 300 plants  
+c) *1200 plants  
+d) x Whichever centre is easiest to access  
+
+ 
+ 
+#### S5A. (classic from Tversky/Kahneman law of small numbers)
+In a squash tournament, the organisers are debating whether to have games of best of 3, 9 or 21 points.  Holding all other rules of the game constant, if A is a slightly better player than B, which scoring will give A a better chance of winning?  
+a) best of 3 points  
+b) best of 9 points  
+c) *best of 21 points  
+d) x Won't make any difference  
+ 
+ 
+```{r S5A, echo=F,include=F}
+#NB. Simulating this makes it clear that if A is much better than B, it really doesn't make much difference with original Ns! Fine if we simulate so that prob A winning is .6 and if we make lowest the best of 3.
+
+#Assuming we can treat p(A) win as p
+#In fact, this only works if p not too high and if lowest N games is v small
+p = .6
+games<-c(3,9,21)
+
+
+  for (j in 1:3){
+    seq1 <-0
+   for (i in 1:1000){
+
+  thisg<-rbinom(games[j],games[j],p)
+  thiswin <- length(which(thisg>games[j]/2))
+  if(thiswin>games[j]/2) {seq1<-seq1+1}
+
+   }
+    print(paste0('N games is ',games[j]))
+    print(paste0('Wins in 1000 = ',sum(seq1)))
+}
+
+```
+
+#### S5B. 
+Two chess players are having a tournament. They are considering whether to play the best of 5, 11, or 17 games.  If player A is slightly better than player B, which tournament size should player B argue for, to get the best chance of winning?  
+
+a) 17 games  
+b) 11 games  
+c) *5 games  
+d) It doesn't matter: The chances are the same regardless of number of games  
+ 
+
+#### S6A. (Risk of type II error with small samples)
+Two scientists are both trying to test whether a certain new drug affects hunger in mice, by giving them the drug (group D) or a placebo (group P) and then measuring their food consumption. At the start of the experiment, the average mouse eats 10g of food pellets, with SD of 3g.  
+Scientist A runs 10 studies with 10 mice in each group, and Scientist B runs 10 studies with 30 mice in each group. Unfortunately for them, a careless lab technician distributed a placebo in place of the new drug, so there should not be any effects except by chance. When the scientists looks at the results, a large effect, difference in food consumption of 3g, is seen between the two groups (D and P) on one run of the experiment. Which scenario is more likely:  
+
+a)  *The run with a large difference is found in the smaller group   
+b)    The run with a large difference is found in the larger group  
+c)    The group difference shows group D eats more than group P  
+d)   x A large difference is equally likely D>P or P>D, with no effect of sample size  
+ 
+
+
+```{r S6A,include=F,echo=F}
+n1<-10
+n2<-30
+alldiffa<-vector()
+alldiffb<-vector()
+for (i in 1:10){
+miceDa<-rnorm(n1,10,3)
+micePa<-rnorm(n1,10,3)
+miceDb<-rnorm(n2,10,3)
+micePb<-rnorm(n2,10,3)
+diffa<-mean(miceDa)-mean(micePa)
+diffb<-mean(miceDb)-mean(micePb)
+#print(paste0('Mean diff n8 = ',
+#             diffa))
+#print(paste0('Mean diff n16 = ',
+#             diffb))
+alldiffa<-c(alldiffa,diffa)
+alldiffb<-c(alldiffb,diffb)}
+print('Differences for each run of small group: ')
+      print(alldiffa)
+print('Differences for each run of large group: ')
+      print(alldiffb)
+```
+
+#### S6B.
+Two researchers are testing the effect of oxytocin on prosocial behaviour. In their experiments, participants are given either a dose of oxytocin or a placebo. Researcher A runs 5 studies with 10 participants in each condition and Researcher B runs 5 studies with 20 participants in each condition. Unknown to the researchers, the oxytocin had been replaced by a placebo, yet a large difference (1 SD) is observed between two groups on one run of the experiment. Which is most likely:  
+
+a) *The large difference is seen in a study by the researcher using groups of 10  
+b)  The large difference is seen in a study by the researcher using groups of 20  
+c) x The difference is a type II error, and could equally likely be seen with groups of 10 or 20  
+d)  The difference is real - there was confusion between oxytocin and placebo  
+
+ 
+# Appendix 2: Pilot data
+
+```{r makepilottable, echo=F,include=F}
+wantcols <- c('ID','meanpcorr1','meanpcorr2','pcorr.half','meanarray1','meanarray2','parray.half','PreProbQ','PostProbQ','PreNumQ','PostNumQ')
+flexdf<-tdf[,wantcols]
+flexdf[,8:11]<-round(flexdf[,8:11],3)
+colnames(flexdf)<-c('ID','CorrectH1','CorrectH2','p:H1_H2','ArrayIndexH1','ArrayIndexH2','p:Ai1_Ai2','Pre_Quiz_P','Post_Quiz_P','Pre_Quiz_S','Post_Quiz_S')
+
+
+```
+
+`r flextable(flexdf)`
+Table `r tabnumber`. Pilot subjects ordered by total percent correct on the training task. CorrectH1 and H2 are proportion items correct in first and second half of training, and p:H1_H2 is one-tailed p-value for testing for an increase in items correct from the first to second half. ArrayIndexH1 and H2 represent the mean array index at the point of response for each half of the training, with p:Ai1_Ai2 the one-tailed p-value for testing for an increase from first to second half. The final four columns show mean proportion of items correct on the quiz at pretest and posttest, with P-items and S-items shown separately.
+
+
