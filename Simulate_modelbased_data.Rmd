@@ -260,99 +260,7 @@ for (i in 1:nsub){
  abline(0,1)
 ```
 
-```{r strategyB, echo=F}
-mysheet$diff1<-mysheet$meanE1-mysheet$meanC1
-mysheet$diff2<-mysheet$meanE2-mysheet$meanC2
-mysheet$diff3<-mysheet$meanE3-mysheet$meanC3
-mysheet$diff4<-mysheet$meanE4-mysheet$meanC4
-mysheet$diff5<-mysheet$meanE5-mysheet$meanC5
-mysheet$diff6<-mysheet$meanE6-mysheet$meanC6
 
-#NB also added diff  to check if abs difference in means gives different result - but not much indication that it does. In fact if you plot diff vs ES they are virtually identical, given that SD is 1.
-
-#Make a generic spreadsheet for each strategy. Index will be the value of array, ESboundary or L, depending on strategy
-errrate<-1/40 #currently set as one error per half
-nsub=100
-simdata<-data.frame(matrix(NA,nrow=nsub,ncol=10))
-colnames(simdata)<-c('ID','strategy','index1','mean.array1','dprime1','p.corr1','index2','mean.array2','dprime2','p.corr2')
-#simulate each subject one at a time by going through blocks 1-2 then 3-4
-
-o1 <- which(colnames(mysheet)=='ObsE1') #First column with observed mean eff size (array 1)
-
-#We will use the previously created boundtab to allocate the indices. 5 equal groups, so can just allocate in repeating sequence
-
-simdata$ID<-1:nsub
-simdata$strategy <- 'B'
-simdata$index1 <-boundtab$LowerBound
-simdata$index2 <- simdata$index1
-subseq<-seq(2,nsub,2)
-simdata$index2[subseq]<-round((simdata$index1[subseq]-.05),3) #for half the subjects we broaden boundaries, so response will be later
-
-for (i in 1:nsub){
-  #we now check at each array size to find if bounds exceeded
-  ESvals<-vector() #initialise vector for this subject
-  arrays <- vector()
-  hvals<-matrix(c(1,nperhalf,(nperhalf+1),(2*nperhalf)),byrow=T,nrow=2)
-  for (h in 1:2){ #same syntax for both halves
-    mycounter<-0
-  for (r in hvals[h,1]:hvals[h,2]){
-    mycounter<-mycounter+1
-    thisw<-6 #default is last array, if no values outside bounds
-    oes <- mysheet[r,o1:(o1+5)] #list of observed effects
-    thisindex<-simdata$index1[i]
-    if(h==2){thisindex <- simdata$index2[i]}
-    w1 <- which(oes < thisindex) #ES values less than lower bound, i.e. response NO
-    w2 <- which(oes > (.3-thisindex)) #ES values greater than upper bound, i.e. response YES
-    if(length(w1)>0){thisw<-w1[1]}
-     if(length(w2)>0){thisw<-w2[1]}
-    ESvals[mycounter]<-mysheet[r,(o1+thisw-1)]
-    arrays[mycounter]<-thisw
-  }
-  
-  myresp <- rep(1,nperhalf) #response is YES if obsES greater than .15
-  w <- which(ESvals<.15) #rows where obsES less than .15
-  myresp[w] <- 0 #response set to zero
-  
-  #Need to add error responses : occasional wrong button press, so response flipped
-  err.p <-runif(nperhalf)
-  we<-which(err.p<errrate)
-  myresp[we]<-abs(myresp[we]-1) #flips from 0 to 1 or 1 to 0
-  
-  resptable <- table(myresp,mysheet$ES[hvals[h,1]:hvals[h,2]])
-
-
-   mypcorr<- (resptable[1,1]+resptable[2,2])/nperhalf
-   mydprime<- psycho::dprime(
-    n_hit = resptable[1,1],
-    n_fa = resptable[2,1],
-    n_miss= resptable[1,2],
-    n_cr=  resptable[2,2],
-    adjusted = TRUE)$dprime
-  
-   if(h==1){
-  simdata$p.corr1[i]<-mypcorr
-  simdata$dprime1[i]<-mydprime
-  simdata$mean.array1[i]<-mean(arrays)
-   }
-      if(h==2){
-  simdata$p.corr2[i]<-mypcorr
-  simdata$dprime2[i]<-mydprime
-  simdata$mean.array2[i]<-mean(arrays)
-   }
-  
-  }
-}
-  simdataB <- simdata
-  
-
-#Now check if differences between 1st and 2nd half are evident on t-test
- t.array<- t.test(simdata$mean.array1,simdata$mean.array2)
- t.p.corr<-  t.test(simdata$p.corr1,simdata$p.corr2)
- t.dprime <-t.test(simdata$dprime1,simdata$dprime2)
-
- plot(simdata$dprime1,simdata$dprime2,col=as.factor(simdata$index1))
- abline(0,1)
-```
 
 ```{r strategyC, echo=F}
 
@@ -368,7 +276,7 @@ o1 <- which(colnames(mysheet)=='LL1') #First column with observed LL
 #Each subject will be given a LL from normal dist with mean 3.5, SD 1
 
 simdata$ID<-1:nsub
-simdata$strategy <- 'B'
+simdata$strategy <- 'C'
 simdata$index1 <- rnorm(nsub,mean=2.5,sd=1)
 simdata$index2 <- simdata$index1
 subseq<-seq(2,nsub,2)
