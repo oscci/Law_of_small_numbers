@@ -7,7 +7,9 @@ require(tidyverse)
 require(here)
 require(flextable) #for nice table output
 require(psycho) #for dprime
+require(lme4)
 ```
+<!-- for stats nb http://journal.sjdm.org/stat.htm-->
 To simulate data, we take models of participant behaviour, and generate responses based on the Gorilla spreadsheet used in the study.
 
 ## Strategies  
@@ -75,18 +77,32 @@ There should also be a finite rate of unintended error, where the participant in
 - The first goal is to see whether it is possible to deduce the strategy that generated the data from the pattern of responses in individual cases.  
 - The second goal is to see whether one can find evidence of improved accuracy with learning when there is such a mixture of strategies and only a proportion show learning.
 
+## Evaluation after running simulations below  
+Simulation of learning is problematic. Basically, strategy A or C works pretty well if initial value is reasonable, regardless of the exact level, so altering the criterion doesn't have a big effect.  
+It's also clear that, because of random sampling, the particular arrays used can exert a bigger effect than the subject strategy - some arrays are just hard because misleading.  
+Strategy B just doesn't really work - because effect size is constant across arrays, but more varied at small N, it almost always means deciding at array 1. 
+Any strategy, i.e. A or B, where the index criterion is just a set of fixed values will give the same result for all subjects with that index value - unless error rate is high. So simulation of 100 cases will give hugely significant results because whole set of subjects is just duplicated. 
+See below for new simulations to take this further. 
+
+
 ## Simulate cases for each strategy.
 
 ```{r loadspreadsheet, echo=F}
-nperhalf <- 40 #2 blocks of 20 used here for each half
-mysheet <- read.csv(here('Gorilla_spreadsheets','spreadsheet1.csv'))
+loadspreadsheet<-function(myfile){
+
+mysheet <- read.csv(here('Gorilla_spreadsheets',myfile))
 w<- which(is.na(mysheet$randomise_trials))
 mysheet<-mysheet[-w,] #remove rows that occur between blocks
+return(mysheet)
+}
 ```
 
 ```{r strategyA}
 #Make a generic spreadsheet for each strategy. Index will be the value of array, ESboundary or L, depending on strategy
-errrate<-1/40 #currently set as one error per half
+mysheet<-loadspreadsheet('spreadsheet1.csv')
+nperhalf<-nrow(mysheet)/2
+p.learn <- 0 #proportion who improve on 2nd half
+errrate<-1/nperhalf #currently set as one error per half
 nsub=100
 simdata<-data.frame(matrix(NA,nrow=nsub,ncol=10))
 colnames(simdata)<-c('ID','strategy','index1','mean.array1','dprime1','p.corr1','index2','mean.array2','dprime2','p.corr2')
@@ -102,7 +118,7 @@ for (i in 1:nsub){
   simdata$index1[i] <- w[1] #this is preferred array size for 1st set of blocks
   simdata$index2[i] <- w[1] #this is preferred array size for 2nd set of blocks
 
-  if(runif(1) >.5){ #50% of subjects will increase array size by 1 in blocks 3-4
+  if(runif(1) <p.learn){ # subjects who learn will increase array size by 1 in blocks 3-4
     simdata$index2[i] <- w[1]+1
     if(simdata$index2[i]>6){ simdata$index2[i] <- 6}
   }
@@ -176,9 +192,14 @@ mysheet$diff6<-mysheet$meanE6-mysheet$meanC6
 
 #NB also added diff  to check if abs difference in means gives different result - but not much indication that it does. In fact if you plot diff vs ES they are virtually identical, given that SD is 1.
 
+# Odd finding that worse performance despite learning effect. So need to reverse blocks to check it is not block specific.
+
+mysheet<-rbind(mysheet[41:60,],mysheet[1:20,],mysheet[21:40,],mysheet[61:80,])
+
+
 #Make a generic spreadsheet for each strategy. Index will be the value of array, ESboundary or L, depending on strategy
-errrate<-1/40 #currently set as one error per half
-nsub=100
+errrate<-0/40 #
+nsub=5
 simdata<-data.frame(matrix(NA,nrow=nsub,ncol=10))
 colnames(simdata)<-c('ID','strategy','index1','mean.array1','dprime1','p.corr1','index2','mean.array2','dprime2','p.corr2')
 #simulate each subject one at a time by going through blocks 1-2 then 3-4
@@ -191,31 +212,37 @@ simdata$ID<-1:nsub
 simdata$strategy <- 'B'
 simdata$index1 <-boundtab$LowerBound
 simdata$index2 <- simdata$index1
-subseq<-seq(1,nsub,2)
+if(p.learn>0){
+subseq<-1:round((p.learn*nsub),0)
 simdata$index2[subseq]<-round((simdata$index1[subseq]-.05),3) #for half the subjects we broaden boundaries, so response will be later
+}
+  hvals<-matrix(c(1,nperhalf,(nperhalf+1),(2*nperhalf)),byrow=T,nrow=2)#range of rows for each half
 
 for (i in 1:nsub){
   #we now check at each array size to find if bounds exceeded
+
+  for (h in 1:2){ #same syntax for both halves
   ESvals<-vector() #initialise vector for this subject
   arrays <- vector()
-  hvals<-matrix(c(1,nperhalf,(nperhalf+1),(2*nperhalf)),byrow=T,nrow=2)
-  for (h in 1:2){ #same syntax for both halves
     mycounter<-0
-  for (r in hvals[h,1]:hvals[h,2]){
-    mycounter<-mycounter+1
-    thisw<-6 #default is last array, if no values outside bounds
-    oes <- mysheet[r,o1:(o1+5)] #list of observed effects
     thisindex<-simdata$index1[i]
     if(h==2){thisindex <- simdata$index2[i]}
+  for (r in hvals[h,1]:hvals[h,2]){ #use row indices for this half
+    mycounter<-mycounter+1
+    thisw<-6 #default is last array, if no values outside bounds
+    oes <- mysheet[r,o1:(o1+5)] #list of observed effects by array size for this row
+
     w1 <- which(oes < thisindex) #ES values less than lower bound, i.e. response NO
     w2 <- which(oes > (.3-thisindex)) #ES values greater than upper bound, i.e. response YES
-    if(length(w1)>0){thisw<-w1[1]}
-     if(length(w2)>0){thisw<-w2[1]}
+    allw <- c(w1,w2)
+    if(length(allw)>0){
+    thisw<-min(allw) #find first array where value outside boundaries
+    }
     ESvals[mycounter]<-mysheet[r,(o1+thisw-1)]
     arrays[mycounter]<-thisw
   }
   
-  myresp <- rep(1,nperhalf) #response is YES if obsES greater than .15
+  myresp <- rep(1,nperhalf) #response is YES if obsES greater than .15, this is default
   w <- which(ESvals<.15) #rows where obsES less than .15
   myresp[w] <- 0 #response set to zero
   
@@ -224,7 +251,7 @@ for (i in 1:nsub){
   we<-which(err.p<errrate)
   myresp[we]<-abs(myresp[we]-1) #flips from 0 to 1 or 1 to 0
   
-  resptable <- table(myresp,mysheet$ES[hvals[h,1]:hvals[h,2]])
+  resptable <- table(myresp,mysheet$ES[hvals[h,1]:hvals[h,2]]) #compare responses with trueES
 
 
    mypcorr<- (resptable[1,1]+resptable[2,2])/nperhalf
@@ -240,7 +267,7 @@ for (i in 1:nsub){
   simdata$dprime1[i]<-mydprime
   simdata$mean.array1[i]<-mean(arrays)
    }
-      if(h==2){
+  if(h==2){
   simdata$p.corr2[i]<-mypcorr
   simdata$dprime2[i]<-mydprime
   simdata$mean.array2[i]<-mean(arrays)
@@ -258,6 +285,7 @@ for (i in 1:nsub){
 
  plot(simdata$dprime1,simdata$dprime2,col=as.factor(simdata$index1))
  abline(0,1)
+ boxplot(ESvals~mysheet$ES[41:80])
 ```
 
 
@@ -279,8 +307,10 @@ simdata$ID<-1:nsub
 simdata$strategy <- 'C'
 simdata$index1 <- rnorm(nsub,mean=2.5,sd=1)
 simdata$index2 <- simdata$index1
-subseq<-seq(2,nsub,2)
-simdata$index2[subseq]<-round((simdata$index1[subseq]+1),3) #for half the subjects we broaden boundaries, so response will be later
+if(p.learn>0){
+subseq<-1:round((p.learn*nsub),0)
+simdata$index2[subseq]<-round((simdata$index1[subseq]-.05),3) #for p.learn the subjects we broaden boundaries, so response will be later
+}
 
 for (i in 1:nsub){
   #we now check at each array size to find if bounds exceeded
@@ -297,8 +327,10 @@ for (i in 1:nsub){
     if(h==2){thisindex <- simdata$index2[i]}
     w1 <- which(oes < (-thisindex)) #ES values less than LL i.e. response NO
     w2 <- which(oes > thisindex) #ES values greater than LL, i.e. response YES
-    if(length(w1)>0){thisw<-w1[1]}
-     if(length(w2)>0){thisw<-w2[1]}
+    allw <- c(w1,w2)
+    if(length(allw)>0){
+    thisw<-min(allw) #find first array where value outside boundaries
+    }
     LLvals[mycounter]<-mysheet[r,(o1+thisw-1)]
     arrays[mycounter]<-thisw
   }
@@ -307,14 +339,13 @@ for (i in 1:nsub){
   w <- which(LLvals<0) #rows where LL less than 0
   myresp[w] <- 0 #response set to zero
   
+  #-----------------------------------
   #Need to add error responses : occasional wrong button press, so response flipped
   err.p <-runif(nperhalf)
   we<-which(err.p<errrate)
   myresp[we]<-abs(myresp[we]-1) #flips from 0 to 1 or 1 to 0
-  
+  #-----------------------------------
   resptable <- table(myresp,mysheet$ES[hvals[h,1]:hvals[h,2]])
-
-
    mypcorr<- (resptable[1,1]+resptable[2,2])/nperhalf
    mydprime<- psycho::dprime(
     n_hit = resptable[1,1],
@@ -338,12 +369,354 @@ for (i in 1:nsub){
 }
   simdataC <- simdata
   
-
 #Now check if differences between 1st and 2nd half are evident on t-test
  t.array<- t.test(simdata$mean.array1,simdata$mean.array2)
  t.p.corr<-  t.test(simdata$p.corr1,simdata$p.corr2)
  t.dprime <-t.test(simdata$dprime1,simdata$dprime2)
 
- plot(simdata$dprime1,simdata$dprime2,col=as.factor(simdata$index1))
+ plot(simdata$dprime1,simdata$dprime2,col=as.factor(simdata$index1),main='Strategy C: LL')
  abline(0,1)
+
 ```
+
+
+# Recap  
+
+Strategy B - relying on observed effect size (or difference in means, which is pretty much the same thing) can never give high levels of accuracy. 
+Strategy A, which in effect combines B with a threshold level of array size, is pretty effective.  
+Strategy C is most effective; can delivery higher accuracy at earlier array sizes.
+
+If we observe significant learning over time, this is more likely to be a case of adopting a new, effective, strategy, rather than changing the level of an index.  
+So we need first to just show accuracy levels in relation to strategies, without any learning.
+This will show the range of possible accuracies in relation to array size with different strategies.
+
+Could do it by halves still?
+
+Start with strategy of using Log Likelihood, strategy L. This time just get value for each half with fixed L values.
+
+```{r strategyL, echo=F}
+mysheet<-loadspreadsheet('spreadsheet1.csv')
+nperhalf<-nrow(mysheet)/2
+p.learn <- 0 #proportion who improve on 2nd half
+errrate<-0/nperhalf #currently set as N error per half
+
+LLset <- seq(1,5,.5) #set of log likelihood cutoffs to try
+nsub<-length(LLset) #just one subject per likelihood that is tested
+
+#Make a generic spreadsheet for each strategy. Index will be the value of LL for this subject
+
+simdata<-data.frame(matrix(NA,nrow=nsub,ncol=10))
+colnames(simdata)<-c('ID','strategy','index1','mean.array1','dprime1','p.corr1','index2','mean.array2','dprime2','p.corr2')
+#simulate each subject one at a time by going through blocks 1-2 then 3-4
+
+o1 <- which(colnames(mysheet)=='LL1') #First column with observed LL
+
+#Each subject will be given a LL from the sequence
+
+simdata$ID<-1:nsub
+simdata$strategy <- 'C'
+simdata$index1 <- LLset
+simdata$index2 <- simdata$index1
+
+
+for (i in 1:nsub){
+  #we now check at each array size to find if bounds exceeded
+  LLvals<-vector() #initialise vector for this subject
+  arrays <- vector()
+  hvals<-matrix(c(1,nperhalf,(nperhalf+1),(2*nperhalf)),byrow=T,nrow=2)
+  for (h in 1:2){ #same syntax for both halves
+    mycounter<-0
+    thisindex<-simdata$index1[i]
+    if(h==2){thisindex <- simdata$index2[i]}
+  for (r in hvals[h,1]:hvals[h,2]){
+    mycounter<-mycounter+1
+    thisw<-6 #default is last array, if no values outside bounds
+    oes <- mysheet[r,o1:(o1+5)] #list of observed effects
+ 
+    w1 <- which(oes < (-thisindex)) #ES values less than LL i.e. response NO
+    w2 <- which(oes > thisindex) #ES values greater than LL, i.e. response YES
+   allw <- c(w1,w2)
+    if(length(allw)>0){
+    thisw<-min(allw) #find first array where value outside boundaries
+    }
+    LLvals[mycounter]<-mysheet[r,(o1+thisw-1)]
+    arrays[mycounter]<-thisw
+  }
+  
+  myresp <- rep(1,nperhalf) #response is YES if obsES greater than 0
+  w <- which(LLvals<0) #rows where LL less than 0
+  myresp[w] <- 0 #response set to zero
+  
+  #-----------------------------------
+  #Need to add error responses : occasional wrong button press, so response flipped
+  err.p <-runif(nperhalf)
+  we<-which(err.p<errrate)
+  myresp[we]<-abs(myresp[we]-1) #flips from 0 to 1 or 1 to 0
+  #-----------------------------------
+  
+
+  resptable <- table(myresp,mysheet$ES[hvals[h,1]:hvals[h,2]])
+   mypcorr<- (resptable[1,1]+resptable[2,2])/nperhalf
+   mydprime<- psycho::dprime(
+    n_hit = resptable[1,1],
+    n_fa = resptable[2,1],
+    n_miss= resptable[1,2],
+    n_cr=  resptable[2,2],
+    adjusted = TRUE)$dprime
+  
+   if(h==1){
+  simdata$p.corr1[i]<-mypcorr
+  simdata$dprime1[i]<-mydprime
+  simdata$mean.array1[i]<-mean(arrays)
+   }
+      if(h==2){
+  simdata$p.corr2[i]<-mypcorr
+  simdata$dprime2[i]<-mydprime
+  simdata$mean.array2[i]<-mean(arrays)
+   }
+  
+  }
+}
+  simdataC1 <- simdata
+  
+plot(simdata$index1,simdata$p.corr1,type='b',ylim=c(.5,1),xlab='Abs. LogLikelihood criterion',ylab='Proportion correct',pch=0,cex=2.5)
+lines(simdata$index2,simdata$p.corr2,type='b',pch=0,cex=2.5)
+text(simdata$index1,(simdata$p.corr1),round(simdata$mean.array1,1),cex=.7)
+text(simdata$index2,(simdata$p.corr2),round(simdata$mean.array1,1),cex=.7)
+```
+
+Figure 1 shows two estimates of accuracy (proportion correct), from the first and second halves of the session (40 trials each). On each trial, the subject waits until the observed log likelihood is greater than the absolute of the log likelihood cutoff (L). The response is 'Yes' (blue > pink) if the observed log likelihood exceeds L, and 'No' (blue = pink) if the observed value is less than -L. 
+The plot shows that by adopting a log-likelihood criterion between 3 and 4, it is possible to achieve over 90% accuracy. The numerical values for each point in the plot correspond to the mean array size at the point when a decision is made (i.e. when absolute L is exceeded). Using strategy L, it is possible to achieve high accuracy while basing decision on an average array size between 3.8 to 4.3. 
+
+It is unlikely, however, that people could actually use this strategy. Log likelihood can be computed from the displayed data, but it is not directly observable.  It is implausible that a subject could implicitly calculate a proxy for log likelihood, especially under time pressure. Figure 1, however, suggests an alternative heuristic for achieving high levels of accuracy:  simply waiting until a given array size of 3 or more, and then basing a judgement on whether the observed difference between groups is greater or less than half the true effect size. Because the population standard deviation of distributions is one, the difference between means is broadly comparable to the effect size. This value is visible as the difference in mean bars between the blue and pink dots, which can be roughly judged by eye. We refer to this as strategy A (using array size). In the next demonstration, we consider how effective such a strategy would be, depending on the array size that is adopted. In each case, the subject waits until their predetermined criterion effect size, and then judges whether the observed difference in means is closer to 0 or .3 (i.e. greater or less than .15). 
+
+
+```{r strategyA1}
+#Make a generic spreadsheet for each strategy. Index will be the value of array, ESboundary or L, depending on strategy
+mysheet<-loadspreadsheet('spreadsheet1.csv')
+nperhalf<-nrow(mysheet)/2
+p.learn <- 0 #proportion who improve on 2nd half
+errrate<-0/nperhalf #currently set to zero
+allarrays<-1:6
+nsub=6
+simdata<-data.frame(matrix(NA,nrow=nsub,ncol=10))
+colnames(simdata)<-c('ID','strategy','index1','mean.array1','dprime1','p.corr1','index2','mean.array2','dprime2','p.corr2')
+#simulate each subject one at a time by going through blocks 1-2 then 3-4
+
+o1 <- which(colnames(mysheet)=='ObsE1') #First column with observed effect size (array 1)
+simdata$ID<-1:nsub
+simdata$strategy <- 'A'
+simdata$index1<-allarrays
+simdata$index2<-allarrays
+for (i in 1:nsub){
+  for (h in 1:2){ #do for each half
+  myans <- o1+simdata$index1[i]-1 #column with array size that will be used
+  ESvals <-mysheet[hvals[h,1]:hvals[h,2],myans]
+  myresp <- rep(1,nperhalf) #response is YES if obsES greater than 1.5
+  w <- which(ESvals<.15) #rows where obsES less than .15
+  myresp[w] <- 0 #response set to zero
+  #Need to add error responses : occasional wrong button press, so response flipped
+  err.p <-runif(nperhalf)
+  we<-which(err.p<errrate)
+  myresp[we]<-abs(myresp[we]-1) #flips from 0 to 1 or 1 to 0
+  
+  resptable <- table(myresp,mysheet$ES[hvals[h,1]:hvals[h,2]])
+  p.corr<-(resptable[1,1]+resptable[2,2])/nperhalf
+  dprime <- psycho::dprime(
+    n_hit = resptable[1,1],
+    n_fa = resptable[2,1],
+    n_miss= resptable[1,2],
+    n_cr=  resptable[2,2],
+    adjusted = TRUE)$dprime
+  if(h==1){
+  simdata$p.corr1[i] <- p.corr
+  simdata$dprime1[i] <- dprime
+  }
+    if(h==2){
+  simdata$p.corr2[i] <- p.corr
+  simdata$dprime2[i] <- dprime
+  }
+  }
+}
+
+    #For strategy A only, selected array will be same as index
+  simdata$mean.array1<-simdata$index1
+  simdata$mean.array2<-simdata$index2
+
+ simdataA <-simdata
+ 
+ plot(simdataA$index1,simdataA$p.corr1,type='b',ylim=c(.5,1),xlab='Array size',ylab='Proportion correct',pch=16,cex=1)
+lines(simdataA$index2,simdataA$p.corr2,type='b',pch=16,cex=1)
+#text(simdataA$index1,(simdataA$p.corr1),round(simdata$mean.array1,1),cex=.7)
+#text(simdataA$index2,(simdataA$p.corr2),round(simdata$mean.array1,1),cex=.7)
+
+```
+
+# Simulating data for analysis
+
+For simulated data, let us supposed we have N subjects, who initially start with strategy B, with distribution 25% array 1, 50% array 2 and 15% array 3 and 10% array 4. In the second two blocks, half of them move to increase the mean array size by 2. 
+
+
+```{r simulated_data_A_with_learning}
+#Make a generic spreadsheet for each strategy. Index will be the value of array, ESboundary or L, depending on strategy
+mysheet<-loadspreadsheet('spreadsheet1.csv')
+nperhalf<-nrow(mysheet)/2
+p.learn <- .33 #proportion who improve on 2nd half
+errrate<-0.5/nperhalf #random errs per 40 items
+
+nsub=100
+simdataA1<-data.frame(matrix(NA,nrow=nsub,ncol=10))
+colnames(simdataA1)<-c('ID','strategy','index1','mean.array1','dprime1','p.corr1','index2','mean.array2','dprime2','p.corr2')
+#simulate each subject one at a time by going through blocks 1-2 then 3-4
+
+o1 <- which(colnames(mysheet)=='ObsE1') #First column with observed effect size (array 1)
+simdataA1$ID<-1:nsub
+simdataA1$strategy <- 'A'
+allarrayvals <- c( 1,1,1,1,2,2,2,2,2,2,2,2,3,3,4,4,5,6)
+learnvals <- c(0,1)
+
+for (i in 1:nsub){
+  
+  simdataA1$index1[i]<-0 #this indicates whether stick with low array or learn to go higher
+    simdataA1$index2[i]<-0 #this indicates whether stick with low array or learn to go higher
+  learnp <- runif(1)
+  if(learnp<p.learn){
+ simdataA1$index2[i] <- sample(learnvals,1)
+  }
+  
+  for (h in 1:2){ #do for each half
+    arrays <- vector()
+    thistrial<-0
+    for (r in hvals[h,1]:hvals[h,2]){
+      thistrial<-thistrial+1
+      thisarray<-sample(allarrayvals,1)
+      if(h==2){
+        if(simdataA1$index2[i]==1){
+        thisarray<-thisarray+2
+        if(thisarray>6){thisarray<-6}
+        }
+      }
+    
+  myans <- o1+thisarray-1 #column with array size that will be used
+  ESvals <-mysheet[hvals[h,1]:hvals[h,2],myans]
+  myresp <- rep(1,nperhalf) #response is YES if obsES greater than 1.5
+  w <- which(ESvals<.15) #rows where obsES less than .15
+  myresp[w] <- 0 #response set to zero
+  #Need to add error responses : occasional wrong button press, so response flipped
+  err.p <-runif(nperhalf)
+  we<-which(err.p<errrate)
+  myresp[we]<-abs(myresp[we]-1) #flips from 0 to 1 or 1 to 0
+  
+  arrays[thistrial]<-thisarray
+  resptable <- table(myresp,mysheet$ES[hvals[h,1]:hvals[h,2]])
+  p.corr<-(resptable[1,1]+resptable[2,2])/nperhalf
+  dprime <- psycho::dprime(
+    n_hit = resptable[1,1],
+    n_fa = resptable[2,1],
+    n_miss= resptable[1,2],
+    n_cr=  resptable[2,2],
+    adjusted = TRUE)$dprime
+  if(h==1){
+  simdataA1$p.corr1[i] <- p.corr
+  simdataA1$dprime1[i] <- dprime
+   simdataA1$mean.array1[i]<-mean(arrays)
+  }
+    if(h==2){
+  simdataA1$p.corr2[i] <- p.corr
+  simdataA1$dprime2[i] <- dprime
+   simdataA1$mean.array2[i]<-mean(arrays)
+    }
+
+  }
+}
+}
+
+simdataA1$arraydiff<-simdataA1$mean.array2-simdataA1$mean.array1
+simdataA1$pcorrdiff<-simdataA1$p.corr2-simdataA1$p.corr1
+simdataA1$dprimediff<-simdataA1$dprime2-simdataA1$dprime1
+#Now check if differences between 1st and 2nd half are evident on t-test
+ t.array<- t.test(simdataA1$mean.array1,simdataA1$mean.array2)
+ t.p.corr<-  t.test(simdataA1$p.corr1,simdataA1$p.corr2)
+ t.dprime <-t.test(simdataA1$dprime1,simdataA1$dprime2)
+
+
+
+```
+
+
+These data suggest adequate power for detecting improvement across blocks, if we assume 50% learn, and that this leads to increase in array choice, as modelled here.  
+
+We would then aim to use difference score as predictor of gains in quiz.
+Question is which difference score is best. The array measure is most sensitive in these simulated data.
+
+```{r quizsim}
+#Assume pcorr on quiz initially 3/12
+#Those in learning=1 group increase by 2 pts.
+# Again, need to have binomial distribution
+
+pbad <- .3 #probability of answering q correctly prior to learning
+pgood <- .6 #probability of answering q for those who learned
+binomq1 <- pbinom(0:6,6,pbad) #cumulative probabilities for scores of 1-6 out of 6, prob pass =.3
+binomq2 <- pbinom(0:6,6,pgood) #cumulative probabilities for scores of 1-6 out of 6, prob pass =.3
+
+simdataA1$quizSpre <- 6 #default N correct
+simdataA1$quizSpost <- 6#default N correct
+
+for (i in 1:nsub){
+  tempqp <- runif(1)
+  w<- which(binomq1>tempqp)[1]
+  if(length(w)>0){
+  simdataA1$quizSpre[i]<-w-1
+  }
+   tempqp <- runif(1)
+   w<- which(binomq1>tempqp)[1]
+   if(simdataA1$index2[i]==1){
+      w<- which(binomq2>tempqp)[1]
+   }
+  if(length(w)>0){
+  simdataA1$quizSpost[i]<-w-1
+  }
+  
+}
+
+t.test(simdataA1$quizSpre,simdataA1$quizSpost)
+
+
+
+
+
+```
+
+
+```{r tryMLL}
+#traditional regression, without random slopes
+#This does not estimate the learning effect - just testse if arraydiff predicts postscore after allowing for prescore
+regsim <- lm(quizSpost ~ quizSpre + arraydiff, data=simdataA1)
+summary(regsim)
+
+
+
+#needs data in long format
+#stack time1 and time2 for questionnaire
+mc <- which(colnames(simdataA1)=='quizSpost')
+ma <- which(colnames(simdataA1)=='arraydiff')
+longsim <- rbind(simdataA1[,c(1,ma,mc)],simdataA1[,c(1,ma,mc)]) #start by just duplicating postquiz
+longsim$post <- 1
+longsim$post[1:nrow(simdataA1)]<-0
+colnames(longsim)[3]<-'quizscore'
+longsim$quizscore[1:nrow(simdata)]<-simdataA1[,(mc-1)] #now substitute prequiz
+longsim$quizscore<-longsim$quizscore/6 #proportions
+
+binsim <- glmer(quizscore  ~ 1 + post * arraydiff+ (1|ID),
+               data = longsim, family = "binomial")
+summary(binsim)
+  
+
+
+```
+
+
+
+
+
+  
