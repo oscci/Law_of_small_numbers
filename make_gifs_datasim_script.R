@@ -135,7 +135,7 @@ makeLL <- function(ES,ESobs,Nsample){
 
 # simulate data ================================================================================================
 
-gifmake<- 1 #set to 1 for creating gifs for study; 
+gifmake<- 2 #set to 1 for creating gifs for study; set to 2 to just make gorilla worksheet, 0 to make many spreadsheets
 #0 if making lots of datasets for testing effectiveness of different resonse strategies
 #any other value to just make spreaqdsheet without gifs
 #Elist<-c(3,5,8,0) #effect size x 10 - use this if you want ES of .3, .5 and .8
@@ -395,38 +395,3 @@ myspread1$skip_ref[triallist] <- myspread$skip_ref[triallist] #skip_ref is name 
 
 write.csv(myspread1,'gorilla_spreadsheets/spreadsheet1.csv',row.names=FALSE)
 
-#Some plots to check distributions
-
-#bf has some crazy big values that mess with graphs, so we'll get rid of that
-w<-which(mybf$BF > 50000)
-mybf$BF[w]<-NA
-plot(mybf$t,mybf$obsES,col=as.factor(mybf$Nsize))
-abline(h=0)
-abline(v=0)
-plot(log(mybf$BF),mybf$obsES,col=as.factor(mybf$Nsize))
-abline(h=0)
-abline(v=0)
-
-plot(mybf$LL,mybf$obsES,col=as.factor(mybf$Nsize),pch=(13+10*mybf$trueES),xlab='Log Likelihood',ylab='Observed Effect size')
-abline(h=0)
-abline(v=0)
-legend(-20, 1.4, legend=(N_size[1:6]/2),
-       col=1:6,  pch=15,cex=0.8)
-text(-15,1.5,'N per group',cex=.8)
-
-legend(-30, 1.4, legend=c(0,.3),
-       pch=c(13,16),cex=0.8)
-text(-28,1.5,'True effect size',cex=.8)
-
-plot(mybf$level,mybf$t,col=as.factor(mybf$Nsize))
-plot(mybf$level,mybf$LL,col=as.factor(mybf$Nsize))
-plot(mybf$level,mybf$BF,col=as.factor(mybf$Nsize))
-plot(mybf$level,mybf$obsES,col=as.factor(mybf$Nsize))
-plot(log(mybf$BF),mybf$LL,col=as.factor(mybf$Nsize))
-abline(h=0)
-abline(v=0)   #The first BF from the direction BF t-test is similar to my computed LL, but scale is compacted
-
-# mybf$BFratio <- mybf$BF/mybf$BF2
-# plot(log(mybf$BFratio),mybf$LL,col=as.factor(mybf$Nsize))
-# abline(h=0)
-# abline(v=0)  #ratio of the 2 BF doesn't appear meaningful here

@@ -16,7 +16,7 @@ See simulate model based data script for working up to the logic of the simulati
 
 # Simulating data for analysis
 
-For simulated data, let us supposed we have N subjects, who initially start with strategy B, with distribution 25% array 1, 50% array 2 and 15% array 3 and 10% array 4. In the second two blocks, a proportion of them move to increase the mean array size by 2. 
+For simulated data, let us supposed we have N subjects, who initially start with strategy B, with distribution 25% array 1, 50% array 2 and 15% array 3 and 10% array 4. In the second two blocks, a proportion of them (p) move to increase the mean array size by A (1 or 2). 
 
 We will then simulate their questionnaire data as well and check power to detect main effects from various analyses. 
 
@@ -31,9 +31,9 @@ loadspreadsheet<-function(myfile){
 ```
 
 ```{r simulated_data_A_with_learning}
-#Make a generic spreadsheet for each strategy. Index will be the value of array, ESboundary or L, depending on strategy
+#Make a generic spreadsheet for each strategy. Index will be the value of array, ESboundary or L, depending on strategy. NB this simulation assumes S is same for blocks 1-2 and then 3-4. But later on we just focus on comparing 1 and 4 - this allows for possibility that some learning might occur in blocks 1-2 and/or that best performance may only be seen in block 4. Since we will ignore blocks 2-3 in analysis, this method of simulation will be OK.
 
-makesim<-function(mysheet,nsub,p.learn,errrate){
+makesim<-function(mysheet,nsub,p.learn,errrate,A){ #array is increase in array size
   nperhalf<-nrow(mysheet)/2
   
   hvals<-matrix(c(1,nperhalf,(nperhalf+1),(2*nperhalf)),byrow=T,nrow=2)#range of rows for each half
@@ -41,10 +41,10 @@ makesim<-function(mysheet,nsub,p.learn,errrate){
   colnames(simdataA1)<-c('ID','strategy','index1','mean.array1','dprime1','p.corr1','index2','mean.array2','dprime2','p.corr2')
   #simulate each subject one at a time by going through blocks 1-2 then 3-4
   
-  o1 <- which(colnames(mysheet)=='ObsE1') #First column with observed effect size (array 1)
+  o1 <- which(colnames(mysheet)=='ObsE1') # column with observed effect size (array 1)
   simdataA1$ID<-1:nsub
   simdataA1$strategy <- 'A'
-  allarrayvals <- c( 1,1,1,1,2,2,2,2,2,2,2,2,3,3,4,4,5,6)
+  allarrayvals <- c( 1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,6,6) #
   learnvals <- c(0,1)
   
   for (i in 1:nsub){
@@ -64,7 +64,7 @@ makesim<-function(mysheet,nsub,p.learn,errrate){
         thisarray<-sample(allarrayvals,1)
         if(h==2){
           if(simdataA1$index2[i]==1){
-            thisarray<-thisarray+2
+            thisarray<-thisarray+A
             if(thisarray>6){thisarray<-6}
           }
         }
@@ -116,7 +116,7 @@ makesim<-function(mysheet,nsub,p.learn,errrate){
 ```
 
 
-These data suggest adequate power for detecting improvement across blocks, if we assume 50% learn, and that this leads to increase in array choice, as modelled here.  
+
 
 We would then aim to use difference score as predictor of gains in quiz.
 Question is which difference score is best. The array measure is most sensitive in these simulated data.
@@ -184,7 +184,7 @@ binsim<-function(simdata){
 ```
 
 
-```{r dopower,warnings=F}
+```{r makebigsummary,warnings=F}
 mysheet<-loadspreadsheet('spreadsheet1.csv')
 
 firstlast<-1
@@ -205,75 +205,119 @@ if(firstlast==1){ #Rather than compariong two halves (each of 2 blocks) we can j
 }
 
 nperhalf<-nrow(mysheet)/2
-nsubvals <- c(60,80,100)
+nsubvals <- c(60,90,120)
+subbits<-paste0(nsubvals,collapse="_")
 plearnvals <- c(0,.25,.33,.5)
+pbits<-paste0(plearnvals,collapse="_")
+quizgoodvals<-c(.5,.66) #posttest proportion correct on s items for those who learned
+qbits<-paste0(quizgoodvals,collapse='_')
 errrate<-0.5/nperhalf #random errs per 40 items
-pbad <- .3 #probability of answering q correctly prior to learning
-pgood <- .6 #probability of answering q for those who learned
+pbad <- .33 #probability of answering q correctly prior to learning (avg 2/6 correct)
+pgood <- .66 #probability of answering q for those who learned - now treated as variable, see below
 
 
-niter<-200
+niter<-500
 thisrow<-0
-bigsummary<-data.frame(matrix(NA,nrow=niter*length(nsubvals)*length(plearnvals),ncol=12))
-colnames(bigsummary)<-c('run','nsub','plearn','p.t.array','quiz.pbad','quiz.pgood','ptquiz','lmpre.p','lmarraydiff.p',
+quizgoodvals<-c(.5,.66) #posttest proportion correct on s items for those who learned
+quizbits<-paste0(quizgoodvals,collapse='_')
+bigsummary<-data.frame(matrix(NA,nrow=niter*length(nsubvals)*length(plearnvals)*length(quizgoodvals)*2,ncol=14))
+colnames(bigsummary)<-c('run','nsub','plearn','A','p.t.below5','p.t.array','quiz.pbad','quiz.pgood','ptquiz','lmpre.p','lmarraydiff.p',
                         'binpost.p','binarraydiff.p','bin.interact.p')
-for (n in 1:niter){
-  print(n)
-  for (nsub in nsubvals){
+for (i in 1:niter){
+  print(i)
+
     for (p.learn in plearnvals){
-      thisrow<-thisrow+1
-      simdata<-makesim(mysheet, nsub,p.learn,errrate)
-      bigsummary$run[thisrow]<-n
-      bigsummary$nsub[thisrow]<-nsub
+      for (A in 1:2){ #this is amount of gain in array index for those who learn
+        for (pgood in quizgoodvals){
+    
+      simdata<-makesim(mysheet, nsub,p.learn,errrate,A)
+       for (thissub in nsubvals){
+       thisrow<-thisrow+1
+      bigsummary$run[thisrow]<-i
+     
+      bigsummary$nsub[thisrow]<-thissub
       bigsummary$plearn[thisrow]<-p.learn
-      bigsummary$quiz.pbad[thisrow]<-pbad
-      bigsummary$quiz.pgood[thisrow]<-pgood
-      bigsummary$p.t.array[thisrow]<-t.test(simdata$mean.array1,simdata$mean.array2)$p.value
+      bigsummary$A[thisrow]<-A
+      bigsummary$quiz.pbad[thisrow]<-pbad #percent correct for nonlearners
+      bigsummary$quiz.pgood[thisrow]<-pgood#percent correct for learners
+      bigsummary$p.t.below5[thisrow]<-t.test(simdata$mean.array1[1:thissub],mu=5)$p.value
+      bigsummary$p.t.array[thisrow]<-t.test(simdata$mean.array1[1:thissub],simdata$mean.array2)$p.value #pvalue for t-test comparing arrays for 1st and last block
       simdata<-quizsim(simdata,pbad,pgood) #adds questionnaire scores
-      bigsummary$ptquiz[thisrow]<-t.test(simdata$quizSpre,simdata$quizSpost)$p.value
-      regsim <- lm(quizSpost ~ quizSpre + arraydiff, data=simdata)
+      bigsummary$ptquiz[thisrow]<-t.test(simdata$quizSpre[1:thissub],simdata$quizSpost[1:thissub])$p.value
+      regsim <- lm(quizSpost ~ quizSpre + arraydiff, data=simdata[1:thissub,])
       s<-summary(regsim)
       bigsummary$lmpre.p[thisrow]<-s$coefficients[2,4]
       bigsummary$lmarraydiff.p[thisrow]<-s$coefficients[3,4]
-      b<-binsim(simdata)
+      dobin<-0 #set to 1 to include binomial MLL indices
+      if(dobin==1){
+      b<-binsim(simdata[1:thissub,])
       bigsummary$binpost.p[thisrow]<-b$coefficients[2,4]
       bigsummary$binarraydiff.p[thisrow]<-b$coefficients[3,4]
       bigsummary$bin.interact.p[thisrow]<-b$coefficients[4,4]
+      }
+      }
     }
   }
-  
+  }
 }
 
-write.csv(bigsummary,'bigsummary20base.csv')
+bigname<-paste0('bigsummary_A12flat_pgood',qbits,'_props',pbits,'_N',subbits,'.csv')
+write.csv(bigsummary,bigname,row.names=F)
 
 ```
 
-Compute percentage < .05
+Compute percentage < alpha
 
 ```{r powerbit}
 thisrow<-0
+alpha <- .01
+powersummary<-data.frame(matrix(NA,ncol=7,nrow=length(nsubvals)*length(plearnvals)*length(quizgoodvals)*2))
 
-powersummary<-data.frame(matrix(NA,ncol=7,nrow=length(nsubvals)*length(plearnvals)))
 wc<-which(colnames(bigsummary)=='lmpre.p')
-colnames(powersummary)[3:7]<-colnames(bigsummary)[wc:(wc+4)]
-colnames(powersummary)[1:2]<-c('nsub','plearn')
+colnames(powersummary)[6:7]<-colnames(bigsummary)[wc:(wc+1)]
+colnames(powersummary)[1:5]<-c('nsub','plearn','A','quizgood','tlearn')
 row<-0
+for (Ad in 1:2){
     for (p in plearnvals){
+      for (q in quizgoodvals){
       for (n in nsubvals){
 
       row<-row+1
       powersummary$nsub[row]<-n
       powersummary$plearn[row]<-p
-      temp<-filter(bigsummary,nsub==n,plearn==p)
+      powersummary$A[row]<-Ad
+      powersummary$quizgood[row]<-q
+      temp<-filter(bigsummary,nsub==n,plearn==p,A==Ad,quiz.pgood==q)
       for(mycol in wc:(wc+4)){
-        w<-length(which(temp[,mycol]<.05))
-        powersummary[row,(mycol-5)]<-w/nrow(temp)
+        w<-length(which(temp[,mycol]<alpha))
+        powersummary[row,(mycol-4)]<-w/nrow(temp)
       }
+      powersummary$tlearn[row]<-length(which(temp$p.t.array<alpha))/nrow(temp)
     }
   }
+}
+}
 
-ggplot(data=powersummary, aes(x=plearn, y=lmarraydiff.p, group=nsub)) +
+doplot <- 0
+if(doplot==1){
+ggplot(data=powersummary, aes(x=plearn, y=tlearn, group=interaction(nsub,A),col=interaction(nsub,A))) +
   geom_line()+
-  geom_point()
+  geom_point()+
+  ggtitle("T-test for array index, block 1 vs block 4")+
+  ylab("Power")+
+  xlab("Proportion of subjects who learn")
+
+ggplot(data=powersummary, aes(x=plearn, y=lmarraydiff.p, group=interaction(nsub,A),col=interaction(nsub,A))) +
+  geom_line()+
+  geom_point()+
+    ggtitle("Prediction of Quiz S-item correct from array index increase")+
+  ylab("Power")+
+  xlab("Proportion of subjects who learn")
+}
+#Make one table for learning effect and another for impact on quiz
+
+
+flextable(powersummary[,1:7])
+
 
 ```
