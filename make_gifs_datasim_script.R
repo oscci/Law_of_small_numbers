@@ -393,5 +393,19 @@ myspread1 <- myspread
 myspread1[triallist,]<-myspread1[trialrows,]
 myspread1$skip_ref[triallist] <- myspread$skip_ref[triallist] #skip_ref is name for block (not sure why!); restore this from original so that blocks correctly numbered
 
+#add column that specifies array size at which absolute LL exceeds 3.68 (equal to 40:1 chance of null:true or vv)
+# This can be used for bonus.
+myspread1$bonus <- NA
+c <-which(colnames(myspread1)=='LL1')
+for (i in 1:nrow(myspread1)){
+  if(!is.na(myspread1$LL1[i])){ #ignore rows with blanks (block dividers)
+     w<-first(which(abs(myspread1[i,c:(c+5)])>3.9)) #find first instance of LL>3.9
+      if(length(w)>0)
+        {myspread1$bonus[i] <- w}
+       if(length(w)==0)
+       {myspread1$bonus[i] <- 6} #if no instance, then set bonus for 6
+  }
+}
+
 write.csv(myspread1,'gorilla_spreadsheets/spreadsheet1.csv',row.names=FALSE)
 
