@@ -1,0 +1,302 @@
+---
+title: "Simulating data for Law of Small Numbers study"
+output: html_notebook
+---
+```{r loadpackages}
+print(date())
+require(tidyverse)
+require(here)
+require(flextable) #for nice table output
+require(psycho) #for dprime
+require(lme4)
+```
+<!-- for stats nb http://journal.sjdm.org/stat.htm-->
+See simulate model based data script for working up to the logic of the simulation
+
+
+
+# Simulating data for analysis
+
+For simulated data, let us supposed we have N subjects, who initially just use observed effect size as the basis for their response.  In the second two blocks, a proportion of them (p) move to increase the mean array size by A (1 or 2). 
+
+We will then simulate their questionnaire data as well and check power to detect main effects from various analyses. 
+
+28 May 2021. Added simulated rewards to see how they behave. After some experimentation, decided that rather than linking reward to array size, it should be linked to whether 'optimum' array size was basis of selection, i.e. when absolute log likelihood exceeded 3.38 (40:1 odds).
+
+```{r loadspreadsheet, echo=F}
+loadspreadsheet<-function(myfile){
+  
+  mysheet <- read.csv(here('Gorilla_spreadsheets',myfile))
+  w<- which(is.na(mysheet$randomise_trials))
+  mysheet<-mysheet[-w,] #remove rows that occur between blocks
+  mysheet$EarningCorrect<-"6:1" #just recording current reward scheme - this alters with array size so stored as string
+ mysheet$EarningWrong<- -4
+  return(mysheet)
+}
+```
+
+```{r simulated_data_A_with_learning}
+#Function to make a generic spreadsheet. NB this simulation originally just compared 2 halves of training (blocks 1-2 and blocks 3-4).  But later on we just focus on comparing 1 and 4 - this allows for possibility that some learning might occur in blocks 1-2 and/or that best performance may only be seen in block 4. Since we will ignore blocks 2-3 in analysis, this method of simulation will be OK.
+
+makesim<-function(mysheet,nsub,p.learn,errrate,A,earnc,earne,bonus,allarrayvals){ #array is increase in array size
+ 
+  neworder<-sample(1:nrow(mysheet),nrow(mysheet),replace=F) #randomise the order of trials
+  mysheet<-mysheet[neworder,]
+  nperhalf<-nrow(mysheet)/2 #number of trials for each half
+  
+  hvals<-matrix(c(1,nperhalf,(nperhalf+1),(2*nperhalf)),byrow=T,nrow=2)#range of rows for each half
+  simdataA1<-data.frame(matrix(NA,nrow=nsub,ncol=12))
+  colnames(simdataA1)<-c('ID','strategy','index1','mean.array1','dprime1','p.corr1','index2','mean.array2','dprime2','p.corr2','earn1','earn2')
+  #simulate each subject one at a time by going through blocks 1 then 4
+  
+  o1 <- which(colnames(mysheet)=='ObsE1') # column with observed effect size (array 1)
+  simdataA1$ID<-1:nsub #this is simulated sheet with summary data for one sub per row
+  simdataA1$strategy <- 'A'
+
+  for (i in 1:nsub){
+    
+    simdataA1$index1[i]<-0 #this indicates whether stick with low array or learn to go higher
+    simdataA1$index2[i]<-0 #this indicates whether stick with low array or learn to go higher - here it is initialised; will increase for those identified as learners. 
+    learnp <- runif(1)
+    if(learnp<p.learn){
+      simdataA1$index2[i] <- 1 #for the specified proportion of subjects, index2 is now set to 1
+    }
+    
+    for (h in 1:2){ #do for each half
+      arrays <- vector()
+      correctans <- vector() #needed for working out reward scheme
+      correctresp <- vector() #needed for working out reward scheme
+      reward<-vector() #actual reward on each trial
+      thistrial<-0
+      for (r in hvals[h,1]:hvals[h,2]){
+        thistrial<-thistrial+1
+        thisarray<-sample(allarrayvals,1)
+        if(h==2){
+          if(simdataA1$index2[i]==1){
+            thisarray<-thisarray+A
+            if(thisarray>6){thisarray<-6}
+            }
+           }
+        
+        myans <- o1+thisarray-1 #column with array size that will be used
+        ESvals <-mysheet[hvals[h,1]:hvals[h,2],myans] #trueES at array of response
+       correctans<-mysheet$ES[hvals[h,1]:hvals[h,2]]
+       correctans[correctans>0]<-1
+        myresp <- rep(1,nperhalf) #default; response is YES (retained if obsES greater than .15)
+        w <- which(ESvals<.15) #rows where obsES less than .15
+        myresp[w] <- 0 #response set to zero
+        #Potential to  add error responses : occasional wrong button press, so response flipped
+        err.p <-runif(nperhalf)
+        we<-which(err.p<errrate)
+        myresp[we]<-abs(myresp[we]-1) #flips from 0 to 1 or 1 to 0
+        
+        arrays[thistrial]<-thisarray
+       
+        correctresp[thistrial]<-0
+        if (correctans[thistrial]==myresp[thistrial])
+          {correctresp[thistrial]<-1}
+ 
+    #now we have to work out reward for this trial
+        if(correctresp[thistrial]==1){
+          reward[thistrial]<-earnc[arrays[thistrial]]
+          if(mysheet$bonus[thistrial]==arrays[thistrial])
+          {reward[thistrial]<-reward[thistrial]+bonus}
+        }
+          if(correctresp[thistrial]==0){
+          reward[thistrial]<-earne[arrays[thistrial]]
+        }
+        
+      }
+        resptable <- table(myresp,mysheet$ES[hvals[h,1]:hvals[h,2]])
+        p.corr<-(resptable[1,1]+resptable[2,2])/nperhalf
+        dprime <- psycho::dprime(
+          n_hit = resptable[1,1],
+          n_fa = resptable[2,1],
+          n_miss= resptable[1,2],
+          n_cr=  resptable[2,2],
+          adjusted = TRUE)$dprime
+        if(h==1){
+          simdataA1$p.corr1[i] <- p.corr
+          simdataA1$dprime1[i] <- dprime
+          simdataA1$mean.array1[i]<-mean(arrays)
+          simdataA1$earn1[i]<-sum(reward)
+        }
+        if(h==2){
+          simdataA1$p.corr2[i] <- p.corr
+          simdataA1$dprime2[i] <- dprime
+          simdataA1$mean.array2[i]<-mean(arrays)
+           simdataA1$earn2[i]<-sum(reward)
+        }
+        
+      
+    }
+  }
+  
+  simdataA1$arraydiff<-simdataA1$mean.array2-simdataA1$mean.array1
+  simdataA1$pcorrdiff<-simdataA1$p.corr2-simdataA1$p.corr1
+  simdataA1$dprimediff<-simdataA1$dprime2-simdataA1$dprime1
+  #Now check if differences between 1st and 2nd half are evident on t-test
+  t.array<- t.test(simdataA1$mean.array1,simdataA1$mean.array2)
+  t.p.corr<-  t.test(simdataA1$p.corr1,simdataA1$p.corr2)
+  t.dprime <-t.test(simdataA1$dprime1,simdataA1$dprime2)
+  
+  return(simdataA1)
+}
+```
+
+
+Use makesim to check how earnings schedule works for those who do and don't learn.
+```{r checkearnings}
+p.learn=1 #just compare 1st and 2nd half assuming all learn
+  allarrayvals <- c( 1,1,2,2,2,2,3,3,3,3,3,3,4,4,4,5,5,5,6,6) #this can be converted to distribution of probabilities for each array index. 2 to 5 are equally likely - 1 and 6 half as common. Can vary this.
+ 
+nsub=1000
+errrate=.025
+A=2
+earnc<-rep(4,6)
+earne<--rep(4,6)
+bonus<-2
+mysheet<-loadspreadsheet('spreadsheet1.csv')
+mysheet<-mysheet[1:40,]
+
+nudat<- makesim(mysheet,nsub,p.learn,errrate,A,earnc,earne,bonus,allarrayvals)
+
+mean(nudat$mean.array1)
+mean(nudat$mean.array2)
+mean(nudat$earn1)
+mean(nudat$earn2)
+mean(nudat$p.corr1)
+mean(nudat$p.corr2)
+
+```
+
+
+We would then aim to use difference score as predictor of gains in quiz.
+ The array index difference is used in these simulated data.
+
+```{r quizsim}
+#Functrion to simulate quiz data for S-items
+#Assume pcorr on quiz initially 3/12
+#Those in learning=1 group increase by 2 pts.
+# Again, need to have binomial distribution
+quizsim <- function(simdata,pbad,pgood){
+  binomq1 <- pbinom(0:6,6,pbad) #cumulative probabilities for scores of 1-6 out of 6, prob pass =.3
+  binomq2 <- pbinom(0:6,6,pgood) #cumulative probabilities for scores of 1-6 out of 6, prob pass =.3
+  
+  simdata$quizSpre <- 6 #default N correct
+  simdata$quizSpost <- 6#default N correct
+  
+  for (i in 1:nsub){
+    tempqp <- runif(1)
+    w<- which(binomq1>tempqp)[1]
+    if(length(w)>0){
+      simdata$quizSpre[i]<-w-1
+    }
+    tempqp <- runif(1)
+    w<- which(binomq1>tempqp)[1]
+    if(simdata$index2[i]==1){
+      w<- which(binomq2>tempqp)[1]
+    }
+    if(length(w)>0){
+      simdata$quizSpost[i]<-w-1
+    }
+    
+  }
+  return(simdata)
+}
+
+
+```
+
+
+
+```{r makebigsummary,warnings=F}
+#Now simulate lots of runs
+mysheet<-loadspreadsheet('spreadsheet1.csv')
+
+firstlast<-1
+if(firstlast==1){ #Rather than compariong two halves (each of 2 blocks) we can just take 1st and last block
+  #In this case  we just compare 2 blocks.
+  #this is simulated by first shuffling blocks, as different subjects get different orders; then just taking 2 of them.
+  #In effect, subject would do all blocks, but we just compare first and last, so only need two
+  #Need to check power for this scenario, as small N items will make less reliable}
+  blockbits<-matrix(c(1, 20,
+                      21, 40,
+                      41, 60,
+                      61, 80),byrow=1,nrow=4)
+  theseblocks<-sample(1:4,2,replace=FALSE) #select 2 blocks at random
+  myrows<-(1+(theseblocks[1]-1)*20):(theseblocks[1]*20)
+  myrows2<-(1+(theseblocks[2]-1)*20):(theseblocks[2]*20)
+  
+  mysheet<-mysheet[c(myrows,myrows2),]
+}
+
+nperhalf<-nrow(mysheet)/2
+nsubvals <- c(50,75,100)
+subbits<-paste0(nsubvals,collapse="_")
+plearnvals <- c(0,.25,.33,.5)
+pbits<-paste0(plearnvals,collapse="_")
+quizgoodvals<-c(.5,.66) #posttest proportion correct on s items for those who learned
+qbits<-paste0(quizgoodvals,collapse='_')
+errrate<-0.5/nperhalf #random errs per 40 items
+pbad <- .33 #probability of answering q correctly prior to learning (avg 2/6 correct)
+pgood <- .66 #probability of answering q for those who learned - now treated as variable, see below
+  allarrayvals <- c( 1,1,2,2,2,2,3,3,3,3,3,3,4,4,4,5,5,5,6,6) #this can be converted to distribution of probabilities for each array index. 2 to 5 are equally likely - 1 and 6 half as common. Can vary this.
+ 
+
+
+niter<-500
+thisrow<-0
+quizgoodvals<-c(.5,.66) #posttest proportion correct on s items for those who learned
+quizbits<-paste0(quizgoodvals,collapse='_')
+bigsummary<-data.frame(matrix(NA,nrow=niter*length(nsubvals)*length(plearnvals)*length(quizgoodvals)*2,ncol=14))
+colnames(bigsummary)<-c('run','nsub','plearn','A','p.t.below5','p.t.array','quiz.pbad','quiz.pgood','ptquiz','lmpre.p','lmarraydiff.p',
+                        'binpost.p','binarraydiff.p','bin.interact.p')
+earnc<-rep(4,6) #earning for correct at each array size
+earne<- rep(-4,6) #earning for error at each array size
+bonus<-2
+for (i in 1:niter){
+  nsub<-max(nsubvals)
+  print(i)
+
+    for (p.learn in plearnvals){
+      for (A in 1:2){ #this is amount of gain in array index for those who learn
+        for (pgood in quizgoodvals){
+      
+      simdata<-makesim(mysheet, nsub,p.learn,errrate,A,earnc,earne,bonus, allarrayvals) 
+       for (thissub in nsubvals){
+       thisrow<-thisrow+1
+      bigsummary$run[thisrow]<-i
+     
+      bigsummary$nsub[thisrow]<-thissub
+      bigsummary$plearn[thisrow]<-p.learn
+      bigsummary$A[thisrow]<-A
+      bigsummary$quiz.pbad[thisrow]<-pbad #percent correct for nonlearners
+      bigsummary$quiz.pgood[thisrow]<-pgood#percent correct for learners
+      bigsummary$p.t.below5[thisrow]<-t.test(simdata$mean.array1[1:thissub],mu=5)$p.value
+      bigsummary$p.t.array[thisrow]<-t.test(simdata$mean.array1[1:thissub],simdata$mean.array2)$p.value #pvalue for t-test comparing arrays for 1st and last block
+      simdata<-quizsim(simdata,pbad,pgood) #adds questionnaire scores
+      bigsummary$ptquiz[thisrow]<-t.test(simdata$quizSpre[1:thissub],simdata$quizSpost[1:thissub])$p.value
+      regsim <- lm(quizSpost ~ quizSpre + arraydiff, data=simdata[1:thissub,])
+      s<-summary(regsim)
+      bigsummary$lmpre.p[thisrow]<-s$coefficients[2,4]
+      bigsummary$lmarraydiff.p[thisrow]<-s$coefficients[3,4]
+      dobin<-0 #set to 1 to include binomial MLL indices
+      if(dobin==1){
+      b<-binsim(simdata[1:thissub,])
+      bigsummary$binpost.p[thisrow]<-b$coefficients[2,4]
+      bigsummary$binarraydiff.p[thisrow]<-b$coefficients[3,4]
+      bigsummary$bin.interact.p[thisrow]<-b$coefficients[4,4]
+      }
+      }
+    }
+  }
+  }
+}
+#The name incorporates most of the variables used to create the simulated data
+bigname<-paste0('bigsummary_A12nu_pgood',qbits,'_props',pbits,'_N',subbits,'.csv')
+write.csv(bigsummary,bigname,row.names=F)
+
+```
+
+This file is then read for the power calculations that are in the main Rmd file. 
