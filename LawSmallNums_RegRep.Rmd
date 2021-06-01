@@ -198,27 +198,80 @@ The quiz (Appendix 1) was designed for this study, and is termed 'Judgment and r
 ### Online training
 **Instructions**:  After the estimation quiz pre-test, subjects are introduced to the game, as follows: 
 
-_Imagine you are a researcher running a large range of experiments. All of the experiments are comparing a control group with a group receiving an experimental treatment (intervention) of some sort. You want to see whether the experimental group scores higher than the control group after the intervention/treatment. For our purposes, it doesn’t matter too much what the research topic is – the same principle should apply to many different types of experiments. For instance, you could be examining:_ 
-* children’s test scores after an educational intervention versus no intervention 
-* mouse weight after taking a drug versus a placebo 
-* depression scores after an experimental therapy treatment versus standard treatment 
-* changes in cholesterol levels in people following an experimental diet versus no diet 
-* effects of a chemical substrate on bacterial cell growth, compared to a control substrate (each data point measures growth of one cell culture) 
+_Imagine you are a researcher running a large range of experiments. All of the experiments are comparing a control group with a group receiving an experimental treatment (intervention) of some sort. You are testing whether the experimental group has a higher score than the control group after the intervention/treatment._   
+
+_For our purposes, it doesn’t matter too much what the research topic is – the same principle applies to many different types of experiments. E.g., you could be examining:_  
+
+
+* children’s test scores after an educational intervention versus no intervention  
+  
+* mouse weight after taking a drug versus a placebo  
+
+* changes in cholesterol levels in people following an experimental diet versus no diet  
+  
+* effects of a chemical substrate on bacterial cell growth, compared to a control substrate (each data point measures growth of one cell culture)  
+
 _You can choose which of these topics is most relevant to you, and keep that example in mind._  
-_Importantly, we expect the data in these trials to be normally distributed –  most data points will be close to the middle, and fewer data points at the extremes of very high or very low values. The onion shapes to the right are both normal distributions (the width of the shape represents the proportional number of data points in this population that have the value of the y-axis). The boxplot in the centre of these onion shapes details further information about the distribution. The top image on the right compares the distributions separately, the bottom makes a side-by-side comparison. Throughout this game, you will see the bottom image when receiving feedback. If there is no effect of the experimental treatment, the overall distribution of the data might look like the figures to the right, with the distribution of scores from the experimental group looking very similar to those in the control group:_  
-_A large number of trials have been run on the experimental interventions we described-- and you will get to see the data. In any given trial, there is a 50% chance you will see data from an experimental treatment (intervention), which has an effect size of .3, and a 50% chance you will see data from an experimental treatment that has no effect. Your aim is to earn as many points as possible by correctly identifying which trials show data from a population in which there is a true effect, and in which there is no effect. Points earned on the game will be converted to pennies in the bonus payment, but we will not deduct payment for a negative score. _ 
-_The goal is for you to get a sense of how big a sample you need to make this judgment. The game will include 80 trials in total, with breaks in between each block of 20 trials. Every trial will start by showing a few data points from each group. At that stage you can EITHER:_  
-* judge whether there is a true effect or no effect, by pressing one of the buttons below the data, OR 
-* you can wait a few seconds for the screen to automatically advance and show you more evidence (additional data points). 
+
+_Here we assume data in these trials to be normally distributed – i.e., the distribution of scores will fit a bell curve, with most data points close to the middle, and fewer data points at the extremes of very high or very low values._    
+
+_The onion shapes to the right are both (sideways) normal distributions: the width of the shape represents the proportion of data points in this population with a given value on the y-axis. The boxplot in the centre of the plot shows information about the mean and variance of distributions for each condition._  
+
+_The top image on the right compares two distributions separately; the bottom makes a side-by-side comparison. Feedback in this game will be shown like the bottom image._  
+
+_If there is no effect of the experimental treatment, the overall distribution of the data will look like the figure on the bottom right, with the distribution of scores for the experimental group looking very similar to that of the control group._  
+
+_In this game, you will see data from experimental trials. On 50% of trials the data come from a population where there is a true effect of the intervention, which increases scores by 0.3 SD units. (i.e. the effect size is 0.3).  On the other 50% of trials, the intervention has no effect._  
+
+_Your aim is to earn as many points as possible by identifying which trials show data from a population in which there is a true effect, and which trials come from a population with no effect._  
+  
+_The goal is for you to get a sense of how big a sample you need to make this judgment._  
+
+_The game will include 80 trials in total, with breaks in between each block of 20 trials._  
+
+_Every trial will start by showing a few data points from each group._  
+
+_At that stage you can EITHER:_  
+ _judge whether there is a true effect or no effect, by pressing one of the buttons below the data,_  
+  
+OR   
+  
+_you can wait a few seconds for the screen to automatically advance and show you more evidence (additional data points)._
+
 _Collecting more evidence can make you more sure of your decision._   
 
-_You can earn rewards on this game for correct responses; these will be converted to pennies and added to your payment at the end of the game. For each correct response you are given 4p, and for each wrong response you lose 4p. Don't worry, your basic payment for this session is guaranteed, even if you end up with negative points._  
+_**Please note: this study does NOT involve any deception. The feedback you get will be accurate, even if it is sometimes surprising.**_  
 
-_You can also earn bonus points. On each trial, there is an optimal array size: this is the smallest array size where the evidence from the blue and pink dots is clear enough to either decide the means of the two groups are the same, or that they are different, with low likelihood of error.  As there's an element of chance in how the arrays were created, the optimal array size won't always be the same, but the more experience you have with the game, the easier you should find it. 
-Every time you make a correct response at the optimal array size, you will earn a bonus of 2p._  
+_Each trial will start with an image like this, showing a set of data points: one from the control group, and one from the experimental group._  
 
-The subject is then shown some example stimuli, that demonstrate what the stimuli look like, and the reward schedule is explained. 
-Subjects are also told: _Please note: this study does NOT involve any deception. The feedback you get will be accurate, even if it is sometimes surprising._  
+_Along the y-axis you will see scores for each data point. Along the x-axis you will see how many data points there are in each group. Data points for the control group are pink and data points for the experimental group are blue. Each screen will start with 10 data points per condition._  
+
+ _If you wait for more evidence, then more coloured data points will appear._  
+
+_Each new array of data points doubles in size._  
+
+_You can wait for more data until the target sample size of 320 is reached._  
+
+_While data accumulates, you will have to judge whether you think the samples show a true effect or no effect._  
+
+_In other words -- do these samples come from populations with different means, or the same mean? _  
+
+_If you think these samples came from populations that truly differ, respond with **Blue > Pink**._  
+
+_If you think these samples came from populations that are the same, respond with **Blue = Pink**._  
+
+_<u>Once you answer you will hear a *bloop* sound indicating that your response has been recorded.</u>_  
+_<u>After your response is made, the display increases until there are 320 datapoints  in each condition.</u>_  
+_You will then see a feedback slide telling you whether you answered correctly and displaying how many points you earned._  
+
+_On each trial, you earn 4 points for a correct answer, but you lost 4 points if you make a mistake._  
+
+_You can also earn 2 bonus points if you make a correct response at the optimal array size.  This is the smallest array size at which the likelihood of a one scenario (true effect or null)  is 40 times greater than the other.  You should get a sense of what this looks like as you go through the game. The optimal array size will vary from trial to trial, just because of chance factors._  
+
+_<u>You should try to maximise your score as we will convert your points into pennies and add these to your payment.</u>  Don't worry, though: if you make lots of errors and end up with a negative score, we won't subtract anything from the basic payment for this session._  
+
+The subject is then shown some example stimuli that demonstrate what the stimuli look like, and the reward schedule is explained.  
+
 At the end of training they are asked if they thought they had got better at the task over time (options: Yes, Unsure or No) and whether they adopted any specific strategy to guide their responses (free text response box).  
 
 **Training items**  
