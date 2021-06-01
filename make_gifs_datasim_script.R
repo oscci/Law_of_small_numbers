@@ -399,7 +399,7 @@ myspread1$bonus <- NA
 c <-which(colnames(myspread1)=='LL1')
 for (i in 1:nrow(myspread1)){
   if(!is.na(myspread1$LL1[i])){ #ignore rows with blanks (block dividers)
-     w<-first(which(abs(myspread1[i,c:(c+5)])>3.9)) #find first instance of LL>3.9
+     w<-first(which(abs(myspread1[i,c:(c+5)])>3.68)) #find first instance of LL>3.68
       if(length(w)>0)
         {myspread1$bonus[i] <- w}
        if(length(w)==0)
