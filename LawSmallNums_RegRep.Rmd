@@ -17,6 +17,7 @@ output:
 ```{r setup, include=FALSE,echo=FALSE}
 #Additions since submission
 #16052021 - Dietrichson2021 reference - mean effect size in education interventions = .3 (also updated bibtext)
+#6 Jun 2021 - updated with new reward schedule and new pilot data.
 
 
 #https://fishandwhistle.net/post/2020/getting-started-zotero-better-bibtex-rmarkdown/
@@ -170,7 +171,7 @@ We will also examine the potential of this task to enhance subjects' statistical
 
 Specific hypotheses are:  
 _Hypothesis 1_: In line with early work by Tversky and Kahneman (1971), people will be overconfident about estimates based on small samples.  We predict that we will demonstrate this in the estimation quiz, where performance will be poor on questions that focus on sampling variation blindness, and also with our training task, showing that typically people make decisions based on samples where the number of data points is too small to give clear evidence.  
-_Hypothesis 2_: Repeated exposure to a training task with feedback can reduce overconfidence in small samples. Accordingly, we predict that, in the course of training, a proportion of subjects will start to wait longer to view evidence from larger arrays, and correspondingly achieve higher levels of accuracy.  
+_Hypothesis 2_: Repeated exposure to a training task with feedback can reduce overconfidence in small samples. Accordingly, we predict that, in the course of training, a proportion of subjects will achieve higher levels of accuracy, and this will relate to their waiting longer to view evidence from larger arrays.
 _Hypothesis 3_: Learning will generalize beyond the training task. Individual differences in learning on the training task will predict improvement on sampling variation blindness items on the estimation quiz. 
 
 
@@ -184,7 +185,7 @@ The protocol has been approved by the University of Oxford’s Medical Sciences 
 Our subject inclusion criteria include: (1) age of 18 years or over, (2) have studied life or social sciences for at least one term at undergraduate (bachelor’s degree) level. We will recruit up to 100 subjects via the online research platform Prolific (www.prolific.co) and social media platforms. The maximum sample size is determined from a power calculation (see section on Simulated data for sample size determination, below) indicating that this is sufficient to detect the case when 33% or more of subjects shift from reliance on small arrays at start of training to arrays that are meaningfully larger by end of training. 
 
 ## Procedure  
-After providing informed consent, subjects will complete the estimation quiz and judgment task online at a time and place of their choosing, followed by an alternative form of the post-test estimation quiz. Subjects are paid £7.50 for their time, but can earn a further bonus linked to the number of correct items on the quiz (3p per correctly answered item on each version), and their score on the training game to bring the payment up to £12.  
+After providing informed consent, subjects will complete the estimation quiz and judgment task online at a time and place of their choosing, followed by an alternative form of the post-test estimation quiz. Subjects are paid £7.50 for their time, but can earn a further bonus linked to the number of correct items on the quiz (3p per correctly answered item on each version), and their score on the training game to bring the payment up to a theoretical maximum of £12.  
 Training is divided into four blocks, and after each block, subjects are told that they can take a break if they wish. The study is implemented using Gorilla (@anwyl-irvine2020), a cloud-based research tool for behavioral studies. The study takes around one hour to complete.  
   
 ## Design
@@ -193,7 +194,7 @@ Within-task learning will be assessed in a within-subjects design with one facto
 In addition, transfer of training will be assessed using the estimation quiz, with parallel forms administered in a within-subjects pre-post-test design.  
 
 ### Judgment and reasoning quiz
-The quiz (Appendix 1) was designed for this study, and is termed 'Judgment and reasoning quiz' to minimise negative reactions from those who might feel they are poor at statistics. It has two parallel forms, each of which contains 12 multiple-choice items with 4 choices each. Six items test knowledge of general probability (P-items) and six test knowledge of how sample size determines accuracy (S-items). The parallel forms are counterbalanced, so half the subjects receive form 1 at pretest and form 2 at post-test, and half receive the opposite order. The main dependent variable is number of items correct for S-items, but the pattern of error responses will also be reported. A previous version of the quiz was piloted with 21 subjects, confirming that the difficulty level is appropriate, avoiding ceiling effects, and that accuracy on items of type S is lower than that for type P. On the basis of pilot testing, some items were reworded for clarity.
+The quiz (Appendix 1) was designed for this study, and is termed 'Judgment and reasoning quiz' to minimise negative reactions from those who might feel they are poor at statistics. It has two parallel forms, each of which contains 12 multiple-choice items with 4 choices each. Six items test knowledge of general probability (P-items) and six test knowledge of how sample size determines accuracy (S-items). The parallel forms are counterbalanced, so half the subjects receive form 1 at pretest and form 2 at post-test, and half receive the opposite order. The main dependent variable is number of items correct for S-items, but the pattern of error responses will also be reported. A previous version of the quiz was piloted with 21 subjects (Pilot 1), confirming that the difficulty level is appropriate, avoiding ceiling effects, and that accuracy on items of type S is lower than that for type P. On the basis of pilot testing, some items were reworded for clarity.
 
 ### Online training
 **Instructions**:  After the estimation quiz pre-test, subjects are introduced to the game, as follows: 
@@ -277,7 +278,7 @@ At the end of training they are asked if they thought they had got better at the
 **Training items**  
 Gifs for training items were generated by a purpose-designed script which is available on Open Science Framework (https://osf.io/rnkhq/?view_only=b0fcb097cc3044aaa942f15136441c49). For each item, samples of observations were selected in a cumulative fashion, such that, for instance, the sample with 20 observations per group included the sample with 10 observations per group, plus an additional 10 observations.  The array sizes doubled with each step, corresponding to 10, 20, 40, 80, 160 and 320 observations per group.  
 
-All items included a pink sample from a population with mean of zero and SD of one, plus a blue sample. For the blue sample, half the items were drawn from the same population as the pink sample (i.e. null effect) and half were drawn from a population with mean of 0.3 and SD of one (i.e., true effect). `r fignumber <- fignumber+1` Figure `r fignumber` illustrates a set of samples shown side by side for a trial with a true effect. Figures were created using the R programming language (R Core Team, 2020) using the _geom_beeswarm_ function from the _ggbeeswarm_ package (version 0.6.0; Clarke & Sherrill-Mix, 2017) in conjunction with _ggplot2_ (version 3.2.1; Wickham, 2016). Each plot was combined into a gif using the _transition_states_ function from the _gganimate_ package (version 1.0.7; Pederson & Robinson, 2020). Items for pilot testing (see below) showed only the datapoints corresponding to the two datasets, but, as discussed below, for the current study, we added the sample mean shown as a horizontal bar.  
+All items included a pink sample from a population with mean of zero and SD of one, plus a blue sample. For the blue sample, half the items were drawn from the same population as the pink sample (i.e. null effect) and half were drawn from a population with mean of 0.3 and SD of one (i.e., true effect). `r fignumber <- fignumber+1` Figure `r fignumber` illustrates a set of samples shown side by side for a trial with a true effect. Figures were created using the R programming language (R Core Team, 2020) using the _geom_beeswarm_ function from the _ggbeeswarm_ package (version 0.6.0; Clarke & Sherrill-Mix, 2017) in conjunction with _ggplot2_ (version 3.2.1; Wickham, 2016). Each plot was combined into a gif using the _transition_states_ function from the _gganimate_ package (version 1.0.7; Pederson & Robinson, 2020). In Pilot 1 (see below) we showed only the datapoints corresponding to the two datasets, but, as discussed below, for Pilot 2 we added the sample mean shown as a horizontal bar with the aim of improving accuracy.  
 
 ![Figure `r fignumber`. Sample item from the training set. The pair of distributions corresponding to each sample size is presented in a gif one at a time sequentially for 2 seconds, so the display builds up from left to right over time.](demoitem.jpg)
 
@@ -289,7 +290,7 @@ Subjects receive feedback after each response, in the form of a display showing 
 
 The main dependent measure from the training trials is response latency, which is converted to array size, as described above. For data analysis, array size (10, 20, 40, 80, 160, 320) is converted to array index, ranging from 1 to 6.  In addition, stored with each array is the true  effect size in the population on that trial (Null or 0.3), coding of each response as correct (1) or incorrect (0), the observed effect size on that trial, and the log likelihood of a true vs null effect obtained from the observed data. 
 
-In a pilot study  with this task (see below), the reward schedule was simply 10 points for a correct response and -10 for an incorrect response. One drawback of this approach was that the only incentive to respond before the final display was to minimize time in the experiment. In the current version, we therefore encourage more thoughtful responding by explaining the idea of an optimal array size - which is the smallest array size at which the odds in favour of either the null or true hypothesis reaches 40:1 (absolute log likelihood of 3.68).  In contrast to the pilot session, we will also convert the total points earned (4p for correct, -4p for error, plus bonus) into a financial bonus payment.  
+This basic task has evolved over two pilot studies, both of which led to improvements in the design. As well as changes to the displays viewed by subjects, we recognised the importance of manipulating incentives to make subjects take the task seriously.  In the current version we adopt the method used in Pilot 2, which is to encourage thoughtful responding by explaining the idea of an optimal array size - which is the smallest array size at which the odds in favour of either the null or true hypothesis reaches 40:1 (absolute log likelihood of 3.68) or above.  We also convert the total positive points earned (4p for correct, -4p for error, plus bonus) into a financial bonus added to the basic payment for participation.  
 
 
 
@@ -297,9 +298,9 @@ In a pilot study  with this task (see below), the reward schedule was simply 10 
 ### Exclusionary criteria
 If subjects do not complete the post-task quiz they will still be included in the main analysis of learning effects, but replacement subjects will be recruited to ensure a sufficient sample size for the pre-post training analysis of the quiz results.  
 
-In our pilot data, no subjects scored above 80% overall on the training task, but it is anticipated that the updated version of training (showing the mean bar) will be easier, and it is possible that some will obtain scores that are so high that no learning effect will be detectable. If there are subjects who score above 90% in the first block of training, they will be removed from the main analysis and treated separately. It is predicted that these would be people with a good prior understanding of sample size effects, and accordingly should be superior to other subjects on the S-items from the quiz at both pre-test and post-test.  
+We anticipate that some subjects will obtain scores on the first block that are so high that no learning effect will be detectable: 4/30 (13%) of subjects in the second pilot study scored 90% or more in block 1 (see below). Subjects who score 90% or more correct in block 1 will be removed from the main analysis and treated separately. It is predicted that these would be people with a good prior understanding of sample size effects, and accordingly should be superior to other subjects on the S-items from the quiz at both pre-test and post-test.  
 
-For the regression analysis, we use an index of learning which corresponds to the difference in mean array index between first and last blocks. We will exclude any subjects with a mean array size greater than 5 in the first block, since they will show a ceiling effect that will make the predictor variable insensitive. 
+For the regression analysis, we use an index of learning which corresponds to the difference in percentage correct between first and last blocks. We will again exclude subjects scoring 90% or more in the first block, since they will show a ceiling effect that will make the predictor variable insensitive. 
 
 
 
@@ -307,16 +308,16 @@ For the regression analysis, we use an index of learning which corresponds to th
 _Hypothesis 1_: Responses will reflect overconfidence in small samples.
 If this hypothesis is not confirmed, then this would undermine the rationale of the study, so this may be regarded as a form of positive control. This hypothesis will be tested using data both from the Pretest estimation quiz and the training task. On the pretest estimation quiz, it is expected that the majority of subjects will fail to select the correct response on items that assess awareness of the importance of sample size, and when they do so, will either respond that sample size is not important, or, when asked to select an optimal sample size, will select one that is smaller than required.  
 
-In the training task, we predict that responses in the first block of training will tend to be non-optimal, made when the array size is small enough to make an error likely. The array index at which a response is made for all subjects will be compared with a value of 5 (corresponding to N = 160 and power = .85 - see Figure 2), using a directional one-sample t-tests, with the prediction that most participants will make responses at an earlier array index than this.
+In the training task, we predict that responses in the first block of training will tend to be non-optimal, made when the array size is small enough to make an error likely. The array index at which a response is made for all subjects will be compared with a value of 5 (corresponding to N = 160 and power = .85 - see Figure 2), using a directional one-sample t-tests, with the prediction that most participants will make responses at an earlier array index than this. We have already demonstrated in Pilot 2 that this prediction is confirmed in a sample of 30 subjects. 
 
 _Hypothesis 2_: Overconfidence in small samples will decline with training.  
 This prediction will be tested by assessing whether array index at the point of selection is higher for the last than the first block of the training session, using a one-tailed t-test. In addition, it is anticipated that within each block there will be a positive correlation between accuracy and array index, indicating that subjects use the additional information in larger sample sizes to guide their responding. 
 
 _Hypothesis 3_: Generalisation of learning  
-Here the prediction is that individual differences in learning on the training task will predict improvement on the estimation quiz, specifically for items that are designed to assess sampling variability blindness. Individual differences in learning will be characterised by arraydiff, the difference in array index at the point of response for last and first blocks. 
+Here the prediction is that individual differences in learning on the training task will predict improvement on the estimation quiz, specifically for items that are designed to assess sampling variability blindness. Individual differences in learning will be characterised by array.diff, the difference in array index at the point of response for last and first blocks. 
 The prediction will be tested using linear regression:  
-_postS ~ preS + arraydiff_,    
-where postS and preS are posttest and pretest scores on S-items, and arraydiff is the difference in mean array index between the last and first block of training. This simple approach to analysis was settled upon after using simulated data to conduct power analysis comparing linear regression versus a linear mixed models approach. The script for simulation is available on OSF (https://osf.io/rnkhq/?view_only=b0fcb097cc3044aaa942f15136441c49).
+_postS ~ preS + array.diff_,    
+where postS and preS are posttest and pretest scores on S- quiz items, and array.diff is the difference in percent correct between the last and first block of training. This simple approach to analysis was settled upon after using simulated data to conduct power analysis comparing linear regression versus a linear mixed models approach. The script for simulation is available on OSF (https://osf.io/rnkhq/?view_only=b0fcb097cc3044aaa942f15136441c49).
 
 Further exploratory analysis will be used to scrutinise the response profiles on the training task for those subjects who do show learning, as well as their self-report of strategies, with the aim of determining which cues they rely on when making a response (see Exploratory analyses, below). 
 
@@ -325,11 +326,11 @@ The positive control P-items from the quiz will be scrutinised to check that the
 ## Stopping rule  
 We will do an initial check after testing 30 subjects to see whether the predictions from Hypothesis 1 are supported, indicating that subjects on average show sampling variation blindness. If not, then we will halt data collection, as the basic premise of the study would not be supported.  
 
-Assuming the study continues, we will stop and check results after each increment of 30 subjects. Because power depends crucially on the proportion showing learning, and the increase in array index with learning, both of which are unknown at this point, we will adopt a Bayesian stopping rule at sequential stages in data collection, starting with a sample of `r subn[1]`, and then increasing to `r subn[2]` and `r subn[3]` if necessary to meet our prespecified criteria. We will compute Bayes Factors for the t-test analysis testing hypothesis 2, and the linear regression for testing hypothesis 3.  While Bayes Factors fall between 1/3 or 3 we will continue with data collection. If the Bayes Factors yield evidence in favor of the alternative or null hypothesis for both analyses, we will stop data collection.  
+Assuming the study continues, we will stop and check results after testing 50 subjects, and then after each increment of 25 subjects. Because power depends crucially on the proportion showing learning, and the increase in percent correct with learning, both of which are unknown at this point, we will adopt a Bayesian stopping rule at sequential stages in data collection, starting with a sample of `r subn[1]`, and then increasing to `r subn[2]` and `r subn[3]` if necessary to meet our prespecified criteria. We will compute Bayes Factors for the t-test analysis testing hypothesis 2, and the linear regression for testing hypothesis 3.  While Bayes Factors fall between 1/3 or 3 we will continue with data collection. If the Bayes Factors yield evidence in favor of the alternative or null hypothesis for both analyses, we will stop data collection.  
 
 
 ## Exploratory analyses  
-As well as the planned analyses using array index as a dependent variable, the pattern of responses on the training task will be explored to see whether individual subjects adopt specific strategies. Accuracy scores will be used to compute signal detection indices, d prime and beta, for each block of training, based on the number of hits (respond yes when there is a true effect); the number of misses (respond no when there is a true effect), the number of false alarms (respond yes when there is a null effect) and the number of correct negatives (respond no when there is a null effect). Calculations of these indices will be conducted using the _dprime_ function from the _psycho_ package (version 0.5.0; Makowski,2018). The beta values will allow us to detect cases of response bias, i.e. a tendency to always respond 'blue=pink' or 'blue>pink'.  
+As well as the planned analyses using percent correct as a dependent variable, the pattern of responses on the training task will be explored to see whether individual subjects adopt specific strategies. Accuracy scores will be used to compute signal detection indices, d prime and beta, for each block of training, based on the number of hits (respond yes when there is a true effect); the number of misses (respond no when there is a true effect), the number of false alarms (respond yes when there is a null effect) and the number of correct negatives (respond no when there is a null effect). Calculations of these indices will be conducted using the _dprime_ function from the _psycho_ package (version 0.5.0; Makowski,2018). The beta values will allow us to detect cases of response bias, i.e. a tendency to always respond 'blue=pink' or 'blue>pink'.  
 
 As shown in the power values in Figure 2, with an effect size (Cohen's d) of .3, participants need to wait for an array of at least 80 per group (index 4) to have a reasonable chance of success (above 50%) for detecting a true effect, and would be well-advised to wait for the largest array (index 6), which would virtually guarantee success.  However, the trial by trial variation allows us to do a rather more sensitive analysis, testing how the evidence available on each specific trial is used.  
 
@@ -396,11 +397,12 @@ The case where no subjects learn corresponds to a test of the null hypothesis, a
 
 
 ```{r powertable,include=TRUE,echo=FALSE}
-bigname<-"bigsummary500_A12nu_pgood0.5_0.66_props0_0.25_0.33_0.5_N50_75_100.csv"
+bigname<-"bigsummary_A12nu_pgood0.5_0.66_props0_0.25_0.33_0.5_N50_75_100.csv"
+#bigname was created in the Simulate_power_proportions script; keeps track of parameters in simulation
 bigsummary<- read.csv(bigname)
-bigsummary<-bigsummary[,c(1:4,8,6,9:11)]
-nsubvals<-c(50,75,100)
-plearnvals<-c(0,.25,.33,.5)
+bigsummary<-bigsummary[,c(1:4,8,6,9:11)] #final columns 9:11 for array index; or 12:14 for proportion correct
+nsubvals<-c(50,75,100) #values that vary for N subjects - should match those in bigname
+plearnvals<-c(0,.25,.33,.5) #values that vary for proportion of subjects who learn- should match those in bigname
 quizgoodvals<-c(.5,.66) #all subjects start with mean proportion correct on quiz S-items of .33. Those who show learning on training task increase to either .5 or .66. (Equivalent to increase by 1 or 2 items)
 thisrow<-0
 alpha <- .0166*2 #sequential stopping means need divide .05 by 3, but then note we have one-tailed test
@@ -441,6 +443,7 @@ for (Ad in 1:2){
 # column lmpre.p is power of regression coefficient for quiz pretest score
 # column lmarraydiff.p is power of regression coefficient for arraydifference (block 4 minus block 1) as predictor quiz posttest.
 
+#columns 12:14 in original bigsummary are parallel versions where %correct is used instead of array index.
 
 #Make table for learning effect in task
 #For learning effect on task, we just average power across levels of quiz success
@@ -536,7 +539,7 @@ Power to detect any improvement in the overall sample is generally poor if one j
 #Now do table 3 for power for regression
 #Make table3 for prediction of quiz posttest from arraygain
 #For learning effect on task, we just average power across levels of quiz success
-LMtab <- aggregate(powersummary$lmarraydiff.p,by=list(powersummary$nsub,powersummary$plearn,powersummary$quiz.pgood,powersummary$A),FUN=mean)
+LMtab <- aggregate(powersummary$lmpdiff.p,by=list(powersummary$nsub,powersummary$plearn,powersummary$quiz.pgood,powersummary$A),FUN=mean)
 table3<-data.frame(matrix(NA,nrow=20,ncol=4))
 colnames(table3) <- c('Parameters','N=50','N=75','N=100')
 
@@ -598,11 +601,13 @@ Finally, if we are able to show an improvement with this short training session,
 
 ## Pilot data  
 `r tabnumber <- tabnumber+1`
-The training task was modified on the basis of results from pilot data collected from 21 participants recruited via Prolific. Data are available on OSF (https://osf.io/rnkhq/?view_only=b0fcb097cc3044aaa942f15136441c49). Overall performance on the pilot task was poor, with mean of only 65% correct, confirming the difficulty that subjects had in judging effect sizes from distributions. A score of 85% or above was observed in only 10% of all blocks x subjects. Pilot participants found the task reasonably straightforward but scrutiny of individual cases for evidence of response strategies suggested that only a few participants had started to wait longer to respond as the session proceeded, and others went in the opposite direction, selecting smaller arrays as the task proceeded.  In general, high performers were those who waited for large arrays from the outset, rather than those who changed strategy in the course of training. 
+The training task was modified on the basis of results from Pilot Study 1, with data collected from 21 participants recruited via Prolific. Data are available on OSF (https://osf.io/rnkhq/?view_only=b0fcb097cc3044aaa942f15136441c49). Overall performance on the pilot task was poor, with mean of only 65% correct, confirming the difficulty that subjects had in judging effect sizes from distributions. A score of 85% or above was observed in only 10% of all blocks x subjects. Subjects in PIlot 1 found the task reasonably straightforward but scrutiny of individual cases for evidence of response strategies suggested that only a few participants had started to wait longer to respond as the session proceeded, and others went in the opposite direction, selecting smaller arrays as the task proceeded.  In general, high performers were those who waited for large arrays from the outset, rather than those who changed strategy in the course of training. 
 
-We therefore considered ways of making the training more effective. In the pilot task, the beeswarm displays for the two groups  had omitted the horizontal line corresponding to the mean, and each beeswarm faded out as the next one appeared, which meant it was less obvious that the distributions were cumulative. In addition, although the subjects were shown a demonstration of the task, they did not have any familiarisation trials, and it was felt they they might perform better if given the chance to try a few trials to become familiar with the pace of the task. In the current version of the task, the displays include a horizontal bar corresponding to the mean, and prior displays remain visible rather than fading them out, to emphasise that, within a trial, each set of points included the prior, smaller set. In addition, subjects will be given 4 practice trials before the training blocks, and the reward schedule is modified to impose a small cost for selecting larger arrays, to discourage subjects from just waiting until the last array as a default strategy. Instructions are also modified to stress that the stimuli were genuine, with no trick questions.
+Pilot 1 participants also completed the estimation quizzes that preceded and followed the training session. As noted above, modifications were made to wording of some quiz items for the current study on the basis of pilot testing to avoid confusing or over-complicated language. 
 
-The pilot participants also completed the estimation quizzes that preceded and followed the training session. As noted above, modifications were made to wording of some quiz items for the current study on the basis of pilot testing to avoid confusing or over-complicated language. 
+On the basis of Pilot 1 data, we considered ways of making the training more effective. In Pilot 1, the beeswarm displays for the two groups  had omitted the horizontal line corresponding to the mean, and each beeswarm faded out as the next one appeared, which meant it was less obvious that the distributions were cumulative. In addition, although the subjects were shown a demonstration of the task, they did not have any familiarisation trials, and it was felt they they might perform better if given the chance to try a few trials to become familiar with the pace of the task. For Pilot 2, the displays included a horizontal bar corresponding to the mean, and prior displays remained visible rather than fading out, to emphasise that, within a trial, each set of points included the prior, smaller set. In addition, subjects were given 4 practice trials before the training blocks, and the reward schedule was modified to provide stronger motivation to succeed, as described above. 
+
+A second pilot study, Pilot 2, was run with 30 subjects, on the new version of the training task (without the quiz).  This confirmed that not only was performance improved relative to pilot 1, but also there was evidence of learning in terms of the percentage correct measure. The mean array index was numerically larger for the last vs the first block, but the difference was not statistically significant. However, for the final block only, there was a significant correlation between mean array index and percent correct, and several subjects reported that they learned to wait for larger arrays in the course of training, suggesting the task was effective in achieving its aim. A summary of results form Pilot 2 is available on OSF. 
 
 
 # Appendix 1
