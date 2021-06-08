@@ -1,0 +1,180 @@
+---
+title: "Process Stats Game pilot data"
+output: html_notebook
+---
+
+Read in data and load packages. 
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(flextable)
+
+dat1<- read.csv(paste0("./Data/data_exp_53470-v3_task-c7jj.csv"), na.strings = c("NA", ""))
+dat2<- read.csv(paste0("./Data/data_exp_53470-v4_task-c7jj.csv"), na.strings = c("NA", ""))
+
+all.dat <- rbind(dat1, dat2)
+```
+
+## How did participants perform?
+
+```{r }
+# take data, filter, and create new variables
+sum.dat <- all.dat %>%
+  filter(Attempt== 1,
+         display== "beeswarms") %>%
+  select(Participant.Public.ID, Trial.Number, ANSWER, Correct, Reaction.Time, bonus) %>%
+  mutate(block= cut(as.numeric(Trial.Number), breaks= c(0,20,40,60,Inf), labels = c("1","2","3","4")))
+# accuracy per half
+p.agg <- sum.dat %>% 
+  group_by(Participant.Public.ID, block) %>% 
+  summarise(meanAcc = mean(Correct))
+# visualize
+ggplot(p.agg, aes(x = block, y = meanAcc, color = Participant.Public.ID, group = Participant.Public.ID)) + 
+  geom_point(size= 2.5) + geom_line() + 
+  theme_bw(18) +
+  ylab("Proportion correct") +
+  xlab("Block") +
+  ggtitle("Proportion correct across blocks") +
+  theme(legend.position = "none")
+# block means
+sum.dat %>% 
+  group_by(block) %>% 
+  summarise(meanAcc = mean(Correct))
+```
+
+Slopes for individual participants are fairly mixed with a few showing learning and others not. As can be seen from the printed tibble is that accuracy during block 1 is around 72%. This increased for block 2 and remains stable. This indicates that participants are learning this fairly early on. 
+
+## What array were participants responding to?
+
+```{r array}
+array.dat<- sum.dat %>%
+  mutate(array= as.numeric(cut(Reaction.Time, breaks= c(0,2000,4000,6000,8000,10000,Inf), labels = c("1","2","3","4","5","6"))))
+# mean array
+array.agg <- array.dat %>% 
+  group_by(Participant.Public.ID, block) %>% 
+  summarise(meanArray = mean(array),
+            meanAcc = mean(Correct))
+# visualize
+ggplot(array.agg, aes(x = block, y = meanArray, color = Participant.Public.ID, group = Participant.Public.ID)) + 
+  geom_point(size= 2.5) + geom_line() + 
+  theme_bw(18) +
+  ylab("Array") +
+  xlab("Block") +
+  ggtitle("Chosen Array across blocks") +
+  theme(legend.position = "none")
+# block means
+array.dat %>% 
+  group_by(block) %>% 
+  summarise(meanArray = mean(array))
+```
+
+Slopes for individual participants are fairly mixed with some choosing later arrays in the second half while others are not. From the printed tibble there isn't much of a change in chosen array.
+
+## Planned analysis
+
+We plan to exclude those who score more than 90% correct in block 1. 
+
+### Hypothesis 1
+
+For hypothesis 1, we state: *In the training task, we predict that responses in the first block of training will tend to be non-optimal, made when the array size is small enough to make an error likely. The array index at which a response is made for all subjects will be compared with a value of 5 (corresponding to N = 160 and power = .85 - see Figure 2), using a directional one-sample t-tests, with the prediction that most participants will make responses at an earlier array index than this.*
+
+```{r h1}
+h1.test <- array.agg %>%
+  filter(block==1,
+         meanAcc < .90)
+t.test(h1.test$meanArray, mu= 5, alternative = "less")
+```
+
+Out of the 30 participants, 4 were removed due to having greater than 89% accuracy during block 1. The *t*-test indicates that the array during block 1 is statistically different from 5. 
+
+### Hypothesis 2
+
+For hypothesis 2, we state: *Overconfidence in small samples will decline with training. This prediction will be tested by assessing whether array index at the point of selection is higher for the last than the first block of the training session, using a one-tailed t-test. In addition, it is anticipated that within each block there will be a positive correlation between accuracy and array index, indicating that subjects use the additional information in larger sample sizes to guide their responding.*
+
+```{r h2}
+h2.test <- array.agg %>%
+  filter(block==1 | block==4,
+         Participant.Public.ID %in% h1.test$Participant.Public.ID)
+# means
+aggregate(FUN= mean, data= h2.test, meanArray~ block)
+# compare blocks
+t.test(h2.test$meanArray~h2.test$block, paired= TRUE, alternative= "greater")
+```
+
+Regarding the comparisons across blocks, there is a subtle increase in the array choice. This is not significant in hypothesis test. 
+
+## Accuracy analysis  
+(Added by Dorothy). Although blocks have not increased, it does look as if increase in accuracy is significant. 
+This appears to be a more sensitive way of measuring learning, even though it links less well to our specific hypothesis.  
+
+```{r db)compare.p.corr}
+
+hx.test <- array.agg %>%
+  filter(block==1 | block==4,
+         Participant.Public.ID %in% h1.test$Participant.Public.ID)
+# means
+aggregate(FUN= mean, data= hx.test, meanAcc~ block)
+# compare blocks
+t.test(hx.test$meanAcc~hx.test$block, paired= TRUE, alternative= "less")
+```
+
+
+```{r arrayCor}
+# plot
+ggplot(h2.test, aes(x=meanArray, y=meanAcc, color=block)) +
+  geom_point(size= 2) + 
+  geom_rug() + 
+  geom_smooth(method= lm) +
+  facet_wrap(~block) + theme_bw(18) + theme(legend.position = "none") +
+  ggtitle("Correlation between accuracy and array") +
+  xlab("Mean chosen array") +
+  ylab("Mean accuracy")
+# correlation coefficients
+# block 1
+cor(h2.test[h2.test$block==1,]$meanAcc, h2.test[h2.test$block==1,]$meanArray, method = "spearman")
+# block 4
+cor(h2.test[h2.test$block==4,]$meanAcc, h2.test[h2.test$block==4,]$meanArray, method = "spearman")
+```
+
+We start to see evidene of a correlation between array and accuracy in block four that isn't present in block 1. 
+
+## How much bonus payment did we give?
+
+```{r bonus}
+# filter
+bonus.dat <- all.dat %>%
+  filter(Trial.Number== "bonusPayment")
+# plot 
+hist(as.numeric(bonus.dat$Response))
+# mean payment
+mean(as.numeric(bonus.dat$Response))
+```
+
+The mean bonus payment made was `r mean(as.numeric(bonus.dat$Response))`. The total bonus payment made was `r sum(as.numeric(bonus.dat$Response))`. As shown in the histogram people are getting the hang. 
+
+## What startegies did participants employ?
+
+Here, participants were asked *Did you change how you approached the task? Please let us know if you adopted any specific strategy to guide your response?*
+
+*NOTE*. Only 26 received the follow up questionnaire due to an issue in Gorilla. This is now fixed. 
+
+```{r strategy}
+strat.dat <- read.csv("./Data/data_exp_53470-v4_questionnaire-lo83.csv", na.strings = c("NA", ""))
+# subjective improvement
+improve <- strat.dat %>%
+  filter(Question.Key== "better.over.time")
+# counts
+
+table(improve$Response)
+# filter
+strat.dat <- strat.dat %>%
+  filter(Question.Key== "approach.feedback")
+# list
+print(strat.dat$Response)
+
+```
+
+21 participants reported that they had improved over time, with 1 saying they did not and 4 saying they were unsure. As we can see from the qualitative questions a few participants didn't employ a strategy. 
+
+The good news is that a few people learned that later arrays produced more reliable results. 
