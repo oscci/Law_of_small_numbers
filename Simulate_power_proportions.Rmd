@@ -13,7 +13,7 @@ require(lme4)
 <!-- for stats nb http://journal.sjdm.org/stat.htm-->
 See simulate model based data script for working up to the logic of the simulation
 
-
+**NB. In checking effect of regression to mean, identified an error which meant columns where true effect size looked up were out by 1. Corrected on 28 June 2021 (DB).**
 
 # Simulating data for analysis
 
@@ -40,8 +40,7 @@ loadspreadsheet<-function(myfile){
 
 makesim<-function(mysheet,nsub,p.learn,errrate,A,earnc,earne,bonus,allarrayvals){ #array is increase in array size
  
-  neworder<-sample(1:nrow(mysheet),nrow(mysheet),replace=F) #randomise the order of trials
-  mysheet<-mysheet[neworder,]
+
   nperhalf<-nrow(mysheet)/2 #number of trials for each half
   
   hvals<-matrix(c(1,nperhalf,(nperhalf+1),(2*nperhalf)),byrow=T,nrow=2)#range of rows for each half
@@ -54,7 +53,8 @@ makesim<-function(mysheet,nsub,p.learn,errrate,A,earnc,earne,bonus,allarrayvals)
   simdataA1$strategy <- 'A'
 
   for (i in 1:nsub){
-    
+    neworder<-sample(1:nrow(mysheet),nrow(mysheet),replace=F) #randomise the order of trials for each sub
+    mysheet<-mysheet[neworder,]
     simdataA1$index1[i]<-0 #this indicates whether stick with low array or learn to go higher
     simdataA1$index2[i]<-0 #this indicates whether stick with low array or learn to go higher - here it is initialised; will increase for those identified as learners. 
     learnp <- runif(1)
@@ -70,7 +70,7 @@ makesim<-function(mysheet,nsub,p.learn,errrate,A,earnc,earne,bonus,allarrayvals)
       thistrial<-0
       for (r in hvals[h,1]:hvals[h,2]){
         thistrial<-thistrial+1
-        thisarray<-sample(allarrayvals,1)
+        thisarray<-sample(allarrayvals,1) #use allarrayvals distribution to determine array index at point of decision
         if(h==2){
           if(simdataA1$index2[i]==1){
             thisarray<-thisarray+A
@@ -78,8 +78,8 @@ makesim<-function(mysheet,nsub,p.learn,errrate,A,earnc,earne,bonus,allarrayvals)
             }
            }
         
-        myans <- o1+thisarray-1 #column with array size that will be used
-        ESvals <-mysheet[hvals[h,1]:hvals[h,2],myans] #trueES at array of response
+        arraycol <- o1+thisarray #column with array size that will be used [this was miscomputed before Jun28]
+        ESvals <-mysheet[hvals[h,1]:hvals[h,2],arraycol] #trueES at array of response
        correctans<-mysheet$ES[hvals[h,1]:hvals[h,2]]
        correctans[correctans>0]<-1
         myresp <- rep(1,nperhalf) #default; response is YES (retained if obsES greater than .15)
@@ -147,7 +147,7 @@ makesim<-function(mysheet,nsub,p.learn,errrate,A,earnc,earne,bonus,allarrayvals)
 
 Use makesim to check how earnings schedule works for those who do and don't learn.
 ```{r checkearnings}
-p.learn=1 #just compare 1st and 2nd half assuming all learn
+p.learn=1 #set to 1 to just compare 1st and 2nd half assuming all learn
   allarrayvals <- c( 1,1,2,2,2,2,3,3,3,3,3,3,4,4,4,5,5,5,6,6) #this can be converted to distribution of probabilities for each array index. 2 to 5 are equally likely - 1 and 6 half as common. Can vary this.
  
 nsub=1000
@@ -299,4 +299,66 @@ write.csv(bigsummary,bigname,row.names=F)
 
 ```
 
-This file is then read for the power calculations that are in the main Rmd file. 
+This file is then read for the power calculations that are in the main Rmd file.
+
+
+## Checking regression to the mean if subjects are omitted.
+Start with little function that just computes means so we can compare cropped and original files.
+```{r checkmean}
+checkmeans<-function(df,thisdf){
+  
+ma1<-mean(as.vector(df$mean.array1))
+ma2<-mean(as.vector(df$mean.array2))
+mp1 <- mean(as.vector(df$p.corr1))
+mp2 <-mean(as.vector(df$p.corr2))
+print(thisdf)
+print(c('Meanarray1','Meanarray2','Mean% 1','Mean% 2'))
+print(c(ma1,ma2,mp1,mp2))
+}
+```
+
+```{r regmean}
+p.learn=.5 #assume half are true learners
+  allarrayvals <- c( 1,1,2,2,2,2,3,3,3,3,3,3,4,4,4,5,5,5,6,6) #this can be converted to distribution of probabilities for each array index. 2 to 5 are equally likely - 1 and 6 half as common. Can vary this.
+ 
+nsub=1000
+errrate=.025
+A=2
+earnc<-rep(4,6)
+earne<--rep(4,6)
+bonus<-2
+mysheet<-loadspreadsheet('spreadsheet1.csv')
+mysheet<-mysheet[1:40,]
+
+nudat<- makesim(mysheet,nsub,p.learn,errrate,A,earnc,earne,bonus,allarrayvals)
+
+
+
+nudat1<-nudat[nudat$index2==0,]  #nonlearners
+nudat2<-nudat[nudat$index2==1,]  #learners
+plot(jitter(nudat1$p.corr1,1),jitter(nudat1$p.corr2,1))
+plot(jitter(nudat2$p.corr1,1),jitter(nudat2$p.corr2,1))
+#Not v informative - but why few values of .75 - something wrong?
+
+table(nudat1$p.corr1,nudat1$p.corr2)
+table(nudat2$p.corr1,nudat2$p.corr2)
+
+# For both null and true learning, now check impact of omitting those with initial score > .9
+
+nudat1x <- nudat1[nudat1$p.corr1<.9,]
+nudat2x <- nudat2[nudat2$p.corr1<.9,]
+
+checkmeans(nudat1,'No learn; all')
+checkmeans(nudat1x,'No learn; cropped')
+checkmeans(nudat2,'learn; all')
+checkmeans(nudat2x,'learn; cropped')
+
+```
+
+This confirms that omitting cases with initial high scores will create false increase in % correct from time 1 to time 2.
+
+
+
+
+
+
