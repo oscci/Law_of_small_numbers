@@ -6,19 +6,19 @@ output:
   word_document: default
   html_document:
     df_print: paged
-csl: apa
+
 bibliography: LawSmallNums.bib 
 ---
 output:
   word_document:
     reference_docx: StylesTemplate.docx
     keep_md: true
-
+csl:apa
 ```{r setup, include=FALSE,echo=FALSE}
 
 # NB This script reads output from two other scripts
 # 'gorilla_spreadsheets/spreadsheet1.csv' (created by make_gifs_datasim_script.R)
-# 'bigsummary_A12nu_pgood0.5_0.66_props0_0.25_0.33_0.5_N50_75_100.csv' (created by simulate_power_proportions.rmd)
+# 'powsummary_1000_A12_pgood0.5_0.66_props0_0.25_0.33_0.5_N50_75_100.csv' (created by simulate_power_proportions.rmd)
 #These .csv files are provided on OSF, or can be created by re-running the scripts listed above.
 #The spreadsheet1.csv sheet should be saved in a subdirectory called 'gorilla_spreadsheets'
 
@@ -205,7 +205,7 @@ In addition, transfer of training will be assessed using the estimation quiz, wi
 The quiz (Appendix 1) was designed for this study, and is termed 'Judgment and reasoning quiz' to minimise negative reactions from those who might feel they are poor at statistics. It has two parallel forms, each of which contains 12 multiple-choice items with 4 choices each. Six items test knowledge of general probability (P-items) and six test knowledge of how sample size determines accuracy (S-items). The parallel forms are counterbalanced, so half the subjects receive form 1 at pretest and form 2 at post-test, and half receive the opposite order. The main dependent variable is number of items correct for S-items, but the pattern of error responses will also be reported. A previous version of the quiz was piloted with 21 subjects (Pilot 1), confirming that the difficulty level is appropriate, avoiding ceiling effects, and that accuracy on items of type S is lower than that for type P. On the basis of pilot testing, some items were reworded for clarity.
 
 ### Independent and dependent variables
-On the training task, the independent variable is block: there are 4 blocks each of 20 items, but our focus is on comparing blocks 1 and 4. The dependent variables are mean array index per block, corresponding to the array size at which the response is made, and proportion correct for each block.  
+On the training task, the independent variable is block: there are 4 blocks each of 20 items, but our focus is on comparing blocks 1 and 4. The dependent variables are (a) mean array index per block, 1 to 6, corresponding to the array size (10, 20, 40, 80, 160, 320 per group) at which the response is made, and (b) earnings in the game, which reflects both proportion correct for each block, and ability to select the optimal array size at which to respond (see below).
 On the quiz, the independent variable is time (pre-training or post-training) and the dependent variable is proportion correct for S-items and P-items.  
 
 
@@ -278,9 +278,9 @@ _<u>Once you answer you will hear a *bloop* sound indicating that your response 
 _<u>After your response is made, the display increases until there are 320 datapoints  in each condition.</u>_  
 _You will then see a feedback slide telling you whether you answered correctly and displaying how many points you earned._  
 
-_On each trial, you earn 4 points for a correct answer, but you lost 4 points if you make a mistake._  
+_On each trial, you earn 4 points for a correct answer, but you lose 4 points if you make a mistake._  
 
-_You can also earn 2 bonus points if you make a correct response at the optimal array size.  This is the smallest array size at which the likelihood of a one scenario (true effect or null)  is 40 times greater than the other.  You should get a sense of what this looks like as you go through the game. The optimal array size will vary from trial to trial, just because of chance factors._  
+_You can also earn 2 bonus points if you make a correct response at the optimal array size.  This is the smallest array size at which the likelihood of one scenario (true effect or null)  is 40 times greater than the other.  You should get a sense of what this looks like as you go through the game. The optimal array size will vary from trial to trial, just because of chance factors._  
 
 _<u>You should try to maximise your score as we will convert your points into pennies and add these to your payment.</u>  Don't worry, though: if you make lots of errors and end up with a negative score, we won't subtract anything from the basic payment for this session._  
 
@@ -311,7 +311,7 @@ This basic task has evolved over two pilot studies, both of which led to improve
 ### Exclusionary criteria
 If subjects do not complete the post-task quiz they will still be included in the main analysis of learning effects, but replacement subjects will be recruited to ensure a sufficient sample size for the pre-post training analysis of the quiz results.  
 
-We anticipate that some subjects will obtain scores on the first block that are so high that no learning effect will be detectable: 4/30 (13%) of subjects in the second pilot study scored 90% or more in block 1 (see below). Subjects who score 90% or more correct in block 1 will be removed from the main analysis and treated separately. It is predicted that these would be people with a good prior understanding of sample size effects, and accordingly should be superior to other subjects on the S-items from the quiz at both pre-test and post-test.  
+We will also exclude from the main analysis any subjects who score 5 or 6 correct on S-items in the pretest quiz, as they would be people with a good prior understanding of sample size effects, so would be unlikely to show learning gains. We will check whether that assumption holds, by comparing performance of this subgroup with that of the rest of the sample on Block 1 of the training task.  We will recruit further subjects to substitute for these in the main analysis, regardless of how they perform.  
 
 For the regression analysis, we use an index of learning which corresponds to the difference in percentage correct between first and last blocks. We will again exclude subjects scoring 90% or more in the first block, since they will show a ceiling effect that will make the predictor variable insensitive. 
 
@@ -324,13 +324,13 @@ If this hypothesis is not confirmed, then this would undermine the rationale of 
 In the training task, we predict that responses in the first block of training will tend to be non-optimal, made when the array size is small enough to make an error likely. The array index at which a response is made for all subjects will be compared with a value of 5 (corresponding to N = 160 and power = .85 - see Figure 2), using a directional one-sample t-tests, with the prediction that most participants will make responses at an earlier array index than this. We have already demonstrated in Pilot 2 that this prediction is confirmed in a sample of 30 subjects. 
 
 _Hypothesis 2_: Overconfidence in small samples will decline with training.  
-This prediction will be tested by assessing whether array index at the point of selection is higher for the last than the first block of the training session, using a one-tailed t-test. In addition, it is anticipated that within each block there will be a positive correlation between accuracy and array index, indicating that subjects use the additional information in larger sample sizes to guide their responding. 
+This prediction will be tested by assessing whether array index at the point of selection is higher for the last than the first block of the training session, using a one-tailed t-test. In addition, it is anticipated that within each block there will be a positive correlation between earnings (reflecting proportion correct and identification of the optimal array) and array index, indicating that subjects use the additional information in larger sample sizes to guide their responding.
 
 _Hypothesis 3_: Generalisation of learning  
-Here the prediction is that individual differences in learning on the training task will predict improvement on the estimation quiz, specifically for items that are designed to assess sampling variability blindness. Individual differences in learning will be characterised by array.diff, the difference in array index at the point of response for last and first blocks. 
+Here the prediction is that individual differences in learning on the training task will predict improvement on the estimation quiz, specifically for items that are designed to assess sampling variability blindness. Individual differences in learning will be characterised by earn.diff, the difference in earnings for last and first blocks. 
 The prediction will be tested using linear regression:  
-_postS ~ preS + array.diff_,    
-where postS and preS are posttest and pretest scores on S- quiz items, and array.diff is the difference in percent correct between the last and first block of training. This simple approach to analysis was settled upon after using simulated data to conduct power analysis comparing linear regression versus a linear mixed models approach. The script for simulation is available on OSF (https://osf.io/rnkhq/?view_only=b0fcb097cc3044aaa942f15136441c49).
+_postS ~ preS + earn.diff_,    
+where postS and preS are posttest and pretest scores on S- quiz items, and earn.diff is the difference in earnings between the last and first block of training. This simple approach to analysis was settled upon after using simulated data to conduct power analysis comparing linear regression versus a linear mixed models approach. The script for simulation is available on OSF (https://osf.io/rnkhq/?view_only=b0fcb097cc3044aaa942f15136441c49).
 
 Further exploratory analysis will be used to scrutinise the response profiles on the training task for those subjects who do show learning, as well as their self-report of strategies, with the aim of determining which cues they rely on when making a response (see Exploratory analyses, below). 
 
@@ -343,7 +343,7 @@ Assuming the study continues, we will stop and check results after testing 50 su
 
 
 ## Exploratory analyses  
-As well as the planned analyses using percent correct as a dependent variable, the pattern of responses on the training task will be explored to see whether individual subjects adopt specific strategies. Accuracy scores will be used to compute signal detection indices, d prime and beta, for each block of training, based on the number of hits (respond yes when there is a true effect); the number of misses (respond no when there is a true effect), the number of false alarms (respond yes when there is a null effect) and the number of correct negatives (respond no when there is a null effect). Calculations of these indices will be conducted using the _dprime_ function from the _psycho_ package (version 0.5.0; Makowski,2018). The beta values will allow us to detect cases of response bias, i.e. a tendency to always respond 'blue=pink' or 'blue>pink'.  
+As well as the planned analyses using earnings as a dependent variable, the pattern of responses on the training task will be explored to see whether individual subjects adopt specific strategies. Accuracy scores will be used to compute signal detection indices, d prime and beta, for each block of training, based on the number of hits (respond yes when there is a true effect); the number of misses (respond no when there is a true effect), the number of false alarms (respond yes when there is a null effect) and the number of correct negatives (respond no when there is a null effect). Calculations of these indices will be conducted using the _dprime_ function from the _psycho_ package (version 0.5.0; Makowski,2018). The beta values will allow us to detect cases of response bias, i.e. a tendency to always respond 'blue=pink' or 'blue>pink'.  
 
 As shown in the power values in Figure 2, with an effect size (Cohen's d) of .3, participants need to wait for an array of at least 80 per group (index 4) to have a reasonable chance of success (above 50%) for detecting a true effect, and would be well-advised to wait for the largest array (index 6), which would virtually guarantee success.  However, the trial by trial variation allows us to do a rather more sensitive analysis, testing how the evidence available on each specific trial is used.  
 
@@ -390,7 +390,7 @@ dev.off()
   
 Figure `r fignumber` shows the contrast between observed effect sizes, which show more variation at small array indices, and log likelihood, where trials with true and null effects diverge as array index increases.  Considering first the observed effect sizes, it is clear that if a subject relied on this information to make decisions at small array indices, they would make many errors. Two of the True trials, B and C, have negative effect sizes at array indices 1 and 2, and one of the Null trials, D, has an effect size greater than .3 in the first array. Log likelihood values are shown in the right-hand panel, with dotted lines denoting cutoff of +/- 3.68, which we used as a criterion for the optimal array size.  A log likelihood of 3.68 indicates that the True Hypothesis is 40 times more likely to have generated the observed data than the Null Hypothesis, and a log likelihood of -3.68 indicates that the Null Hypothesis is 40 times more likely than the True Hypothesis. The trials shown in Figure `r fignumber` indicate that a strategy of responding True when log likelihood exceeds 3.68 and Null when it is less than -3.68 is not infallible (e.g., trial B has log likelihood below -3.68 at array index 3, yet comes from a distribution with true effect size of .3). Nevertheless, we can use this approach to compute accuracy levels that would arise from adopting different strategies over all trials, and it is clear that reliance on responding when absolute log likelihood exceeds 3.68 is a close to optimal strategy for achieving success without needing to wait until the final array. 
 
-Of course, a problem for subjects is that they cannot estimate log likelihood directly from the information they are presented with. Our primary analysis assumes that, on the basis of feedback, subjects may simply learn that they are more likely to be accurate if they wait to see more data, in which case, they would base their judgment on observed effect size, once the array index gets to 5 or above. By observing the pattern of responses in individuals, we may be able to determine if a subject adopts a more specific strategy, and if so, whether they place reliance on observed effect size or log likelihood. 
+Of course, a problem for subjects is that they cannot estimate log likelihood directly from the information they are presented with. However, they can estimate the amount of overlap between the blue and pink samples, which is predictive of log likelihood.  Our primary analysis assumes that, on the basis of feedback, subjects may simply learn that they are more likely to be accurate if they wait to see more data, in which case, they would base their judgment on observed effect size, once the array index gets to 5 or above. By observing the pattern of responses in individuals, we may be able to determine if a subject adopts a more specific strategy, and if so, whether they place reliance on observed effect size or sample overlap. 
 
 
 
@@ -410,7 +410,7 @@ The case where no subjects learn corresponds to a test of the null hypothesis, a
 
 
 ```{r powertable,include=TRUE,echo=FALSE}
-bigname<-"bigsummary_A12nu_pgood0.5_0.66_props0_0.25_0.33_0.5_N50_75_100.csv"
+bigname<-"powsummary_1000_A12_pgood0.5_0.66_props0_0.25_0.33_0.5_N50_75_100.csv"
 #bigname was created in the Simulate_power_proportions script; keeps track of parameters in simulation
 bigsummary<- read.csv(bigname)
 bigsummary<-bigsummary[,c(1:4,8,6,9:11)] #final columns 9:11 for array index; or 12:14 for proportion correct
@@ -604,7 +604,7 @@ As shown in Table `r tabnumber`, the combination of parameters determines power,
 ## Interpretation of pattern of results
 We can refer to the pattern of results on the training task and the quiz as indicating null result, inconclusive, or prediction confirmed. 
 
-The first possible pattern is where neither the training task nor the quiz shows any improvement in sampling variation blindness. If this pattern were observed, we would conclude that the training task was not effective in debiasing subjects away from sample size neglect to a meaningful extent. We would consider using information from the experiment to devise a modified version of the task. There are various ways one could do this: by changing the visual display, or by changing the reward schedule, or providing more explicit instruction. It would, of course, also be possible to extend the training, although this might require having more than one session. In effect, this study could act as a baseline against which to evaluate other approaches to training.  
+The first possible pattern is where neither the training task nor the quiz shows any improvement. If this pattern were observed, we would conclude that the training task was not effective in debiasing subjects away from sample size neglect to a meaningful extent. We would consider using information from the experiment to devise a modified version of the task. There are various ways one could do this: by changing the visual display, or by changing the reward schedule, or providing more explicit instruction. It would, of course, also be possible to extend the training, although this might require having more than one session. In effect, this study could act as a baseline against which to evaluate other approaches to training.  
 
 If results on one or both measures are inconclusive, this could reflect insufficient training/quiz items, and or sample heterogeneity. If the sample is heterogeneous, with a subset responding to the training, we would expect to see a relationship between gains on training and gains on the S-items on the quiz. We would also aim in future work to identify characteristics of those who improved with training.  
 
@@ -717,28 +717,28 @@ myt/500
 ```
 
 #### P3A (Classic probability including averaging probabilities)
-In the city of Ficticium, there is generally a 10% chance it will rain on any given day in the first half of September, a 50% chance it will rain any given day in the second half of September,  a 25% chance it will rain on any given day in November, and a 30% chance it will rain on any given day in December. (September, November and December are all 30 days long). Which month is likely to have more rainy days?  
+In the city of Ficticium, there is generally a 10% chance it will rain on any given day in the first half of September, a 50% chance it will rain any given day in the second half of September,  a 25% chance it will rain on any given day in November, and a 30% chance it will rain on any given day in April. (September, November and April are all 30 days long). Which month is likely to have more rainy days?  
 a) September  
 b)  November  
-c)  December  
-d) *September and December are equally likely  
+c)  April  
+d) *September and April are equally likely  
 
 ```{r P3A, include=F, echo=F}
 myrain<-data.frame(matrix(NA,nrow=1000,ncol=3))
-names(myrain)<-c('Sep','Nov','Dec')
+names(myrain)<-c('Sep','Nov','Apr')
 for (i in 1:10000){
 sep1<-rbinom(1,15,.1)
 sep2<-rbinom(1,15,.5)
 nov<-rbinom(1,30,.25)
-dec<-rbinom(1,30,.3)
+apr<-rbinom(1,30,.3)
 myrain[i,1]<-sep1+sep2
 myrain[i,2]<-nov
-myrain[i,3]<-dec
+myrain[i,3]<-apr
 }
 print ('Mean rainy days')
 print(paste('September ',mean(myrain$Sep)))
 print(paste('November ',mean(myrain$Nov)))
-print(paste('December ',mean(myrain$Dec)))
+print(paste('April ',mean(myrain$Apr)))
 ```
 
 #### P3B. 
@@ -795,7 +795,7 @@ print(tallred)
 ```
 
 #### P5B
-In box of 100 CDs, 40% of the disks are have been recorded by pop artists and 60% of disks feature female vocalists. Assuming that the female vocalists are equally likely to be pop artists or not, how many CDs have been recorded by female pop vocalists?   
+In a box of 100 CDs, 40% of the disks have been recorded by pop artists and 60% of disks feature female vocalists. Assuming that the female vocalists are equally likely to be pop artists or not, how many CDs have been recorded by female pop vocalists?   
 
 a) 12 CDs  
 b) 18 CDs  
@@ -885,57 +885,100 @@ for (j in 1:3){
 
 
 
-#### S2A (dependence of accuracy of estimate on sample size, proportions)
-You are a forensic scientist who is trying to establish the sex of a skeleton. You have a sample of bone; you know that when you classify the cells men typically have 33% type X and 67% type Y. 
-Women typically have 50% type X and 50% type Y. 
+#### S2A (probability of result in 'wrong' direction is higher with small sample size)
+A forensic archaeologist has a set of 10 male skeletons from an ancient burial site. Experts are divided as to whether the site was colonised by Tribe A or Tribe B- the only 2 tribes in the region. Previous studies with large samples found that men from Tribe A had an average height of 160 cm, with SD of 6, and men from Tribe B had an average height of 158 cm, with SD of 6. 
 
-Doing the test for cell type is very expensive so you do not want to test more cells than necessary, but it is important to get the right answer. 
-You take a sample of 24 cells from an individual and find 8 are of type X. 
+The mean height of the sample is 158 cm. What can the archaeologist conclude?  
 
-Should you:  
-a)    x Conclude the skeleton is male  
-b)    x Add more cells to give a sample of 48 cells before deciding  
-c)   *Add more cells to give a sample of 100 cells before deciding  
-d)     Add more cells to give a sample of 200 cells before deciding  
+a)    We can be very confident that the sample comes from Tribe B 
+b)  * Tribe B is more likely than Tribe A, but should collect 90 more samples to be sure  
+c)    Equally likely the sample comes from Tribe A or Tribe B 
+d)  x  Can't be sure: Tribe B is more likely than Tribe A, but collecting more samples won't help
     
 
-
 ```{r S2A,include=F,echo=F}
-p1=.33
-p2=.5
-#conventional power analysis
+#We simulate data to compute the probability that the observation comes from tribe A
+ #The observed value is half a SD below average for sample A       
+mA= 160  #tribe A
+sA=6
+mB=158 #tribe B
+sB=6
+obsmean <- 158
+obsdiffA <- (mA-obsmean)/sA
+niter<- 1000
+for (n in c(10,50,100)){ #try with different sample sizes
+  print(paste0('n = ',n))
 
-#h is effect size, which is 2*arcsin(sqrt(p1))-2*arcsin(sqrt(p2))
-h<-2*asin(sqrt(p1))-2*asin(sqrt(p2))
+counter1 <- 0 #initialise counters for various difference scores
 
-pwr.p.test(h=h,n=24,sig.level=.05)
-pwr.p.test(h=h,n=48,sig.level=.05)
-pwr.p.test(h=h,n=100,sig.level=.05)
-pwr.p.test(h=h,n=200,sig.level=.05)
+for (i in 1:niter){
+xsample<-rnorm(n,mA,sA) #observed sample - actually from tribe A
+d<- mean(xsample)-mA
+alld<-c(alld,d) 
+critd<-obsdiffA*sA
+if (d>critd){counter1 <- counter1+1}	
+}
+
+
+
+print(paste0('prob that xsample is .33 SD less than xA mean: ',counter1/niter))
+
+
+}
+
+
 ```
 
-#### S2B 
 
-A naturalist notices a new disease affecting parrots. She has 20 specimens with the disease, 14 of which are male. It is important to know whether males are more susceptible than females to the disease, as this will affect how it is treated.
+#### S2B (probability of result in 'wrong' direction is higher with small sample size)
+There are concerns that kangaroos appear unhealthy in a particular area of the Australian bush. There is concern that this may be due to eating poisoned bait that affects the blood. A naturalist has blood samples from 10 kangaroos, and measures a distinctive blood marker that is lowered in poisoned animals. Previous studies have found that the mean blood marker in healthy kangaroos is 130 with SD of 30, whereas the mean is 120 with SD of 30 in poisoned animals. 
 
-Should she:  
- a)  x Conclude that males are more susceptible to the disease than females  
- b)   Conclude that there is no difference in susceptibility for males and females  
- c)   x Gather more cases to give a sample size of 40 before deciding  
- d)   *Gather more cases to give a sample size of 100 before deciding  
+The mean blood marker in the sample is 120. Assuming that there is no other explanation than poisoning for an abnormal blood marker, what can the scientist conclude?
 
+a)    The kangaroos have definitely been poisoned
+b)  x  The kangaroos probably have been poisoned but can't be sure. Collecting data from more kangaroos won't help. 
+c)  * The kangaroos probably have been poisoned, but would need to collect blood from 90 more kangaroos in the affected area to be sure  
+d)    The kangaroos have not been poisoned
 
+    
 ```{r S2B,include=F,echo=F}
-h=2*asin(sqrt(.7))-2*asin(sqrt(.5))
-#h is effect size, which is 2*arcsin(sqrt(p1))-2*arcsin(sqrt(p2))
+#We simulate data to compute the probability that the observation comes from unpoisoned animals 
 
+mA = 120
+sA = 30
+mB = 130
+sB = 30
+alld <- vector()
+obsmean <- 120
 
-pwr.p.test(h=h,n=20,sig.level=.05)
-pwr.p.test(h=h,n=40,sig.level=.05)
-pwr.p.test(h=h,n=100,sig.level=.05)
+obsdiff <- (mB - obsmean) / sB
+niter <- 1000
+for (n in c(10, 50, 100)) {
+  #try with different sample sizes
+  print(paste0('n = ', n))
+  
+  counter1 <- 0 #initialise counter
+  
+  for (i in 1:niter) {
+    xsample <-
+      rnorm(n, mB, sB) #observed sample - actually from unpoisoned (B)
+    d <- mB - mean(xsample)
+    alld <- c(alld, d)  #can plot this to see distribution of differences)
+    critd <- obsdiff * sB
+    if (d > critd) {
+      counter1 <- counter1 + 1
+    }
+  }
+  
+  print(
+    paste0(
+      'prob that an unpoisoned sample is .33 SD less than mean of unpoisoned population: ',
+      counter1 / niter
+    )
+  )
+}
 
 ```
-
 
 #### S3A (dependence of power on sample size)
  
@@ -947,7 +990,7 @@ b) 50 per group
 c)  100 per group  
 d) *300 per group   
 
-```{r Q7a, include=F, echo=F}
+```{r S3a, include=F, echo=F}
 require(pwr)
 pwr.t.test(d = .3, sig.level = .05 , power =.95 , type = "two.sample",alternative="greater") 
 ```
@@ -966,45 +1009,99 @@ myp<-pwr.t.test(d = .4, sig.level = .05 , power =.9 , type = "two.sample",altern
 ```
 
 
-#### S4A.(power with proportions)
-Imagine you are a researcher studying a particular rare gene variant that is found in 0.01% of the population (1 in 10,000). You want to test the hypothesis that the variant doubles the risk of a rare disease that affects 1 in 300 people in the general population. You have access to the biobank genetic data from (almost) all residents of a large population country (30 million inhabitants), a medium population country (10 million inhabitants), and a small population country (1 million inhabitants). All else being equal, which country’s biobank data would give you the most accurate answer to your research question?  
+#### S4A.(likelihood of given value depends on sample size: same as S2 from parallel form, but with initial adequate N)
+There are concerns that kangaroos appear unhealthy in a particular area of the Australian bush. There is concern that this may be due to eating poisoned bait that affects the blood. A naturalist has blood samples from 160 kangaroos, and measures a distinctive blood marker that is lowered in poisoned animals. Previous studies have found that the mean blood marker in healthy kangaroos is 130 with SD of 30, whereas the mean is 120 with SD of 30 in poisoned animals. 
 
-a) Smallest country  
-b) Medium country  
-c) *Largest country  
-d) x Does not matter: No difference between countries  
- 
-```{r q8a, include=F, echo=F}
-options(scipen = 999)
-myN<-c(30000000,10000000,1000000)
-for (thisn in 1:3){
-  print(paste('Population total is ',myN[thisn]))
-  truedat<-rnorm(myN[thisn],0,1)
-trueX<-length(which(truedat>3.09)) #corresponds to .001  N in population with variant
-trueN<-myN[1]-trueX #N in population without rare variant.
-#Risk of those with variant is 1 in 50, and for those without variant is 1 in 100
-trueXP <- round(trueX/150,0)
-trueXN <-trueX-trueXP
-trueNP <- round(trueN/300,0)
-trueNN <-trueN-trueNP
-tbl <- matrix(c(trueXP,trueXN,trueNP,trueNN),nrow=2)
-colnames(tbl)<-c('Rare variant','Common variant')
-rownames(tbl)<-c('Affected','Unaffected')
-print(tbl)
-print(chisq.test(tbl))
+The mean blood marker in the sample is 120. Assuming that there is no other explanation than poisoning for an abnormal blood marker, what can the scientist conclude?  
+
+a)  *  The kangaroos have definitely been poisoned
+b)    The kangaroos probably have been poisoned but can't be sure. Collecting data from more kangaroos won't help. 
+c)   The kangaroos probably have been poisoned, but would need to collect blood from 100 more kangaroos in the affected area of bush to be sure  
+d)    The kangaroos have not been poisoned
+
+    
+```{r S2B,include=F,echo=F}
+#We simulate data to compute the probability that the observation comes from unpoisoned animals 
+
+mA = 120
+sA = 30
+mB = 130
+sB = 30
+alld <- vector()
+obsmean <- 120
+
+obsdiff <- (mB - obsmean) / sB
+niter <- 1000
+for (n in c(10, 50, 160)) {
+  #try with different sample sizes
+  print(paste0('n = ', n))
+  
+  counter1 <- 0 #initialise counter
+  
+  for (i in 1:niter) {
+    xsample <-
+      rnorm(n, mB, sB) #observed sample - actually from unpoisoned (B)
+    d <- mB - mean(xsample)
+    alld <- c(alld, d)  #can plot this to see distribution of differences)
+    critd <- obsdiff * sB
+    if (d > critd) {
+      counter1 <- counter1 + 1
+    }
+  }
+  
+  print(
+    paste0(
+      'prob that an unpoisoned sample is .33 SD less than mean of unpoisoned population: ',
+      counter1 / niter
+    )
+  )
 }
 
 ```
 
-#### S4B.  
-You are a biologist interested in studying a particular disease in plants. The disease affects 20% of the population (1 in 5) and leads to most plants dying. You have developed a spray that you think reduces mortality of the disease by 50%. You have to make the decision about how many plants to study to test the spray: in different centres you could gain access to 150 plants, 300 plants, or 1200 plants. Which centre would be best to conduct your research?  
+#### S4A.(Likelihood of given value depends on sample size: same as S2 from parallel form, but with initial adequate N) 
+A forensic archaeologist has a set of 160 male skeletons from an ancient burial site. Experts are divided as to whether the site was colonised by Tribe A or Tribe B 0 the only two tribes in the region. Previous studies with large samples found that men from Tribe A had an average height of 160 cm, with SD of 6, and men from Tribe B had an average height of 158 cm, with SD of 6. 
 
-a) 150 plants  
-b) 300 plants  
-c) *1200 plants  
-d) x Whichever centre is easiest to access  
+The mean height of the sample is 158 cm. What can the archaeologist conclude?  
 
- 
+a)   * We can be very confident that the sample comes from Tribe B  
+b)    Tribe B is more likely than Tribe A, but should collect 100 more samples to be sure  
+c)    Equally likely the sample comes from Tribe A or Tribe B 
+d)    Can't be sure: Tribe B is more likely than Tribe A, but collecting more samples won't help
+    
+
+```{r S4B,include=F,echo=F}
+#We simulate data to compute the probability that the observation comes from tribe A
+ #The observed value is half a SD below average for sample A       
+mA= 160  #tribe A
+sA=6
+mB=158 #tribe B
+sB=6
+obsmean <- 158
+obsdiffA <- (mA-obsmean)/sA
+niter<- 1000
+for (n in c(10,50,160)){ #try with different sample sizes
+  print(paste0('n = ',n))
+
+counter1 <- 0 #initialise counters for various difference scores
+
+for (i in 1:niter){
+xsample<-rnorm(n,mA,sA) #observed sample - actually from tribe A
+d<- mean(xsample)-mA
+alld<-c(alld,d) 
+critd<-obsdiffA*sA
+if (d>critd){counter1 <- counter1+1}	
+}
+
+
+
+print(paste0('prob that xsample is .33 SD less than xA mean: ',counter1/niter))
+
+
+}
+
+
+``` 
  
 #### S5A. (classic from Tversky/Kahneman law of small numbers)
 In a squash tournament, the organisers are debating whether to have games of best of 3, 9 or 21 points.  Holding all other rules of the game constant, if A is a slightly better player than B, which scoring will give A a better chance of winning?  
