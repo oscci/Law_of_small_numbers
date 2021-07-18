@@ -1,0 +1,658 @@
+---
+title: "Analysis of pilot datasets"
+output:
+  html_document:
+    df_print: paged
+  word_document: default
+---
+Version by DVM Bishop, July 2021  
+Incorporating previous scripts by Adam Parker, June 2021  
+(DVMB is less competent in tidyverse than AP, so this script has a mixture of styles!)  
+
+
+## Pilot study 1  
+For Pilot 1, 21 participants recruited via Prolific were given a version of the task that used gifs to show increasing sample sizes at 2 s intervals.  There were 80 trials divided into 4 blocks of 20. They also did the original versions of pre- and post-test quizzes. 
+There were 3 key differences in the training task between Pilot 1 and the final version of the task:  
+* a) The horizontal lines denoting sample means were omitted; judgments were based just on the beeswarms showing individual data points.  
+
+* b) The beeswarm for each sample size was shown separately - this appeared as a single beeswarm increasing in size as it moved across the screen - i.e. presentation was not cumulative, and so the fact that each new sample added to the previous one was not obvious.  
+
+* c) Participants were compensated for doing the experiment, and they earned or lost points in relation to correct and error responses, but their financial reward was not linked to the points they earned.    
+
+For the pilot 1 quiz (see analysis below), S-items 2 and 4 both involved questions involving proportions. In the final quiz, questions about means were substituted to make the quiz more aligned with the training.  
+
+Game is here:  https://gorilla.sc/admin/project/7839#
+and is found at Projects/Science Game Developed/Science Game, version 13  
+
+*check! ? on gorilla csv file it says it is Task Draft version 28*
+
+```{r loadpackages, ,warnings=F, include=F, echo=T}
+library(tidyverse)
+library(ggplot2)
+library(flextable)
+library(stats)
+library(psych)
+library(psycho) #for d prime
+```
+## Results from training game  
+
+```{r readraw, include=F, echo=T}
+
+# Raw data from training task are in two blocks, on https://osf.io/cmn92/
+# These are raw output files created from Gorilla
+# Files are public, so it should be possible to download them directly
+dat1 <- read.csv('https://osf.io/hngry/download',stringsAsFactors = F)
+dat2 <- read.csv('https://osf.io/m3uv7/download',stringsAsFactors = F)
+
+all.dat <- rbind(dat1, dat2)
+```
+
+
+*Question for Adam: Should we discard trials with extremely long RTs? 
+Currently they are coded as selection of array index 6.
+(For plots I have censored RTs at 30000, but could instead code as NA)*
+
+```{r checkraw, include=F, echo=T}
+## Convert/check raw data format 
+#create easy to manage subject ID
+
+sublist <- unique(all.dat$Participant.Public.ID)
+
+#any blanks?
+w<- which(sublist=='')
+if(length(w)>0){sublist<-sublist[-w]}
+
+all.dat$subject<-NA #create new subject number
+for (i in 1:length(sublist)){
+  all.dat$subject[all.dat$Participant.Public.ID==sublist[i]]<-i
+}
+
+#remove all but learning trials (defined by display 'beeswarms')
+short.dat<-all.dat[all.dat$display=='beeswarms',]
+
+#retain only Attempt
+w<-which(short.dat$Attempt==1)
+short.dat<-short.dat[w,]
+#This should have 2400 values, but only has 2393 - some missing data? 
+#Need to check if these were subjs who timed out without making a response.
+
+#check RT distribution
+short.dat$Reaction.Time<-as.numeric(short.dat$Reaction.Time)
+short.dat$Reaction.Time[short.dat$Reaction.Time>30000]<-30000 #censor values at 30000
+hist(short.dat$Reaction.Time, breaks=50)
+abline(v=c(2000,4000,6000,8000,10000),col='red')
+
+
+
+#code array index according to reaction time (array that is reached on gif at this RT)
+short.dat$array= as.numeric(cut(short.dat$Reaction.Time, breaks= c(0,2000,4000,6000,8000,10000,Inf), labels = c("1","2","3","4","5","6")))
+
+#Check scoring worked OK.
+
+table(short.dat$Correct,short.dat$ANSWER,short.dat$Response)
+
+#Compute earnings for each trial
+short.dat$earn<-short.dat$EarningWrong #default is error
+for (r in 1:nrow(short.dat)){
+  if(short.dat$Correct[r]==1){
+    short.dat$earn[r]=short.dat$EarningCorrect[r]
+  }
+}
+
+
+#convert trial number into block.
+
+
+short.dat$Trial.Number<- as.numeric(short.dat$Trial.Number)
+triallist <- unique(short.dat$Trial.Number) #confirm there are 80 values
+
+short.dat$block<-1
+w<- which(short.dat$Trial.Number %in% triallist[21:40])
+short.dat$block[w]<-2
+w<- which(short.dat$Trial.Number %in% triallist[41:60])
+short.dat$block[w]<-3
+w<- which(short.dat$Trial.Number %in% triallist[61:80])
+short.dat$block[w]<-4
+
+# table(short.dat$subject,short.dat$block)
+#All OK: all subs have trials in a block 
+
+
+
+```
+
+We next make an aggregate table with means
+
+```{r makeaggregate, include=F, echo=T}
+mycols<-c('Correct','array','earn')
+colnums<-which(colnames(short.dat)%in% mycols)
+mytab <- aggregate(short.dat[,colnums],by=list(short.dat$subject,short.dat$block),FUN=mean)
+colnames(mytab)[1:2]<-c('subject','block')
+
+#mean correct and mean array index by block
+mymeans <- aggregate(mytab[,3:5], by = list(mytab$block),FUN=mean)
+colnames(mymeans)[1]<-'block'
+mymeans
+
+#means by subject
+mymeans2 <- aggregate(mytab[,3:5], by = list(mytab$subject),FUN=mean)
+colnames(mymeans2)[1]<-'subject'
+mymeans2
+
+
+rarray<-cor(mymeans2[,2:3],use='complete.obs')
+rtext<-paste0('r = ',round(rarray[1,2],3))
+plot(mymeans2$array,mymeans2$Correct,
+     xlab='Mean array size',
+     ylab='mean Correct',
+     main='Pilot 1: \nmeans by subject ')
+
+text(2,.8,rtext)
+
+
+```
+
+
+## Did individual participants show signs of learning?
+
+```{r wrangledatalearn,,warnings=F, include=T,echo=F}
+
+p.agg <- short.dat %>% 
+  group_by(subject, block) %>% 
+  summarise(meanAcc = mean(Correct))
+# visualize
+ggplot(p.agg, aes(x = block, y = meanAcc, color = as.factor(subject), group = as.factor(subject))) + 
+  geom_point(size= 2.5) + geom_line() + 
+  theme_bw(18) +
+  ylab("Proportion correct") +
+  xlab("Block") +
+  ggtitle("Proportion correct across blocks") +
+  theme(legend.position = "none")
+
+```
+
+On inspection, slopes for individual participants are fairly mixed with some appearing to increase, but others going in the opposite direction. Overall means by block does not suggest any learning.
+
+With 40 items, a score of 25 (62.5%) correct indicates better than chance (binomial probability = .040). Eight of the 21 pilot participants did not perform above chance in the first half; two of these low performers did show a significant improvement in the second half. The highest performing participant achieved 88% correct in the second half. Overall, the pilot data suggested the task might be too difficult to show learning, and it was accordingly decided to change the displays of distributions to include bars corresponding to the means for the two groups. Informal piloting with colleagues suggested this led to an increase in accuracy.
+
+At the group level, pairwise t-tests comparing the two halves in terms of (a) percent correct and (b) the array-size at the response showed no reliable differences between the two halves. Scrutiny of individual cases for evidence of response strategies suggested that a few participants had started to wait longer to respond as the session proceeded, but the evidence was not compelling, and others showed the opposite effect, starting to respond earlier over time. In general, high performers were those who waited for large arrays from the outset, rather than those who changed strategy in the course of training.
+
+
+```{r wrangledata2, include=T,echo=F}
+#This chunk allows for an in-depth analysis of individual subjects' responses, including a plot for each one.
+# It does duplicate some of the previous steps in data-checking.  
+# To start, we crunch data down to remove all but key columns and rows
+
+datacrunch <- function(mydata,subdataname){  #mydata is a raw file from Gorilla with all participants
+  #subdataname will be used to store the original Participant code and new shorter ID lookup
+  pilotdat <- mydata[mydata$Screen.Name=='Stimulus1',]
+  allcols<-colnames(pilotdat)
+  
+  #need to rename columns with older naming style (PIlot 1 only)
+  w<-which(allcols %in% c('ES1','ES2','ES3','ES4','ES5','ES6'))
+  if(length(w)>0){
+    colnames(pilotdat)[w]<-c('ObsE1','ObsE2','ObsE3','ObsE4','ObsE5','ObsE6')
+  }
+  
+  
+  wantcols<-c('Participant.Public.ID','Spreadsheet.Row','Trial.Number','Reaction.Time',
+              'Response','Correct','ES','EarningCorrect','EarningWrong','meanC1','meanE1',
+              'meanC2','meanE2','meanC3','meanE3','meanC4','meanE4','meanC5','meanE5','meanC6','meanE6',
+              'ObsE1' ,'ObsE2','ObsE3','ObsE4','ObsE5','ObsE6',
+              'LL1' ,'LL2','LL3','LL4','LL5','LL6',
+              't1' ,'t2','t3','t4','t5','t6')
+  
+  #this version retains information about means and LL etc, which can be useful for looking at strategies
+  pilotdat<-pilotdat[,wantcols]
+  
+  pilotdat$choice<-NA
+  pilotdat$choice[pilotdat$Response=='Blue=Pink']=1
+  pilotdat$choice[pilotdat$Response=='Blue>Pink']=2
+  pilotdat$choice<-as.factor(pilotdat$choice)
+  
+  pilotdat$ID <-as.factor(pilotdat$Participant.Public.ID)
+  
+  levels(pilotdat$ID)<-paste0('s',1:length(levels(pilotdat$ID))) #need to add 's' to avoid confusion because these are not created in numeric order
+  sublookup <- as.data.frame(cbind(pilotdat$ID,pilotdat$Participant.Public.ID))
+  sublookup <- sublookup[!duplicated(sublookup$V1),]
+  colnames(sublookup)<-c('Number','code')
+  #We need to retain a lookup file linking Participant.Public.Id and number so we can link questionnaire data to training data
+  write.csv(sublookup,subdataname,row.names=F)
+  
+  pilotdat$Reaction.Time <- as.integer(pilotdat$Reaction.Time)
+  pilotdat$Trial.Number<-as.numeric(pilotdat$Trial.Number)
+  pilotdat$half <- 1 #for this dataset, we just compared 1st and 2nd halves
+  pilotdat$half[pilotdat$Trial.Number > 40]<-2
+  #convert RT to choice
+  mybreaks<-c(0,2000,4000,6000,8000,10000,Inf)
+  pilotdat$array <- as.numeric(cut(pilotdat$Reaction.Time,
+                                   breaks=mybreaks,
+                                   labels=1:6))
+  
+  #need to find optimal array - i.e. the one where absLL> LLcutoff
+  #LLcutoff can be specified as we choose
+  LLcutoff <- 3
+  L1 <- which(colnames(pilotdat)=='LL1')
+  pilotdat$optarray<-NA
+  for (j in 1:nrow(pilotdat)){
+    optimal <- which(abs(pilotdat[j,L1:(L1+5)])>LLcutoff)
+    ifelse(length(optimal)==0,optimal <-6,optimal<-optimal[1])
+    pilotdat$optarray[j]<-optimal
+    
+  }
+  pilotdat$arraydiff<-pilotdat$array-pilotdat$optarray
+  #just check this worked!
+  #aggregate(pilotdat$Reaction.Time ,by= list(pilotdat$array),FUN=mean)
+  
+  #Now we assemble the other relevant information for this trial
+  
+  startmeans <- which(colnames(pilotdat)=='meanC1')
+  startES <-which(colnames(pilotdat)=='ObsE1')
+  startLL <-which(colnames(pilotdat)=='LL1')
+  startt <-which(colnames(pilotdat)=='t1')
+  for (i in 1:nrow(pilotdat)){
+    mynum<-pilotdat$array[i]
+    pilotdat$Cmean[i] <- pilotdat[i,(startmeans-2+2*mynum)]
+    pilotdat$Emean[i] <- pilotdat[i,(startmeans-1+2*mynum)]
+    pilotdat$ESobs[i] <- pilotdat[i,(startES-1+mynum)]
+    pilotdat$LL[i] <- pilotdat[i,(startLL-1+mynum)]
+    if(pilotdat$LL[i]==Inf){pilotdat$LL[i] <-500} #how to handle infinity values? Here put to 500
+    pilotdat$t[i] <- pilotdat[i,(startt-1+mynum)]
+  }
+  #code ES suitable to use it as colour
+  pilotdat$EScol <- 1
+  pilotdat$EScol[pilotdat$ES==0] <-4.5
+  
+  myag <- aggregate(pilotdat$Correct,b=list(pilotdat$ES,pilotdat$Correct,pilotdat$ID),FUN=length)
+  colnames(myag)<-c('TrueEff','Correct','ID','N')
+  
+  myag2 <- aggregate(pilotdat$array,b=list(pilotdat$ES,pilotdat$Correct,pilotdat$ID),FUN=mean)
+  colnames(myag2)<-c('TrueEff','Correct','ID','array')
+  myag3 <- aggregate(pilotdat$LL,b=list(pilotdat$ES,pilotdat$Correct,pilotdat$ID),FUN=mean)
+  colnames(myag3)<-c('TrueEff','Correct','ID','LL')
+  myag4 <- aggregate(pilotdat$ESobs,b=list(pilotdat$ES,pilotdat$Correct,pilotdat$ID),FUN=mean)
+  colnames(myag4)<-c('TrueEff','Correct','ID','ESobs')
+  
+  myag<-cbind(myag,myag2[,4],myag3[,4],myag4[,4])
+  colnames(myag)[5:7]<-c('array','LL','ESObs')
+  
+  nsub<-length(levels(pilotdat$ID))
+  subs<-unique(pilotdat$ID)
+  
+  myag$p.corr <- NA
+  #work out p.correct and write against first row for subject
+  #NB some may make no errors in one category so can't assume 4 rows in myag for all
+  for (i in 1:nsub){
+    w<-which(myag$ID==subs[i])
+    ww<-intersect(w,which(myag$Correct==1))
+    myag$p.corr[w[1]]<-sum(myag$N[ww])/sum(myag$N[w])
+  }
+  
+  nitem<-nrow(pilotdat)/nsub
+  return(list(pilotdat,myag))
+}
+```
+
+```{r pilot1crunch, include=F, echo=F}
+#For Pilot1 we run this code as follows:
+mypilotag <- datacrunch(all.dat,'sublookup.csv') #2nd term is name where subject ID codes are saved.
+pilotdat <- mypilotag[[1]]
+myag <- mypilotag[[2]]
+```
+
+```{r individual.plots, include=F, echo=F}
+# Remaining code can be used to plot trial by trial responses for each subject, and see how they relate to LL and to observed effect size. This option currently disabled.
+
+doplots <- 0 #set doplots to 1 to create plots 
+
+if (doplots==1){
+  
+  pilotdat$corrpch <- 15 #pch code for correct/incorrect are blob and x
+  pilotdat$corrpch[pilotdat$Correct==0]<-4
+  
+  
+  pdfname <- 'subplots.pdf'
+  
+  pdf(pdfname,width=6, height=6)
+  par(mfrow=c(3,3))
+  mypcorr<-vector()
+  for (n in 1:nsub){
+    mypcorr[n]<-myag$p.corr[myag$ID==subs[n]][1]
+  }
+  
+  for (n in 1:nsub){ #order them by accuracy
+    
+    subdat<-pilotdat[pilotdat$ID==subs[n],]
+    plot(subdat$Trial.Number,subdat$LL,col=(subdat$EScol),pch=subdat$corrpch,main=subs[n],type='b',ylim=c(-20,20))
+    abline(h=0,lty=2)
+    
+    plot(subdat$Trial.Number,subdat$ESobs,col=(subdat$EScol),pch=subdat$corrpch,main=subs[n],type='b',ylim=c(-1,1))
+    abline(h=0,lty=2)
+    text(20,.8,paste0('p.correct: ',round(mypcorr[n],3)),cex=.8)
+    
+    tt<-t.test(subdat$array[1:20], mu = 4, alternative = "greater")
+    plot(subdat$Trial.Number,subdat$array,col=(subdat$EScol),pch=subdat$corrpch,main=subs[n],type='b',ylim=c(1,6))
+    text(15,1.5,paste0('p half1 index> 4: ',round(tt$p.value,3)),cex=.8)
+    
+    #Is E or ES a better predictor of accuracy?
+    #Need to divide by trueES - not getting v far with this
+    ESag <- aggregate(subdat$ESobs, by = list(subdat$ES,subdat$Correct),FUN=mean)
+    Eag <- aggregate(subdat$Emean, by = list(subdat$ES,subdat$Correct),FUN=mean)
+  }
+  dev.off()
+  
+}
+
+#Further analysis of Pilot1 data was done to compare results for blocks 1-2 and 3-4.  This is in the old script LawSmallNums_prereg.Rmd, where there is a chunk called 'byhalf'. This generally showed no indication of learning.
+```
+
+```{r chanceperformance, include=T,echo=F}
+#We vary n to find appropriate value from a range of possible Ns. 
+#This is just done by inspecting pp values
+for (n in 41:50){
+  pp <- 1-pbinom(n, 80, .5, lower.tail = TRUE, log.p = FALSE)
+}
+
+#47/80 is above chance at .05
+47/80
+#This is .5875 correct
+
+#binomial probs for 2nd half only
+for (n in 21:29){
+  pp <- 1-pbinom(n, 40, .5, lower.tail = TRUE, log.p = FALSE)
+  
+}
+#25/40 is above chance at .05
+#This is .625 correct
+```
+
+
+These participants also completed the probability quizzes that preceded and followed the training session.
+
+
+## Pilot 1: Quiz data  
+
+```{r readquiz, include=T,echo=F}
+# read in pre and post data
+# NB will need to check all quiz items categorisation and correct answers before applying to new dataset.
+pre_data_A <- read.csv('https://osf.io/u6n39/download',stringsAsFactors = F)
+pre_data_B <- read.csv('https://osf.io/8a39z/download',stringsAsFactors = F)
+post_data_A <- read.csv('https://osf.io/ryxcj/download',stringsAsFactors = F)
+post_data_B <- read.csv('https://osf.io/qz5xu/download',stringsAsFactors = F)
+
+# create new variables coding time point
+pre_data_A$time <- 1
+pre_data_B$time <- 1
+post_data_A$time <- 2
+post_data_B$time <- 2
+# create a new variable to code list
+pre_data_A$list <- "A"
+pre_data_B$list <- "B"
+post_data_A$list <- "A"
+post_data_B$list <- "B"
+# merge two data frames
+qdata <- bind_rows(pre_data_A, post_data_A, pre_data_B, post_data_B)
+# create factor variables
+qdata$subject <- as.factor(qdata$Participant.Private.ID)
+qdata$item <- as.factor(qdata$Question.Key)
+qdata$time <- as.factor(qdata$time)
+levels(qdata$time) <- c("Pre", "Post")
+```
+
+
+
+```{r codeQs, include=T,echo=F}
+# Code the correct answers.
+# select only numerical responses
+qdata <- qdata[qdata$Response == "1" |
+                 qdata$Response == "2" |
+                 qdata$Response == "3" |
+                 qdata$Response == "4",]
+# code question accuracy
+qdata  <- 
+  qdata %>%
+  mutate(accuracy = ifelse(Question.Key == "1a-quantised" & Response =="1", 1, 
+                           ifelse(Question.Key == "1b-quantised" & Response =="1", 1,
+                                  ifelse(Question.Key == "2a-quantised" & Response =="1", 1,
+                                         ifelse(Question.Key == "2b-quantised" & Response =="1", 1,
+                                                ifelse(Question.Key == "3a-quantised" & Response =="4", 1,
+                                                       ifelse(Question.Key == "3b-quantised" & Response =="1", 1,
+                                                              ifelse(Question.Key == "4a-quantised" & Response =="4", 1,
+                                                                     ifelse(Question.Key == "4b-quantised" & Response =="4", 1,
+                                                                            ifelse(Question.Key == "5a-quantised" & Response =="4", 1,
+                                                                                   ifelse(Question.Key == "5b-quantised" & Response =="1", 1,        
+                                                                                          ifelse(Question.Key == "6a-quantised" & Response =="1", 1,
+                                                                                                 ifelse(Question.Key == "6b-quantised" & Response =="2", 1,      
+                                                                                                        ifelse(Question.Key == "7a-quantised" & Response =="4", 1,      
+                                                                                                               ifelse(Question.Key == "7b-quantised" & Response =="4", 1,     
+                                                                                                                      ifelse(Question.Key == "8a-quantised" & Response =="3", 1,      
+                                                                                                                             ifelse(Question.Key == "8b-quantised" & Response =="3", 1,    
+                                                                                                                                    ifelse(Question.Key == "9a-quantised" & Response =="3", 1,    
+                                                                                                                                           ifelse(Question.Key == "9b-quantised" & Response =="3", 1,   
+                                                                                                                                                  ifelse(Question.Key == "10a-quantised" & Response =="3", 1,      
+                                                                                                                                                         ifelse(Question.Key == "10b-quantised" & Response =="3", 1,       
+                                                                                                                                                                ifelse(Question.Key == "11a-quantised" & Response =="1", 1,      
+                                                                                                                                                                       ifelse(Question.Key == "11b-quantised" & Response =="1", 1,      
+                                                                                                                                                                              ifelse(Question.Key == "12a-quantised" & Response =="2", 1, 
+                                                                                                                                                                                     ifelse(Question.Key == "12b-quantised" & Response =="1", 1, 0)))))))))))))))))))))))))
+# code question type
+qdata  <- 
+  qdata %>%
+  mutate(Prob = ifelse(Question.Key == "2a-quantised" | Question.Key == "2b-quantised" | 
+                         Question.Key == "4a-quantised" | Question.Key == "4b-quantised" | 
+                         Question.Key == "7a-quantised" | Question.Key == "7b-quantised" | 
+                         Question.Key == "8a-quantised" | Question.Key == "8b-quantised" | 
+                         Question.Key == "9a-quantised" | Question.Key == "9b-quantised" | 
+                         Question.Key == "11a-quantised" | Question.Key == "11b-quantised",
+                       "SampleSize", "Probability"))
+qdata$Prob <- as.factor(qdata$Prob)
+```
+
+```{r mapsubjectcodes}
+sublookup <- read.csv("sublookup.csv") #these are codes from training session - need to be matched to same people
+qdata$subID <-NA
+for (i in 1:nrow(sublookup)){
+  w<-which(qdata$Participant.Public.ID ==sublookup$code[i] )
+  qdata$subID[w] <- paste0('s',sublookup$Number[i])
+}
+```
+
+
+
+### Create a table showing the distribution of responses to each question. 
+This is saved as questresults.  
+
+```{r qdatainspect, include=T,echo=F}
+qdata$item<-droplevels(qdata$item)
+qt <- table(qdata$item,qdata$Response)
+qdf <- as.data.frame(unclass(qt))
+qtype <- table(qdata$item,qdata$Prob)
+qdf<-cbind(qdf,unclass(qtype))
+qdf$Probability[qdf$Probability>0]<-1
+qdf<-qdf[,1:ncol(qdf)-1]
+orderq <- c(7,9,11,13,15,17,19,21,23,1,3,5,
+            8,10,12,14,16,18,20,22,24,2,4,6)
+qdf <- qdf[orderq,]
+
+qdf$Answer <- c(1,1,4,4,4,1,4,3,3,3,1,2,2,1,1,4,1,2,4,3,3,3,1,1)
+colnames(qdf)[1:5]<-c('R1','R2','R3','R4','Probquest')
+qdf$perc.c<-NA
+for (i in 1:nrow(qdf)){
+  qdf$perc.c[i] <- qdf[i,qdf$Answer[i]]/21
+}
+
+write.csv(qdf,'questresults.csv')
+qdf
+
+
+```
+
+
+## Create summary table for Pilot 1, with both questionnaire and learning data.
+This is saved as pilot1summary.csv.  
+```{r summarytable, include=T,echo=F}
+#We do this in a function, so it can be reapplied to new data.  
+makesummary <- function(pilotdat, haveQdata, summaryname){
+  if (haveQdata==1){ #omit this step if haveQdata is zero
+    qag <- aggregate(qdata$accuracy, by=list(qdata$time,qdata$Prob,qdata$subID),FUN=mean)
+    colnames(qag)<-c('prepost','type','ID','qscore')
+  }
+  nsub<-length(unique(pilotdat$ID))
+  allcol <- c('ID', 'PreQ.S', 'PostQ.S', 'PreQ.P', 'PostQ.P', 'NcorrN1', 'Nhit1', 'Miss1', 'FP1', 'dprime1', 'beta1', 'pcorr1', 'array1', 'NcorrN2', 'Nhit2', 'Miss2', 'FP2', 'dprime2', 'beta2', 'pcorr2', 'array2', 'NcorrN3', 'Nhit3', 'Miss3', 'FP3', 'dprime3', 'beta3', 'pcorr3', 'array3', 'NcorrN4', 'Nhit4', 'Miss4', 'FP4', 'dprime4', 'beta4', 'pcorr4', 'array4')
+  
+  pilotsummary<-data.frame(matrix(NA,nrow=nsub,ncol=length(allcol)))
+  colnames(pilotsummary)<-allcol
+  
+  #need to add block numbers to pilotdat
+  pilotdat$block<-1
+  w<- which(pilotdat$Trial.Number %in% triallist[21:40])
+  pilotdat$block[w]<-2
+  w<- which(pilotdat$Trial.Number %in% triallist[41:60])
+  pilotdat$block[w]<-3
+  w<- which(pilotdat$Trial.Number %in% triallist[61:80])
+  pilotdat$block[w]<-4
+  
+  namelist <- c('NcorrN','Nhit','Miss','FP')
+  for (s in 1:nsub){
+    thissub <- paste0('s',s)
+    if(haveQdata==1){
+      w<-which(qag$ID==thissub)
+      thisbit<-qag[w,]
+      pilotsummary[s,1]<-thissub
+      pilotsummary[s,2:3]<-thisbit[3:4,4]
+      pilotsummary[s,4:5]<-thisbit[1:2,4]
+    }
+    
+    #now add Ncorrect, hit, miss, fp for each block
+    thatbit <- pilotdat[pilotdat$ID==thissub,]
+    for (b in 1:4){
+      cnames <- paste(namelist,b,sep='')
+      bcols<-which(colnames(pilotsummary) %in% cnames) #cols to write to
+      dpcols<-c(max(bcols)+1,max(bcols)+2,max(bcols+3),max(bcols+4)) #cols to write dprime and beta to
+      bbit <- thatbit[thatbit$block==b,]
+      #N correct negs
+      x1 <- length(intersect(which(bbit$choice==1),which(bbit$Correct==1))) #correct negative
+      x2 <- length(intersect(which(bbit$choice==2),which(bbit$Correct==1))) #correct positive (hit)
+      x3 <- length(intersect(which(bbit$choice==1),which(bbit$Correct==0))) #miss 
+      x4 <- length(intersect(which(bbit$choice==2),which(bbit$Correct==0))) #false positive
+      pilotsummary[s,bcols]<-c(x1,x2,x3,x4)
+      pilotsummary[s,dpcols[1:2]]<-psycho::dprime(x2,x4,x3,x1)[1:2]
+      pilotsummary[s,dpcols[3]]<-(x1+x2)/(x1+x2+x3+x4)
+      pilotsummary[s,dpcols[4]]<- mean(bbit$array)
+    }
+    
+  }
+  #NB in the original file on OSF, misses and FPs were the wrong way round (this affected beta but not dprime)
+  write.csv(pilotsummary,'Pilot1summary.csv',row.names=F)
+  return(pilotsummary)
+}
+
+
+```
+
+```{r summaryPilot1, include=F, echo=T}
+pilot1summary<-makesummary(pilotdat, 1, 'Pilot1summary.csv')
+
+```
+
+We check whether S-items are harder than P-items on the quiz. This is the case for both pre and post-test.
+
+```{r quiztypecompare, include=T,echo=F}
+t.test(pilot1summary$PreQ.S,pilot1summary$PreQ.P,paired=T)
+t.test(pilot1summary$PostQ.S,pilot1summary$PostQ.P,paired=T)
+```
+We check whether there is any indication of gain on the quiz. No difference on t-test for either S or P items.  
+
+```{r quizgain, include=T,echo=F}
+t.test(pilot1summary$PostQ.S,pilot1summary$PreQ.S,paired=T)
+t.test(pilot1summary$PostQ.P,pilot1summary$PreQ.P,paired=T)
+```
+
+We next test to see whether post score on quiz questions is predicted by pcorr at end of training, after allowing for PreQuiz score. No evidence this is the case for either S- or P-items.  
+
+```{r predictQgain, include=T,echo=F}
+mod_predictS <- lm(PostQ.S ~ PreQ.S+pcorr4,data=pilot1summary)
+summary(mod_predictS)
+mod_predictP <- lm(PostQ.P ~ PreQ.P+pcorr4,data=pilot1summary)
+summary(mod_predictP)
+```
+## Summary of results of pilot 1
+With 80 items, a score of 47 (58.7%) correct indicates better than chance (binomial probability = .046). Six of the pilot participants did not perform above chance; one of these low performers did show a significant improvement across the two halves of the session, achieving 68% correct in the second half. The highest performing participant achieved 80%. Overall, the pilot data suggested the task might be too difficult to show learning, and it was accordingly decided to change the displays of distributions to include bars corresponding to the means for the two groups. Informal piloting with colleagues suggested this led to an increase in accuracy.  
+
+It was also possible within the pilot data to look for evidence of learning an optimal strategy. The session was divided into two halves (blocks 1-2 vs blocks 3-4) to test for improvement with exposure to the task. At the individual level, only one participant showed a significant improvement in accuracy across the two halves that met Bonferroni-corrected p-value of .0023. At the group level, pairwise t-tests comparing the two halves in terms of (a) percent correct; (b) the array-size at the response, and (c) the absolute log likelihood at the point of response showed no reliable differences between the two halves. Scrutiny of individual cases for evidence of response strategies suggested that a few participants had started to wait longer to respond as the session proceeded, but the evidence was not compelling, and others showed the opposite effect, starting to respond earlier over time.  
+
+
+# Pilot data 2  
+A revised version of the training task was given to 30 participants recruited via Prolific. Modifications from pilot 1 were as follows:  
+* a) The gif beeswarms showed a horizontal line corresponding to the mean for each group.  
+* b) Each gif remained on display as the next one was added, to make it clear that the samples were cumulative.  
+* c) A reward schedule was devised so that bonus points were awarded if the 'optimal' array was selected. This corresponded to the array where the odds in favour of either the null or true hypothesis reaches 40:1 (absolute log likelihood of 3.68).  
+* d) Points earned in the game were converted to pennies that were added to the baseline payment. (But negative points were not subtracted). 
+
+These participants were not given the quiz, as we felt we had already evaluated it adequately.  
+
+
+```{r readraw2, include=F, echo=T}
+
+# Raw data from training task are in two blocks, on https://osf.io/g2ks6/
+# These are raw output files created from Gorilla
+# Files are public, so it should be possible to download them directly
+dat1b <- read.csv('https://osf.io/qvyxt/download',stringsAsFactors = F)
+dat2b <- read.csv('https://osf.io/pmq2g/download',stringsAsFactors = F)
+
+all.datb <- rbind(dat1b, dat2b)
+```
+
+```{r pilot2crunch, include=F, echo=F}
+#For Pilot2 we run this code as follows:
+mydata <- all.datb
+subdataname <- 'sublookup2.csv'
+mypilotag <- datacrunch(mydata,subdataname)  #2nd term is name where subject ID codes are saved.
+pilotdat <- mypilotag[[1]]
+myag <- mypilotag[[2]]
+```
+
+```{r summaryPilot2, include=F, echo=T}
+pilot2summary<-makesummary(pilotdat, 0, 'Pilot2summary.csv') #2nd term set to zero as we have no questionnaire data.
+
+```
+
+
+
+# Pilot data 3 
+With pilot 2, we were able to demonstrate learning in the task, but, contrary to expectation, this was not accompanied by an increase in the average array index at the point of response. Indeed, many participants responded at a close-to-optimal array index throughout the session, so array index was relatively constant, although accuracy improved.  
+
+One of the reviewers suggested that the relatively fast presentation rate of the arrays might encourage participants to respond at later array indices, if they were still considering their response when the next array appeared. A more realistic approach would be to allow participants as long as they would like at each array index, so they could control the presentation speed. We thought this was a good idea, and so we implemented the task in this format for pilot 3. 
+
+We felt it was necessary to change the reward structure, to prevent participants from simply always selecting the largest array size, and so we had a sliding scale, whereby they had to spend points to view an array of a given size. This was more life-like, as testing larger samples does incur costs. 
+
+In this version of the task, on each trial the participant was confronted with a screen and asked what array size they would like to choose, with the cost increasing by 1 point for each increment in array index. These points were subtracted from the total earned, which, as in Pilot 2 was then converted to pennies that could be added to their monetary reward for participation. 
+
+Participants in Pilot 3 did not do the quiz.  
+
+We present the analysis of Pilot 3 in the same format as previous pilots. It is apparent that learning is poor in this version of the task - more similar to Pilot 1 than to Pilot 2. 
+```{r readraw3, include=F, echo=T}
+
+# Raw data from training task are in two blocks, on https://osf.io/g2ks6/
+# These are raw output files created from Gorilla
+# Files are public, so it should be possible to download them directly
+dat1c <- read.csv('https://osf.io/h6qfa/download',stringsAsFactors = F)
+dat2c <- read.csv('https://osf.io/gqfp8/download',stringsAsFactors = F)
+
+all.datc <-dat2c
+```
+
+```{r pilot3crunch, include=F, echo=F}
+#For Pilot3 we run this code as follows:
+mydata <- all.datc
+subdataname <- 'sublookup3.csv'
+mypilotag <- datacrunch(mydata,subdataname)  #2nd term is name where subject ID codes are saved.
+pilotdat <- mypilotag[[1]]
+myag <- mypilotag[[2]]
+```
+
+```{r summaryPilot2, include=F, echo=T}
+pilot2summary<-makesummary(pilotdat, 0, 'Pilot2summary.csv') #2nd term set to zero as we have no questionnaire data.
+
+```
+
