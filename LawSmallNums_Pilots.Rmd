@@ -35,7 +35,7 @@ library(stats)
 library(psych)
 library(psycho) #for d prime
 ```
-## Results from training game  
+
 
 ```{r readraw, echo=F,include=F, }
 
@@ -480,9 +480,10 @@ write.csv(qdf,'questresults.csv')
 ```
 
 
-## Create summary table, with learning data, and questionnaire data if available.
+
  
-```{r summarytable, include=T,echo=F}
+```{r summarytable, include=T,echo=F,message =F}
+## Create summary table, with learning data, and questionnaire data if available.
 #We do this in a function, so it can be reapplied to new data.  
 makesummary <- function(pilotdat, haveQdata, summaryname){
   if (haveQdata==1){ #omit this step if haveQdata is zero
@@ -561,7 +562,7 @@ makesummary <- function(pilotdat, haveQdata, summaryname){
 ```
 ## Overview of results on learning task
 
-```{r summaryPilot1, echo=F,include=T, message=F}
+```{r summaryPilot1, echo=F,include=T, message=F,warning=F}
 pilot1summary<-makesummary(pilotdat1, 1, 'Pilot1summary.csv')
 means1 <- meanstable(pilot1summary,1)
 ft<-flextable(means1)
@@ -583,7 +584,7 @@ plotlearn1
 ```
 
 
-The plot shows accuracy for individual participants by block. On inspection, slopes for individual participants are fairly mixed with some appearing to increase, but others going in the opposite direction. Overall means by block does not suggest any learning.  
+The plot shows accuracy for individual participants by block. On inspection, slopes for individual participants are fairly mixed with some appearing to increase, but others going in the opposite direction. Overall means by block do not suggest any learning.  
 
 Overall, the pilot data suggested the task was too difficult to lead to learning, and it was accordingly decided to change the displays of distributions to include bars corresponding to the means for the two groups. Informal piloting with colleagues suggested this led to an increase in accuracy.
 
@@ -591,6 +592,12 @@ Overall, the pilot data suggested the task was too difficult to lead to learning
 ## Overview of results on quiz
 
 The distribution of responses to each question is saved as questresults.csv. 
+```{r showquiz,echo=F,include=T}
+ft<-flextable(qdf)
+ft <- set_caption(ft, caption = "Pilot 1: Responses to quiz")
+ft
+
+```
 
 We predicted that S-items would be harder than P-items on the quiz. This is the case for both pre and post-test.
 
@@ -600,12 +607,12 @@ t.test(pilot1summary$PostQ.S,pilot1summary$PostQ.P,paired=T)
 ```
 We check whether there is any indication of gain on the quiz. There was no difference on t-test for either S or P items.  
 
-```{r quizgain, echo=F,include=T,results='asis'}
+```{r quizgain, echo=F,include=T}
 t.test(pilot1summary$PostQ.S,pilot1summary$PreQ.S,paired=T)
 t.test(pilot1summary$PostQ.P,pilot1summary$PreQ.P,paired=T)
 ```
 
-We then considered whether the post-training score on quiz questions is predicted by proportion correct at the end of training, after allowing for PreQuiz score. There was no evidence this is the case for either S- or P-items.  
+We then considered whether the post-training score on quiz questions is predicted by proportion correct at the end of training, after allowing for PreQuiz score. There was no evidence this is the case for either S- or P-items. Quiz post-test scores on S-items were strongly predicted by pretest scores. 
 
 ```{r predictQgain, echo=F,include=T}
 mod_predictS <- lm(PostQ.S ~ PreQ.S+pcorr4,data=pilot1summary)
@@ -617,6 +624,7 @@ summary(mod_predictP)
 
 # Pilot data 2  
 A revised version of the training task was given to 30 participants recruited via Prolific. Modifications from pilot 1 were as follows:  
+  
 *  The gif beeswarms showed a horizontal line corresponding to the mean for each group.  
 
 *  Each gif remained on display as the next one was added, to make it clear that the samples were cumulative.  
@@ -628,7 +636,7 @@ A revised version of the training task was given to 30 participants recruited vi
 These participants were not given the quiz, as we felt we had already evaluated it adequately.  
 
 
-```{r readraw2, include=F, echo=T}
+```{r readraw2, include=F, echo=T,message=F}
 
 # Raw data from training task are in two blocks, on https://osf.io/g2ks6/
 # These are raw output files created from Gorilla
@@ -648,7 +656,7 @@ pilotdat2 <- mypilotag[[1]]
 myag <- mypilotag[[2]]
 ```
 
-```{r summaryPilot2, include=F, echo=T}
+```{r summaryPilot2, include=T, echo=F}
 pilot2summary<-makesummary(pilotdat2, 0, 'Pilot2summary.csv') #2nd term set to zero as we have no questionnaire data.
 means2 <- meanstable(pilot2summary,2)
 ft<-flextable(means2)
@@ -658,6 +666,13 @@ ft
 chancetab<-table(pilot2summary$abovechanceH1,pilot2summary$abovechanceH2)
 
 ```
+The processed results from the learning task for Pilot 2 are available in Pilot2summary.csv.  
+Overall means by block are shown for proportion correct (p.corr), d.prime, array index at time of response (array: ranges from 1 to 6), and earnings (multiply by 20 to get amount earned in pence).  
+Because of the bonus scheme, p.corr and earnings are not perfectly correlated, but they are very close. 
+<!--- NB I have not computed earnings with bonuses yet!-->
+
+A score of 25/40 (62.5%) is better than chance performance (binomial probability = .040). `r chancetab[1,1]` participants did no better than chance on both first and second halves of training (blocks 1-2 and blocks 3-4), `r chancetab[2,2]` participants did better than chance on both halves. `r chancetab[2,1]` participants did better than chance on the first half but not on the second half, and `r chancetab[1,2]` performed at chance on the first half and better on the second half. 
+
 
 
 ```{r doplot2,echo=F,include=T}
@@ -665,10 +680,23 @@ plotlearn2<-plotlearning(pilotdat2,2)
 plotlearn2
 ```
 
-# Pilot data 3 
-With pilot 2, we were able to demonstrate learning in the task, but, contrary to expectation, this was not accompanied by an increase in the average array index at the point of response. Indeed, many participants responded at a close-to-optimal array index throughout the session, so array index was relatively constant, although accuracy improved.  
+The plot and the means table suggest that learning occurred between blocks 1 and 2. Note that the overall final proportion correct is higher than in Pilot 1. However, there is little indication that the array index changes as learning occurs.  Indeed, many participants responded at a close-to-optimal array index throughout the session, so array index was relatively constant, although accuracy improved. These impressions were tested using t-tests. Note that we compared two indices of learning: the difference between accuracy on block 4 vs block 1, and the slope of accuracy against block for all 4 blocks. They gave very similar results.
 
-One of the reviewers suggested that the relatively fast presentation rate of the arrays might encourage participants to respond at later array indices, if they were still considering their response when the next array appeared. An alternative approach would be to allow participants as long as they would like at each array index, so they could control the presentation speed. We thought this was worth trying, and so we implemented the task in this format for pilot 3. 
+```{r checklearning2, echo=F,include=T,message=F }
+
+learn2<-checklearn(pilot2summary) 
+print('Test whether block4 - block1 accuracy differs from zero')
+learn2[[1]]
+print('Test whether slope across 4 blocks for accuracy differs from zero')
+learn2[[2]]
+print('Test whether block4-block1 array index differs from zero')
+learn2[[3]]
+
+```
+
+# Pilot data 3 
+
+One of the reviewers suggested that the relatively fast presentation rate of the arrays might mean that participants would still be thinking about their response  when the next array appeared. An alternative approach would be to allow participants as long as they would like at each array index, so they could control the presentation speed. We thought this was worth trying, and so we implemented the task in an unpaced format for pilot 3. 
 
 We felt it was necessary to change the reward structure, to prevent participants from simply always selecting the largest array size, and so we had a sliding scale, whereby they had to spend points to view an array of a given size. This was more life-like, as testing larger samples does incur costs. 
 
@@ -677,7 +705,7 @@ In this version of the task, on each trial the participant was confronted with a
 Participants in Pilot 3 did not do the quiz.  
 
 We present the analysis of Pilot 3 in the same format as previous pilots. It is apparent that learning is poor in this version of the task - more similar to Pilot 1 than to Pilot 2. 
-```{r readraw3, include=F, echo=T}
+```{r readraw3, include=F, echo=F,message=F}
 
 # Raw data from training task are in two blocks, on https://osf.io/g2ks6/
 # These are raw output files created from Gorilla
