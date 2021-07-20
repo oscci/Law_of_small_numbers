@@ -12,21 +12,22 @@ Incorporating previous scripts by Adam Parker, June 2021
 
 ## Pilot study 1  
 For Pilot 1, 21 participants recruited via Prolific were given a version of the task that used gifs to show increasing sample sizes at 2 s intervals.  There were 80 trials divided into 4 blocks of 20. They also did the original versions of pre- and post-test quizzes. 
-There were 3 key differences in the training task between Pilot 1 and the final version of the task:  
-* a) The horizontal lines denoting sample means were omitted; judgments were based just on the beeswarms showing individual data points.  
+There were 3 key differences in the training task between Pilot 1 and the final version of the task (which corresponds to Pilot 2):  
 
-* b) The beeswarm for each sample size was shown separately - this appeared as a single beeswarm increasing in size as it moved across the screen - i.e. presentation was not cumulative, and so the fact that each new sample added to the previous one was not obvious.  
+* The horizontal lines denoting sample means were omitted; judgments were based just on the beeswarms showing individual data points.  
 
-* c) Participants were compensated for doing the experiment, and they earned or lost points in relation to correct and error responses, but their financial reward was not linked to the points they earned.    
+* The beeswarm for each sample size was shown separately - the display appeared as a single beeswarm increasing in size as it moved across the screen - i.e. presentation was not cumulative, and so the fact that each new sample added to the previous one was not obvious.  
 
-For the pilot 1 quiz (see analysis below), S-items 2 and 4 both involved questions involving proportions. In the final quiz, questions about means were substituted to make the quiz more aligned with the training.  
+* Participants were compensated for doing the experiment, and they earned or lost points in relation to correct and error responses, but their financial reward was not linked to the points they earned.    
 
-Game is here:  https://gorilla.sc/admin/project/7839#
+For the pilot 1 quiz (see analysis below), S-items 2 and 4 both involved questions involving proportions. In the version of the quiz for Registered Report, in response to a reviewer suggestion, questions about means were substituted to make the quiz more aligned with the training.  
+
+The training game is here:  https://gorilla.sc/admin/project/7839#
 and is found at Projects/Science Game Developed/Science Game, version 13  
 
 *check! ? on gorilla csv file it says it is Task Draft version 28*
 
-```{r loadpackages, ,warnings=F, include=F, echo=T}
+```{r loadpackages, ,warnings=F, include=F, echo=F}
 library(tidyverse)
 library(ggplot2)
 library(flextable)
@@ -36,11 +37,11 @@ library(psycho) #for d prime
 ```
 ## Results from training game  
 
-```{r readraw, include=F, echo=T}
+```{r readraw, echo=F,include=F, }
 
 # Raw data from training task are in two blocks, on https://osf.io/cmn92/
 # These are raw output files created from Gorilla
-# Files are public, so it should be possible to download them directly
+# Files are public, so it should be possible to download them directlyn from OSF
 dat1 <- read.csv('https://osf.io/hngry/download',stringsAsFactors = F)
 dat2 <- read.csv('https://osf.io/m3uv7/download',stringsAsFactors = F)
 
@@ -48,24 +49,9 @@ all.dat <- rbind(dat1, dat2)
 ```
 
 
-*Question for Adam: Should we discard trials with extremely long RTs? 
-Currently they are coded as selection of array index 6.
-(For plots I have censored RTs at 30000, but could instead code as NA)*
-
-```{r checkraw, include=F, echo=T}
+```{r checkraw,echo=F, include=F }
 ## Convert/check raw data format 
-#create easy to manage subject ID
-
-sublist <- unique(all.dat$Participant.Public.ID)
-
-#any blanks?
-w<- which(sublist=='')
-if(length(w)>0){sublist<-sublist[-w]}
-
-all.dat$subject<-NA #create new subject number
-for (i in 1:length(sublist)){
-  all.dat$subject[all.dat$Participant.Public.ID==sublist[i]]<-i
-}
+# This chunk was used just for some initial checks of the Gorilla output
 
 #remove all but learning trials (defined by display 'beeswarms')
 short.dat<-all.dat[all.dat$display=='beeswarms',]
@@ -77,11 +63,15 @@ short.dat<-short.dat[w,]
 #Need to check if these were subjs who timed out without making a response.
 
 #check RT distribution
+#optional step to look at RT distribution. Set checkRTs to 1 to see histogram
+checkRTs<- 0 
+
 short.dat$Reaction.Time<-as.numeric(short.dat$Reaction.Time)
+if(checkRTs==1){
 short.dat$Reaction.Time[short.dat$Reaction.Time>30000]<-30000 #censor values at 30000
 hist(short.dat$Reaction.Time, breaks=50)
 abline(v=c(2000,4000,6000,8000,10000),col='red')
-
+}
 
 
 #code array index according to reaction time (array that is reached on gif at this RT)
@@ -91,120 +81,40 @@ short.dat$array= as.numeric(cut(short.dat$Reaction.Time, breaks= c(0,2000,4000,6
 
 table(short.dat$Correct,short.dat$ANSWER,short.dat$Response)
 
-#Compute earnings for each trial
-short.dat$earn<-short.dat$EarningWrong #default is error
-for (r in 1:nrow(short.dat)){
-  if(short.dat$Correct[r]==1){
-    short.dat$earn[r]=short.dat$EarningCorrect[r]
-  }
-}
-
-
-#convert trial number into block.
-
-
-short.dat$Trial.Number<- as.numeric(short.dat$Trial.Number)
-triallist <- unique(short.dat$Trial.Number) #confirm there are 80 values
-
-short.dat$block<-1
-w<- which(short.dat$Trial.Number %in% triallist[21:40])
-short.dat$block[w]<-2
-w<- which(short.dat$Trial.Number %in% triallist[41:60])
-short.dat$block[w]<-3
-w<- which(short.dat$Trial.Number %in% triallist[61:80])
-short.dat$block[w]<-4
-
-# table(short.dat$subject,short.dat$block)
-#All OK: all subs have trials in a block 
-
 
 
 ```
 
-We next make an aggregate table with means
+<!---Generic functions follow that do similar computations for all pilots-->
 
-```{r makeaggregate, include=F, echo=T}
-mycols<-c('Correct','array','earn')
-colnums<-which(colnames(short.dat)%in% mycols)
-mytab <- aggregate(short.dat[,colnums],by=list(short.dat$subject,short.dat$block),FUN=mean)
-colnames(mytab)[1:2]<-c('subject','block')
+```{r crunchingdata, include=F,echo=F}
 
-#mean correct and mean array index by block
-mymeans <- aggregate(mytab[,3:5], by = list(mytab$block),FUN=mean)
-colnames(mymeans)[1]<-'block'
-mymeans
-
-#means by subject
-mymeans2 <- aggregate(mytab[,3:5], by = list(mytab$subject),FUN=mean)
-colnames(mymeans2)[1]<-'subject'
-mymeans2
-
-
-rarray<-cor(mymeans2[,2:3],use='complete.obs')
-rtext<-paste0('r = ',round(rarray[1,2],3))
-plot(mymeans2$array,mymeans2$Correct,
-     xlab='Mean array size',
-     ylab='mean Correct',
-     main='Pilot 1: \nmeans by subject ')
-
-text(2,.8,rtext)
-
-
-```
-
-
-## Did individual participants show signs of learning?
-
-```{r wrangledatalearn,,warnings=F, include=T,echo=F}
-
-p.agg <- short.dat %>% 
-  group_by(subject, block) %>% 
-  summarise(meanAcc = mean(Correct))
-# visualize
-ggplot(p.agg, aes(x = block, y = meanAcc, color = as.factor(subject), group = as.factor(subject))) + 
-  geom_point(size= 2.5) + geom_line() + 
-  theme_bw(18) +
-  ylab("Proportion correct") +
-  xlab("Block") +
-  ggtitle("Proportion correct across blocks") +
-  theme(legend.position = "none")
-
-```
-
-On inspection, slopes for individual participants are fairly mixed with some appearing to increase, but others going in the opposite direction. Overall means by block does not suggest any learning.
-
-With 40 items, a score of 25 (62.5%) correct indicates better than chance (binomial probability = .040). Eight of the 21 pilot participants did not perform above chance in the first half; two of these low performers did show a significant improvement in the second half. The highest performing participant achieved 88% correct in the second half. Overall, the pilot data suggested the task might be too difficult to show learning, and it was accordingly decided to change the displays of distributions to include bars corresponding to the means for the two groups. Informal piloting with colleagues suggested this led to an increase in accuracy.
-
-At the group level, pairwise t-tests comparing the two halves in terms of (a) percent correct and (b) the array-size at the response showed no reliable differences between the two halves. Scrutiny of individual cases for evidence of response strategies suggested that a few participants had started to wait longer to respond as the session proceeded, but the evidence was not compelling, and others showed the opposite effect, starting to respond earlier over time. In general, high performers were those who waited for large arrays from the outset, rather than those who changed strategy in the course of training.
-
-
-```{r wrangledata2, include=T,echo=F}
-#This chunk allows for an in-depth analysis of individual subjects' responses, including a plot for each one.
-# It does duplicate some of the previous steps in data-checking.  
 # To start, we crunch data down to remove all but key columns and rows
 
-datacrunch <- function(mydata,subdataname){  #mydata is a raw file from Gorilla with all participants
-  #subdataname will be used to store the original Participant code and new shorter ID lookup
-  pilotdat <- mydata[mydata$Screen.Name=='Stimulus1',]
-  allcols<-colnames(pilotdat)
-  
-  #need to rename columns with older naming style (PIlot 1 only)
-  w<-which(allcols %in% c('ES1','ES2','ES3','ES4','ES5','ES6'))
-  if(length(w)>0){
-    colnames(pilotdat)[w]<-c('ObsE1','ObsE2','ObsE3','ObsE4','ObsE5','ObsE6')
+datacrunch <- function(mydata,subdataname,pilot){  #mydata is a raw file from Gorilla with all participants
+  #subdataname will be used to store the original Participant code and new shorter ID lookup; pilot specifies which pilot: 1, 2 or 3
+  pilotdat<-mydata #skip next steps for pilot 3, which is already processed
+  if (pilot<3){
+    pilotdat <- mydata[mydata$Screen.Name=='Stimulus1',]
+    allcols<-colnames(pilotdat)
+    
+    #need to rename columns with older naming style (PIlot 1 only)
+    w<-which(allcols %in% c('ES1','ES2','ES3','ES4','ES5','ES6'))
+    if(length(w)>0){
+      colnames(pilotdat)[w]<-c('ObsE1','ObsE2','ObsE3','ObsE4','ObsE5','ObsE6')
+    }
+    
+    
+    wantcols<-c('Participant.Public.ID','Spreadsheet.Row','Trial.Number','Reaction.Time',
+                'Response','Correct','ES','EarningCorrect','EarningWrong','meanC1','meanE1',
+                'meanC2','meanE2','meanC3','meanE3','meanC4','meanE4','meanC5','meanE5','meanC6','meanE6',
+                'ObsE1' ,'ObsE2','ObsE3','ObsE4','ObsE5','ObsE6',
+                'LL1' ,'LL2','LL3','LL4','LL5','LL6',
+                't1' ,'t2','t3','t4','t5','t6')
+    
+    #this version retains information about means and LL etc, which can be useful for looking at strategies - in particular can see for each trial how response is affected by observed effect size or LL. 
+    pilotdat<-pilotdat[,wantcols]
   }
-  
-  
-  wantcols<-c('Participant.Public.ID','Spreadsheet.Row','Trial.Number','Reaction.Time',
-              'Response','Correct','ES','EarningCorrect','EarningWrong','meanC1','meanE1',
-              'meanC2','meanE2','meanC3','meanE3','meanC4','meanE4','meanC5','meanE5','meanC6','meanE6',
-              'ObsE1' ,'ObsE2','ObsE3','ObsE4','ObsE5','ObsE6',
-              'LL1' ,'LL2','LL3','LL4','LL5','LL6',
-              't1' ,'t2','t3','t4','t5','t6')
-  
-  #this version retains information about means and LL etc, which can be useful for looking at strategies
-  pilotdat<-pilotdat[,wantcols]
-  
   pilotdat$choice<-NA
   pilotdat$choice[pilotdat$Response=='Blue=Pink']=1
   pilotdat$choice[pilotdat$Response=='Blue>Pink']=2
@@ -221,17 +131,45 @@ datacrunch <- function(mydata,subdataname){  #mydata is a raw file from Gorilla 
   
   pilotdat$Reaction.Time <- as.integer(pilotdat$Reaction.Time)
   pilotdat$Trial.Number<-as.numeric(pilotdat$Trial.Number)
-  pilotdat$half <- 1 #for this dataset, we just compared 1st and 2nd halves
+  pilotdat$half <- 1 #for this dataset, we initially just compared 1st and 2nd halves
   pilotdat$half[pilotdat$Trial.Number > 40]<-2
   #convert RT to choice
   mybreaks<-c(0,2000,4000,6000,8000,10000,Inf)
-  pilotdat$array <- as.numeric(cut(pilotdat$Reaction.Time,
-                                   breaks=mybreaks,
-                                   labels=1:6))
+  if(pilot<3){
+    pilotdat$array <- as.numeric(cut(pilotdat$Reaction.Time,
+                                     breaks=mybreaks,
+                                     labels=1:6))
+  }
   
+  #Compute earnings for each trial
+pilotdat$earn<-pilotdat$EarningWrong #default is error
+for (r in 1:nrow(pilotdat)){
+  if(pilotdat$Correct[r]==1){
+    pilotdat$earn[r]=pilotdat$EarningCorrect[r]
+  }
+}
+
+#convert trial number into block.
+pilotdat$Trial.Number<- as.numeric(pilotdat$Trial.Number)
+triallist <- unique(short.dat$Trial.Number) #confirm there are 80 values
+
+pilotdat$block<-1
+w<- which(pilotdat$Trial.Number %in% triallist[21:40])
+pilotdat$block[w]<-2
+w<- which(pilotdat$Trial.Number %in% triallist[41:60])
+pilotdat$block[w]<-3
+w<- which(pilotdat$Trial.Number %in% triallist[61:80])
+pilotdat$block[w]<-4
+
+# table(short.dat$ID,short.dat$block)
+#All OK: all subs have trials in a block 
+  
+  #The remander of this chunk allows for an in-depth analysis of individual subjects' responses, including a plot for each one. This is retained for possible future use, but not used here.
+ 
   #need to find optimal array - i.e. the one where absLL> LLcutoff
+# this is already stored for Pilot 2, where it is used to compute bonus
   #LLcutoff can be specified as we choose
-  LLcutoff <- 3
+  LLcutoff <- 3.68 #one hypoth 40 times more likely than the other
   L1 <- which(colnames(pilotdat)=='LL1')
   pilotdat$optarray<-NA
   for (j in 1:nrow(pilotdat)){
@@ -261,7 +199,7 @@ datacrunch <- function(mydata,subdataname){  #mydata is a raw file from Gorilla 
   }
   #code ES suitable to use it as colour
   pilotdat$EScol <- 1
-  pilotdat$EScol[pilotdat$ES==0] <-4.5
+  pilotdat$EScol[pilotdat$ES==0] <-4.5 
   
   myag <- aggregate(pilotdat$Correct,b=list(pilotdat$ES,pilotdat$Correct,pilotdat$ID),FUN=length)
   colnames(myag)<-c('TrueEff','Correct','ID','N')
@@ -293,15 +231,70 @@ datacrunch <- function(mydata,subdataname){  #mydata is a raw file from Gorilla 
 }
 ```
 
-```{r pilot1crunch, include=F, echo=F}
-#For Pilot1 we run this code as follows:
-mypilotag <- datacrunch(all.dat,'sublookup.csv') #2nd term is name where subject ID codes are saved.
-pilotdat <- mypilotag[[1]]
-myag <- mypilotag[[2]]
+```{r meanstablefunction, include=F, echo=F}
+#Make table of means by block
+meanstable<-function(summaryfile,pilot){
+  mycols<-c('dprime1','dprime2','dprime3','dprime4',
+            'pcorr1','pcorr2','pcorr3','pcorr4',
+            'array1','array2','array3','array4',
+            'earn1','earn2','earn3','earn4',
+            'b4_b1_acc','acc.slope')
+shortfile<-summaryfile[,mycols]
+mytab<-round(describe(shortfile),2)
+format.tab<- cbind(1:4,mytab[5:8,3:4],mytab[1:4,3:4],mytab[9:12,3:4],mytab[13:16,3:4])
+colnames(format.tab)<- c('block','pcorr.m','pcorr.sd','dprime.m','dprime.sd','array.m','array.sd','earn.m','earn.sd')
+row.names(format.tab)<-NULL
+return(format.tab)
+}
+
+
 ```
 
-```{r individual.plots, include=F, echo=F}
-# Remaining code can be used to plot trial by trial responses for each subject, and see how they relate to LL and to observed effect size. This option currently disabled.
+
+```{r plot-learn,warnings=F, include=F,echo=F}
+plotlearning <- function(mydata,pilot){
+# accuracy per half
+p.agg <- mydata %>% 
+  group_by(ID, block) %>% 
+  summarise(meanAcc = mean(Correct))
+# visualize
+myplot<-ggplot(p.agg, aes(x = block, y = meanAcc, color = as.factor(ID), group = as.factor(ID))) + 
+  geom_point(size= 2.5) + geom_line() + 
+  theme_bw(18) +
+  ylab("Proportion correct") +
+  xlab("Block") +
+  ggtitle(paste0(" Pilot ",pilot)) +
+  theme(legend.position = "none")
+return(myplot)
+}
+
+```
+
+```{r checklearning, include=F, echo=F}
+checklearn <- function(summaryfile){
+t1<-  t.test(summaryfile$b4_b1_acc)
+
+t2<-  t.test(summaryfile$acc.slope)
+
+t3<-  t.test(summaryfile$array4,summaryfile$array1)
+  
+return(list(t1,t2,t3))  
+}
+
+
+```
+
+
+
+```{r pilot1crunch, include=F, echo=F}
+#For Pilot1 we run this code as follows:
+mypilotag <- datacrunch(all.dat,'sublookup.csv',1) #2nd term is name where subject ID codes are saved.
+pilotdat1 <- mypilotag[[1]]
+myag1<- mypilotag[[2]]
+```
+
+```{r individual-plots, include=F, echo=F}
+# This code chunk can be used to plot trial by trial responses for each subject, and see how they relate to LL, observed effect size and array size. This option currently disabled.
 
 doplots <- 0 #set doplots to 1 to create plots 
 
@@ -311,11 +304,14 @@ if (doplots==1){
   pilotdat$corrpch[pilotdat$Correct==0]<-4
   
   
-  pdfname <- 'subplots.pdf'
+  pdfname <- 'subplotsx.pdf'
   
   pdf(pdfname,width=6, height=6)
   par(mfrow=c(3,3))
   mypcorr<-vector()
+  
+    subs<-unique(myag$ID)
+    nsub<-length(subs)
   for (n in 1:nsub){
     mypcorr[n]<-myag$p.corr[myag$ID==subs[n]][1]
   }
@@ -348,31 +344,27 @@ if (doplots==1){
 
 ```{r chanceperformance, include=T,echo=F}
 #We vary n to find appropriate value from a range of possible Ns. 
-#This is just done by inspecting pp values
+#This is just done by inspecting pp values for different ns
 for (n in 41:50){
   pp <- 1-pbinom(n, 80, .5, lower.tail = TRUE, log.p = FALSE)
 }
 
 #47/80 is above chance at .05
-47/80
+
 #This is .5875 correct
 
 #binomial probs for 2nd half only
 for (n in 21:29){
   pp <- 1-pbinom(n, 40, .5, lower.tail = TRUE, log.p = FALSE)
-  
+
 }
 #25/40 is above chance at .05
 #This is .625 correct
 ```
 
 
-These participants also completed the probability quizzes that preceded and followed the training session.
 
-
-## Pilot 1: Quiz data  
-
-```{r readquiz, include=T,echo=F}
+```{r readquiz, echo=F,include=T,}
 # read in pre and post data
 # NB will need to check all quiz items categorisation and correct answers before applying to new dataset.
 pre_data_A <- read.csv('https://osf.io/u6n39/download',stringsAsFactors = F)
@@ -393,7 +385,7 @@ post_data_B$list <- "B"
 # merge two data frames
 qdata <- bind_rows(pre_data_A, post_data_A, pre_data_B, post_data_B)
 # create factor variables
-qdata$subject <- as.factor(qdata$Participant.Private.ID)
+qdata$ID <- as.factor(qdata$Participant.Private.ID)
 qdata$item <- as.factor(qdata$Question.Key)
 qdata$time <- as.factor(qdata$time)
 levels(qdata$time) <- c("Pre", "Post")
@@ -401,7 +393,7 @@ levels(qdata$time) <- c("Pre", "Post")
 
 
 
-```{r codeQs, include=T,echo=F}
+```{r codeQs, echo=F,include=F}
 # Code the correct answers.
 # select only numerical responses
 qdata <- qdata[qdata$Response == "1" |
@@ -448,7 +440,7 @@ qdata  <-
 qdata$Prob <- as.factor(qdata$Prob)
 ```
 
-```{r mapsubjectcodes}
+```{r mapsubjectcodes,echo=F,include=F}
 sublookup <- read.csv("sublookup.csv") #these are codes from training session - need to be matched to same people
 qdata$subID <-NA
 for (i in 1:nrow(sublookup)){
@@ -457,12 +449,12 @@ for (i in 1:nrow(sublookup)){
 }
 ```
 
-
-
-### Create a table showing the distribution of responses to each question. 
-This is saved as questresults.  
+ 
 
 ```{r qdatainspect, include=T,echo=F}
+
+### Create a table showing the distribution of responses to each question. 
+# This is saved as questresults. 
 qdata$item<-droplevels(qdata$item)
 qt <- table(qdata$item,qdata$Response)
 qdf <- as.data.frame(unclass(qt))
@@ -482,14 +474,14 @@ for (i in 1:nrow(qdf)){
 }
 
 write.csv(qdf,'questresults.csv')
-qdf
+
 
 
 ```
 
 
-## Create summary table for Pilot 1, with both questionnaire and learning data.
-This is saved as pilot1summary.csv.  
+## Create summary table, with learning data, and questionnaire data if available.
+ 
 ```{r summarytable, include=T,echo=F}
 #We do this in a function, so it can be reapplied to new data.  
 makesummary <- function(pilotdat, haveQdata, summaryname){
@@ -498,19 +490,19 @@ makesummary <- function(pilotdat, haveQdata, summaryname){
     colnames(qag)<-c('prepost','type','ID','qscore')
   }
   nsub<-length(unique(pilotdat$ID))
-  allcol <- c('ID', 'PreQ.S', 'PostQ.S', 'PreQ.P', 'PostQ.P', 'NcorrN1', 'Nhit1', 'Miss1', 'FP1', 'dprime1', 'beta1', 'pcorr1', 'array1', 'NcorrN2', 'Nhit2', 'Miss2', 'FP2', 'dprime2', 'beta2', 'pcorr2', 'array2', 'NcorrN3', 'Nhit3', 'Miss3', 'FP3', 'dprime3', 'beta3', 'pcorr3', 'array3', 'NcorrN4', 'Nhit4', 'Miss4', 'FP4', 'dprime4', 'beta4', 'pcorr4', 'array4')
+  allcol <- c('ID', 'PreQ.S', 'PostQ.S', 'PreQ.P', 'PostQ.P', 'NcorrN1', 'Nhit1', 'Miss1', 'FP1', 'dprime1', 'beta1', 'pcorr1', 'array1','earn1', 'NcorrN2', 'Nhit2', 'Miss2', 'FP2', 'dprime2', 'beta2', 'pcorr2', 'array2','earn2', 'NcorrN3', 'Nhit3', 'Miss3', 'FP3', 'dprime3', 'beta3', 'pcorr3', 'array3','earn3', 'NcorrN4', 'Nhit4', 'Miss4', 'FP4', 'dprime4', 'beta4', 'pcorr4', 'array4','earn4')
   
   pilotsummary<-data.frame(matrix(NA,nrow=nsub,ncol=length(allcol)))
   colnames(pilotsummary)<-allcol
   
   #need to add block numbers to pilotdat
-  pilotdat$block<-1
-  w<- which(pilotdat$Trial.Number %in% triallist[21:40])
-  pilotdat$block[w]<-2
-  w<- which(pilotdat$Trial.Number %in% triallist[41:60])
-  pilotdat$block[w]<-3
-  w<- which(pilotdat$Trial.Number %in% triallist[61:80])
-  pilotdat$block[w]<-4
+  # pilotdat$block<-1
+  # w<- which(pilotdat$Trial.Number %in% triallist[21:40])
+  # pilotdat$block[w]<-2
+  # w<- which(pilotdat$Trial.Number %in% triallist[41:60])
+  # pilotdat$block[w]<-3
+  # w<- which(pilotdat$Trial.Number %in% triallist[61:80])
+  # pilotdat$block[w]<-4
   
   namelist <- c('NcorrN','Nhit','Miss','FP')
   for (s in 1:nsub){
@@ -518,17 +510,17 @@ makesummary <- function(pilotdat, haveQdata, summaryname){
     if(haveQdata==1){
       w<-which(qag$ID==thissub)
       thisbit<-qag[w,]
-      pilotsummary[s,1]<-thissub
+  
       pilotsummary[s,2:3]<-thisbit[3:4,4]
       pilotsummary[s,4:5]<-thisbit[1:2,4]
     }
-    
+     pilotsummary[s,1]<-thissub
     #now add Ncorrect, hit, miss, fp for each block
     thatbit <- pilotdat[pilotdat$ID==thissub,]
     for (b in 1:4){
       cnames <- paste(namelist,b,sep='')
       bcols<-which(colnames(pilotsummary) %in% cnames) #cols to write to
-      dpcols<-c(max(bcols)+1,max(bcols)+2,max(bcols+3),max(bcols+4)) #cols to write dprime and beta to
+      dpcols<-c(max(bcols)+1,max(bcols)+2,max(bcols+3),max(bcols+4),max(bcols+5)) #cols to write dprime and beta to
       bbit <- thatbit[thatbit$block==b,]
       #N correct negs
       x1 <- length(intersect(which(bbit$choice==1),which(bbit$Correct==1))) #correct negative
@@ -539,55 +531,99 @@ makesummary <- function(pilotdat, haveQdata, summaryname){
       pilotsummary[s,dpcols[1:2]]<-psycho::dprime(x2,x4,x3,x1)[1:2]
       pilotsummary[s,dpcols[3]]<-(x1+x2)/(x1+x2+x3+x4)
       pilotsummary[s,dpcols[4]]<- mean(bbit$array)
+       pilotsummary[s,dpcols[5]]<- mean(bbit$earn)
     }
     
   }
   #NB in the original file on OSF, misses and FPs were the wrong way round (this affected beta but not dprime)
+  
+  #Add difference score for block4 - block1 for accuracy, and also slope
+  pilotsummary$b4_b1_acc <- pilotsummary$pcorr4-pilotsummary$pcorr1
+  pilotsummary$abovechanceH1<-0
+   pilotsummary$abovechanceH2<-0
+  for (i in 1:nrow(pilotsummary)){
+    accvals<-c('pcorr1','pcorr2','pcorr3','pcorr4')
+    accs <- as.data.frame(cbind(t(pilotsummary[i,accvals]),1:4))
+    colnames(accs)<-c('y','x')
+    mylm <- lm(accs$y~accs$x)
+    pilotsummary$acc.slope[i] <- coefficients(mylm)[2]
+    half1corr<-pilotsummary$Nhit1[i]+pilotsummary$NcorrN1[i]+pilotsummary$Nhit2[i]+pilotsummary$NcorrN2[i]
+    half2corr<-pilotsummary$Nhit3[i]+pilotsummary$NcorrN3[i]+pilotsummary$Nhit4[i]+pilotsummary$NcorrN4[i]
+    if(half1corr>24){ pilotsummary$abovechanceH1[i]<-1}
+    if(half2corr>24){ pilotsummary$abovechanceH2[i]<-1}
+  }
+  
   write.csv(pilotsummary,'Pilot1summary.csv',row.names=F)
   return(pilotsummary)
 }
 
 
 ```
+## Overview of results on learning task
 
-```{r summaryPilot1, include=F, echo=T}
-pilot1summary<-makesummary(pilotdat, 1, 'Pilot1summary.csv')
+```{r summaryPilot1, echo=F,include=T, message=F}
+pilot1summary<-makesummary(pilotdat1, 1, 'Pilot1summary.csv')
+means1 <- meanstable(pilot1summary,1)
+ft<-flextable(means1)
+ft <- set_caption(ft, caption = "Pilot 1: Mean (SD) by block")
+ft
 
+chancetab<-table(pilot1summary$abovechanceH1,pilot1summary$abovechanceH2)
 ```
 
-We check whether S-items are harder than P-items on the quiz. This is the case for both pre and post-test.
+The processed results from the learning task for Pilot 1 are available in Pilot1summary.csv.  
+Overall means by block are shown for proportion correct (p.corr), d.prime, array index at time of response (array: ranges from 1 to 6), and earnings (multiply by 20 to get amount earned in pence).  
+Note that for pilot 1, p.corr and earnings are perfectly correlated. In addition, there is very little difference between dprime and pcorr, reflecting the fact that there was little systematic response bias. 
 
-```{r quiztypecompare, include=T,echo=F}
+A score of 25/40 (62.5%) is better than chance performance (binomial probability = .040). `r chancetab[1,1]` participants did no better than chance on both first and second halves of training (blocks 1-2 and blocks 3-4), `r chancetab[2,2]` participants did better than chance on both halves. `r chancetab[2,1]` participants did better than chance on the first half but not on the second half, and `r chancetab[1,2]` performed at chance on the first half and better on the second half. 
+
+```{r doplot1,echo=F,include=T}
+plotlearn1<-plotlearning(pilotdat1,1)
+plotlearn1
+```
+
+
+The plot shows accuracy for individual participants by block. On inspection, slopes for individual participants are fairly mixed with some appearing to increase, but others going in the opposite direction. Overall means by block does not suggest any learning.  
+
+Overall, the pilot data suggested the task was too difficult to lead to learning, and it was accordingly decided to change the displays of distributions to include bars corresponding to the means for the two groups. Informal piloting with colleagues suggested this led to an increase in accuracy.
+
+
+## Overview of results on quiz
+
+The distribution of responses to each question is saved as questresults.csv. 
+
+We predicted that S-items would be harder than P-items on the quiz. This is the case for both pre and post-test.
+
+```{r quiztypecompare, echo=F,include=T}
 t.test(pilot1summary$PreQ.S,pilot1summary$PreQ.P,paired=T)
 t.test(pilot1summary$PostQ.S,pilot1summary$PostQ.P,paired=T)
 ```
-We check whether there is any indication of gain on the quiz. No difference on t-test for either S or P items.  
+We check whether there is any indication of gain on the quiz. There was no difference on t-test for either S or P items.  
 
-```{r quizgain, include=T,echo=F}
+```{r quizgain, echo=F,include=T,results='asis'}
 t.test(pilot1summary$PostQ.S,pilot1summary$PreQ.S,paired=T)
 t.test(pilot1summary$PostQ.P,pilot1summary$PreQ.P,paired=T)
 ```
 
-We next test to see whether post score on quiz questions is predicted by pcorr at end of training, after allowing for PreQuiz score. No evidence this is the case for either S- or P-items.  
+We then considered whether the post-training score on quiz questions is predicted by proportion correct at the end of training, after allowing for PreQuiz score. There was no evidence this is the case for either S- or P-items.  
 
-```{r predictQgain, include=T,echo=F}
+```{r predictQgain, echo=F,include=T}
 mod_predictS <- lm(PostQ.S ~ PreQ.S+pcorr4,data=pilot1summary)
 summary(mod_predictS)
 mod_predictP <- lm(PostQ.P ~ PreQ.P+pcorr4,data=pilot1summary)
 summary(mod_predictP)
 ```
-## Summary of results of pilot 1
-With 80 items, a score of 47 (58.7%) correct indicates better than chance (binomial probability = .046). Six of the pilot participants did not perform above chance; one of these low performers did show a significant improvement across the two halves of the session, achieving 68% correct in the second half. The highest performing participant achieved 80%. Overall, the pilot data suggested the task might be too difficult to show learning, and it was accordingly decided to change the displays of distributions to include bars corresponding to the means for the two groups. Informal piloting with colleagues suggested this led to an increase in accuracy.  
-
-It was also possible within the pilot data to look for evidence of learning an optimal strategy. The session was divided into two halves (blocks 1-2 vs blocks 3-4) to test for improvement with exposure to the task. At the individual level, only one participant showed a significant improvement in accuracy across the two halves that met Bonferroni-corrected p-value of .0023. At the group level, pairwise t-tests comparing the two halves in terms of (a) percent correct; (b) the array-size at the response, and (c) the absolute log likelihood at the point of response showed no reliable differences between the two halves. Scrutiny of individual cases for evidence of response strategies suggested that a few participants had started to wait longer to respond as the session proceeded, but the evidence was not compelling, and others showed the opposite effect, starting to respond earlier over time.  
 
 
 # Pilot data 2  
 A revised version of the training task was given to 30 participants recruited via Prolific. Modifications from pilot 1 were as follows:  
-* a) The gif beeswarms showed a horizontal line corresponding to the mean for each group.  
-* b) Each gif remained on display as the next one was added, to make it clear that the samples were cumulative.  
-* c) A reward schedule was devised so that bonus points were awarded if the 'optimal' array was selected. This corresponded to the array where the odds in favour of either the null or true hypothesis reaches 40:1 (absolute log likelihood of 3.68).  
-* d) Points earned in the game were converted to pennies that were added to the baseline payment. (But negative points were not subtracted). 
+*  The gif beeswarms showed a horizontal line corresponding to the mean for each group.  
+
+*  Each gif remained on display as the next one was added, to make it clear that the samples were cumulative.  
+
+*  A reward schedule was devised so that bonus points were awarded if the 'optimal' array was selected. This corresponded to the array where the odds in favour of either the null or true hypothesis reaches 40:1 (absolute log likelihood of 3.68).  
+
+* Points earned in the game were converted to pennies that were added to the baseline payment. (But negative points were not subtracted). 
 
 These participants were not given the quiz, as we felt we had already evaluated it adequately.  
 
@@ -607,22 +643,32 @@ all.datb <- rbind(dat1b, dat2b)
 #For Pilot2 we run this code as follows:
 mydata <- all.datb
 subdataname <- 'sublookup2.csv'
-mypilotag <- datacrunch(mydata,subdataname)  #2nd term is name where subject ID codes are saved.
-pilotdat <- mypilotag[[1]]
+mypilotag <- datacrunch(mydata,subdataname,2)  #2nd term is name where subject ID codes are saved.
+pilotdat2 <- mypilotag[[1]]
 myag <- mypilotag[[2]]
 ```
 
 ```{r summaryPilot2, include=F, echo=T}
-pilot2summary<-makesummary(pilotdat, 0, 'Pilot2summary.csv') #2nd term set to zero as we have no questionnaire data.
+pilot2summary<-makesummary(pilotdat2, 0, 'Pilot2summary.csv') #2nd term set to zero as we have no questionnaire data.
+means2 <- meanstable(pilot2summary,2)
+ft<-flextable(means2)
+ft <- set_caption(ft, caption = "Pilot 2: Mean (SD) by block")
+ft
+
+chancetab<-table(pilot2summary$abovechanceH1,pilot2summary$abovechanceH2)
 
 ```
 
 
+```{r doplot2,echo=F,include=T}
+plotlearn2<-plotlearning(pilotdat2,2)
+plotlearn2
+```
 
 # Pilot data 3 
 With pilot 2, we were able to demonstrate learning in the task, but, contrary to expectation, this was not accompanied by an increase in the average array index at the point of response. Indeed, many participants responded at a close-to-optimal array index throughout the session, so array index was relatively constant, although accuracy improved.  
 
-One of the reviewers suggested that the relatively fast presentation rate of the arrays might encourage participants to respond at later array indices, if they were still considering their response when the next array appeared. A more realistic approach would be to allow participants as long as they would like at each array index, so they could control the presentation speed. We thought this was a good idea, and so we implemented the task in this format for pilot 3. 
+One of the reviewers suggested that the relatively fast presentation rate of the arrays might encourage participants to respond at later array indices, if they were still considering their response when the next array appeared. An alternative approach would be to allow participants as long as they would like at each array index, so they could control the presentation speed. We thought this was worth trying, and so we implemented the task in this format for pilot 3. 
 
 We felt it was necessary to change the reward structure, to prevent participants from simply always selecting the largest array size, and so we had a sliding scale, whereby they had to spend points to view an array of a given size. This was more life-like, as testing larger samples does incur costs. 
 
@@ -636,23 +682,73 @@ We present the analysis of Pilot 3 in the same format as previous pilots. It is 
 # Raw data from training task are in two blocks, on https://osf.io/g2ks6/
 # These are raw output files created from Gorilla
 # Files are public, so it should be possible to download them directly
-dat1c <- read.csv('https://osf.io/h6qfa/download',stringsAsFactors = F)
-dat2c <- read.csv('https://osf.io/gqfp8/download',stringsAsFactors = F)
+all.datc <- read.csv('https://osf.io/h6qfa/download',stringsAsFactors = F)
 
-all.datc <-dat2c
+
 ```
 
-```{r pilot3crunch, include=F, echo=F}
+```{r pilot3format, include=F, echo=F}
+# Pilot 3 has different format of output, so make bespoke script.
+# take data, filter, and create new variables
+  wantcols<-c('Participant.Public.ID','Spreadsheet.Row','Trial.Number','ANSWER','Screen.Name','Reaction.Time',
+              'Response','Correct','ES','EarningCorrect','EarningWrong','meanC1','meanE1',
+              'meanC2','meanE2','meanC3','meanE3','meanC4','meanE4','meanC5','meanE5','meanC6','meanE6',
+              'ObsE1' ,'ObsE2','ObsE3','ObsE4','ObsE5','ObsE6',
+              'LL1' ,'LL2','LL3','LL4','LL5','LL6',
+              't1' ,'t2','t3','t4','t5','t6')
+sum.dat <- all.datc %>%
+  filter(Attempt== 1,
+         display== "task",
+         Screen.Name!= "start") %>%
+  select(wantcols) %>%
+  mutate(block= cut(as.numeric(Trial.Number), breaks= c(0,20,40,60,Inf), labels = c("1","2","3","4")),
+         array= ifelse(Screen.Name=='10',1,
+                       ifelse(Screen.Name=='20',2,
+                              ifelse(Screen.Name=='40',3,
+                                     ifelse(Screen.Name=='80',4,
+                                            ifelse(Screen.Name=='160',5,6))))))
+
+
+```
+
+```{r pilot3crunch, echo=F,include=T }
 #For Pilot3 we run this code as follows:
-mydata <- all.datc
+mydata <-sum.dat
 subdataname <- 'sublookup3.csv'
-mypilotag <- datacrunch(mydata,subdataname)  #2nd term is name where subject ID codes are saved.
-pilotdat <- mypilotag[[1]]
-myag <- mypilotag[[2]]
+mypilotag <- datacrunch(mydata,subdataname,3)  #2nd term is name where subject ID codes are saved.
+pilotdat3 <- mypilotag[[1]]
+myag3 <- mypilotag[[2]]
 ```
 
-```{r summaryPilot2, include=F, echo=T}
-pilot2summary<-makesummary(pilotdat, 0, 'Pilot2summary.csv') #2nd term set to zero as we have no questionnaire data.
+```{r makesummary3, echo=F,include=T }
+pilot3summary<-makesummary(pilotdat3, 0, 'Pilot3summary.csv') #2nd term set to zero as we have no questionnaire data.
 
 ```
 
+```{r meantab3,echo=F,include=T }
+means3<-meanstable(pilot3summary,3)
+ft<-flextable(means3)
+ft <- set_caption(ft, caption = "Pilot 3: Mean (SD) by block")
+ft
+
+```
+
+```{r indplot3,echo=F,include=T }
+myplot3<-plotlearning(pilotdat3, 3) 
+myplot3
+chancetab<-table(pilot3summary$abovechanceH1,pilot3summary$abovechanceH2)
+```
+
+A score of 25/40 is better than chance performance (p < .05). `r chancetab[1,1]` participants did no better than chance on both first and second halves of training (blocks 1-2 and blocks 3-4), `r chancetab[2,2]` participants did better than chance on both halves. `r chancetab[2,1]` participants did better than chance on the first half but not on the second half, and `r chancetab[1,2]` performed at chance on the first half and better on the second half. 
+
+```{r checklearning3, echo=F,include=T }
+
+learn3<-checklearn(pilot3summary) 
+print('Test whether block4 - block1 accuracy differs from zero')
+learn3[[1]]
+print('Test whether slope across 4 blocks for accuracy differs from zero')
+learn3[[2]]
+print('Test whether block4-block1 array index differs from zero')
+learn3[[3]]
+
+```
