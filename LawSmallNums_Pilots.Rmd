@@ -11,7 +11,11 @@ Incorporating previous scripts by Adam Parker, June 2021
 
 
 ## Pilot study 1  
-For Pilot 1, 21 participants recruited via Prolific were given a version of the task that used gifs to show increasing sample sizes at 2 s intervals.  There were 80 trials divided into 4 blocks of 20. They also did the original versions of pre- and post-test quizzes. 
+For Pilot 1, 21 participants recruited via Prolific were given a version of the task that used gifs to show increasing sample sizes at 2 s intervals. Their task was to select a response (blue=pink or blue>pink) as soon as they were confident in their decision.  
+
+!["Example of an item where there is a true difference"](gifpilot1.gif)
+
+There were 80 trials divided into 4 blocks of 20. They also did the original versions of pre- and post-test quizzes. 
 There were 3 key differences in the training task between Pilot 1 and the final version of the task (which corresponds to Pilot 2):  
 
 * The horizontal lines denoting sample means were omitted; judgments were based just on the beeswarms showing individual data points.  
@@ -22,10 +26,9 @@ There were 3 key differences in the training task between Pilot 1 and the final 
 
 For the pilot 1 quiz (see analysis below), S-items 2 and 4 both involved questions involving proportions. In the version of the quiz for Registered Report, in response to a reviewer suggestion, questions about means were substituted to make the quiz more aligned with the training.  
 
-The training game is here:  https://gorilla.sc/admin/project/7839#
-and is found at Projects/Science Game Developed/Science Game, version 13  
+The training game is here:  https://gorilla.sc/admin/project/5254#
+Task draft, version 28  
 
-*check! ? on gorilla csv file it says it is Task Draft version 28*
 
 ```{r loadpackages, ,warnings=F, include=F, echo=F}
 library(tidyverse)
@@ -103,14 +106,15 @@ datacrunch <- function(mydata,subdataname,pilot){  #mydata is a raw file from Go
     if(length(w)>0){
       colnames(pilotdat)[w]<-c('ObsE1','ObsE2','ObsE3','ObsE4','ObsE5','ObsE6')
     }
-    
+    if(pilot!=2){pilotdat$bonus <- 0} #we need to create dummy bonus column for pilots 1 and 3, in order to read file properly. Bonus is used to compute earnings. 
+    #We set it to zero for Pilots with no bonus, so condition for awarding bonus is never met.
     
     wantcols<-c('Participant.Public.ID','Spreadsheet.Row','Trial.Number','Reaction.Time',
                 'Response','Correct','ES','EarningCorrect','EarningWrong','meanC1','meanE1',
                 'meanC2','meanE2','meanC3','meanE3','meanC4','meanE4','meanC5','meanE5','meanC6','meanE6',
                 'ObsE1' ,'ObsE2','ObsE3','ObsE4','ObsE5','ObsE6',
                 'LL1' ,'LL2','LL3','LL4','LL5','LL6',
-                't1' ,'t2','t3','t4','t5','t6')
+                't1' ,'t2','t3','t4','t5','t6','bonus')
     
     #this version retains information about means and LL etc, which can be useful for looking at strategies - in particular can see for each trial how response is affected by observed effect size or LL. 
     pilotdat<-pilotdat[,wantcols]
@@ -148,6 +152,12 @@ for (r in 1:nrow(pilotdat)){
     pilotdat$earn[r]=pilotdat$EarningCorrect[r]
   }
 }
+# Compute bonus earning for Pilot 2. Extra earned if selected array = bonus; i.e. if the optimal array size was selected.
+#NB the bonus is fixed at 2 points and hard coded here, not read from file.
+#Because bonus is NA for pilots 1 and 2, this chunk will have no effect
+w<- which(pilotdat$array==pilotdat$bonus)
+pilotdat$earn[w]<-pilotdat$earn[w]+2
+
 
 #convert trial number into block.
 pilotdat$Trial.Number<- as.numeric(pilotdat$Trial.Number)
@@ -496,14 +506,6 @@ makesummary <- function(pilotdat, haveQdata, summaryname){
   pilotsummary<-data.frame(matrix(NA,nrow=nsub,ncol=length(allcol)))
   colnames(pilotsummary)<-allcol
   
-  #need to add block numbers to pilotdat
-  # pilotdat$block<-1
-  # w<- which(pilotdat$Trial.Number %in% triallist[21:40])
-  # pilotdat$block[w]<-2
-  # w<- which(pilotdat$Trial.Number %in% triallist[41:60])
-  # pilotdat$block[w]<-3
-  # w<- which(pilotdat$Trial.Number %in% triallist[61:80])
-  # pilotdat$block[w]<-4
   
   namelist <- c('NcorrN','Nhit','Miss','FP')
   for (s in 1:nsub){
@@ -554,7 +556,7 @@ makesummary <- function(pilotdat, haveQdata, summaryname){
     if(half2corr>24){ pilotsummary$abovechanceH2[i]<-1}
   }
   
-  write.csv(pilotsummary,'Pilot1summary.csv',row.names=F)
+  write.csv(pilotsummary,summaryname,row.names=F)
   return(pilotsummary)
 }
 
@@ -572,28 +574,36 @@ ft
 chancetab<-table(pilot1summary$abovechanceH1,pilot1summary$abovechanceH2)
 ```
 
-The processed results from the learning task for Pilot 1 are available in Pilot1summary.csv.  
+The processed results from the learning task for Pilot 1 are available in Pilot1summary.csv (https://osf.io/gk2ay/files/).  
 Overall means by block are shown for proportion correct (p.corr), d.prime, array index at time of response (array: ranges from 1 to 6), and earnings (multiply by 20 to get amount earned in pence).  
-Note that for pilot 1, p.corr and earnings are perfectly correlated. In addition, there is very little difference between dprime and pcorr, reflecting the fact that there was little systematic response bias. 
+Note that for pilot 1, p.corr and earnings are perfectly correlated. In addition, there is very little difference between dprime and pcorr, reflecting the fact that there was no sign of systematic response bias. 
 
 A score of 25/40 (62.5%) is better than chance performance (binomial probability = .040). `r chancetab[1,1]` participants did no better than chance on both first and second halves of training (blocks 1-2 and blocks 3-4), `r chancetab[2,2]` participants did better than chance on both halves. `r chancetab[2,1]` participants did better than chance on the first half but not on the second half, and `r chancetab[1,2]` performed at chance on the first half and better on the second half. 
 
-```{r doplot1,echo=F,include=T}
+```{r doplot1,echo=F,include=T,message=F}
 plotlearn1<-plotlearning(pilotdat1,1)
 plotlearn1
 ```
 
 
-The plot shows accuracy for individual participants by block. On inspection, slopes for individual participants are fairly mixed with some appearing to increase, but others going in the opposite direction. Overall means by block do not suggest any learning.  
+The plot above shows accuracy for individual participants by block. On inspection, slopes for individual participants are fairly mixed with some appearing to increase, but others going in the opposite direction. Overall means by block do not suggest any learning.  
 
 Overall, the pilot data suggested the task was too difficult to lead to learning, and it was accordingly decided to change the displays of distributions to include bars corresponding to the means for the two groups. Informal piloting with colleagues suggested this led to an increase in accuracy.
 
 
 ## Overview of results on quiz
 
-The distribution of responses to each question is saved as questresults.csv. 
+The distribution of responses to each question is saved as questresults.csv (see OSF) and reproduced below.   
+
+
 ```{r showquiz,echo=F,include=T}
-ft<-flextable(qdf)
+qdf<-qdf[order(qdf$Probquest),]
+pqdf <- cbind(row.names(qdf),qdf)
+colnames(pqdf)[1] <- 'Item'
+pqdf$Item<-substr(pqdf$Item,1,2)
+pqdf$perc.c<-round(pqdf$perc.c,3)
+colnames(pqdf)[6:8]<-c('P-item','Correct resp.','Prop.correct')
+ft<-flextable(pqdf)
 ft <- set_caption(ft, caption = "Pilot 1: Responses to quiz")
 ft
 
@@ -612,7 +622,7 @@ t.test(pilot1summary$PostQ.S,pilot1summary$PreQ.S,paired=T)
 t.test(pilot1summary$PostQ.P,pilot1summary$PreQ.P,paired=T)
 ```
 
-We then considered whether the post-training score on quiz questions is predicted by proportion correct at the end of training, after allowing for PreQuiz score. There was no evidence this is the case for either S- or P-items. Quiz post-test scores on S-items were strongly predicted by pretest scores. 
+We then considered whether the post-training score on quiz questions is predicted by proportion correct at the end of training, after allowing for PreQuiz score. This prediction was specific for S-items. There was no evidence this is the case for either S- or P-items. Quiz post-test scores on S-items were strongly predicted by pretest scores. 
 
 ```{r predictQgain, echo=F,include=T}
 mod_predictS <- lm(PostQ.S ~ PreQ.S+pcorr4,data=pilot1summary)
@@ -633,7 +643,8 @@ A revised version of the training task was given to 30 participants recruited vi
 
 * Points earned in the game were converted to pennies that were added to the baseline payment. (But negative points were not subtracted). 
 
-These participants were not given the quiz, as we felt we had already evaluated it adequately.  
+!["Example of an item from Pilot 2 where there is no true difference"](pilot2_demo.gif)
+These participants were not given the quiz, as we felt we had already evaluated it adequately.  We did, however, ask them for subjective report of how they approached the task at the end of the session. 
 
 
 ```{r readraw2, include=F, echo=T,message=F}
@@ -693,6 +704,31 @@ print('Test whether block4-block1 array index differs from zero')
 learn2[[3]]
 
 ```
+### What strategies did participants employ?
+
+Here, participants were asked *Did you change how you approached the task? Please let us know if you adopted any specific strategy to guide your response?*
+
+*NOTE*. Only 26 received the follow up questionnaire due to an issue in Gorilla. This is now fixed. 
+
+```{r strategy, echo=F, include=T, message=F}
+strat.dat  <- read.csv('https://osf.io/pqx2c/download',stringsAsFactors = F)
+  
+# subjective improvement
+improve <- strat.dat %>%
+  filter(Question.Key== "better.over.time")
+# counts
+
+table(improve$Response)
+# filter
+strat.dat <- strat.dat %>%
+  filter(Question.Key== "approach.feedback")
+# list
+print(strat.dat$Response)
+
+```
+
+21 participants reported that they had improved over time, with 1 saying they did not and 4 saying they were unsure. As we can see from the qualitative questions a few participants didn't employ a strategy. 
+
 
 # Pilot data 3 
 
@@ -700,7 +736,7 @@ One of the reviewers suggested that the relatively fast presentation rate of the
 
 We felt it was necessary to change the reward structure, to prevent participants from simply always selecting the largest array size, and so we had a sliding scale, whereby they had to spend points to view an array of a given size. This was more life-like, as testing larger samples does incur costs. 
 
-In this version of the task, on each trial the participant was confronted with a screen and asked what array size they would like to choose, with the cost increasing by 1 point for each increment in array index. These points were subtracted from the total earned, which, as in Pilot 2 was then converted to pennies that could be added to their monetary reward for participation. 
+In this version of the task, on each trial the participant was confronted with a menu screen and asked what array size they would like to choose, with the cost increasing by 1 point for each increment in array index. These points were subtracted from the total earned, which, as in Pilot 2 was then converted to pennies that could be added to their monetary reward for participation. 
 
 Participants in Pilot 3 did not do the quiz.  
 
@@ -780,3 +816,27 @@ print('Test whether block4-block1 array index differs from zero')
 learn3[[3]]
 
 ```
+### Subjective report of strategies  
+As for pilot 2, we asked participants for subjective report of how they approached the task at the end of the session. 
+```{r strategypilot3, echo=F, include=T, message=F}
+strat.dat  <- read.csv('https://osf.io/rx23d/download',stringsAsFactors = F)
+  
+# subjective improvement
+improve <- strat.dat %>%
+  filter(Question.Key== "better.over.time")
+# counts
+
+table(improve$Response)
+# filter
+strat.dat <- strat.dat %>%
+  filter(Question.Key== "approach.feedback")
+# list
+print(strat.dat$Response)
+
+```
+Responses suggested more of a focus on trying to infer the result from the single display that was selected, rather than appreciating any systematic effect of sample size. 
+
+
+## Overview of results, comparison of pilots. 
+
+Comparison of the three versions of the task indicate that performance improved across blocks only in Pilot 2. This was the only version of the task where the participant saw an evolving display that showed how means varied with sample size.  Clearly, further modifications of the task would be worth exploring, but before doing so, we propose to test whether there is any evidence that improvement on the version used in Pilot 2 predicts improvement on quiz items that test understanding of the impact of sample size on stability of estimates of the mean. 
