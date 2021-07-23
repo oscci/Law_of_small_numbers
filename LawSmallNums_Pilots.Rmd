@@ -299,6 +299,10 @@ r1 <- cor.test(summaryfile$pcorr1,summaryfile$array1)
 r2 <- cor.test(summaryfile$pcorr2,summaryfile$array2)
 r3 <- cor.test(summaryfile$pcorr3,summaryfile$array3)
 r4 <- cor.test(summaryfile$pcorr4,summaryfile$array4)
+summaryfile$allpcorr <- summaryfile$pcorr1+summaryfile$pcorr2+summaryfile$pcorr3+summaryfile$pcorr4
+summaryfile$allarray <- summaryfile$array1+summaryfile$array2+summaryfile$array3+summaryfile$array4
+r0 <- cor.test(summaryfile$allpcorr,summaryfile$allarray)
+
 x1 <- round(r1$estimate,3)
 low1 <-round(r1$conf.int[1],3)
 hi1 <-round(r1$conf.int[2],3)
@@ -319,8 +323,13 @@ low1 <-round(r4$conf.int[1],3)
 hi1 <-round(r4$conf.int[2],3)
 c4 <- paste0(x4," (",low1," to ", hi1, ")")
 
-mydf <-rbind(c1,c2,c3,c4)
-mydf <- as.data.frame(cbind(c('Block1','Block2','Block3','Block4'),mydf))
+x0 <- round(r0$estimate,3)
+low1 <-round(r0$conf.int[1],3)
+hi1 <-round(r0$conf.int[2],3)
+c0 <- paste0(x0," (",low1," to ", hi1, ")")
+
+mydf <-rbind(c1,c2,c3,c4,c0)
+mydf <- as.data.frame(cbind(c('Block1','Block2','Block3','Block4','All Blocks'),mydf))
 colnames(mydf)<-c('Block','Correlation (95% CI)')
 
 return(mydf) 
@@ -759,7 +768,9 @@ ft
 
 ### What strategies did participants employ?
 
-Here, participants were asked *Did you change how you approached the task? Please let us know if you adopted any specific strategy to guide your response?*
+Here, participants were asked *Did you change how you approached the task? Please let us know if you adopted any specific strategy to guide your response?*  
+
+Responses are shown below, with "+" against any that indicate awareness of need to wait for larger sample size.  
 
 *NOTE*. Only 26 received the follow up questionnaire due to an issue in Gorilla. This is now fixed. 
 
@@ -775,13 +786,39 @@ table(improve$Response)
 # filter
 strat.dat <- strat.dat %>%
   filter(Question.Key== "approach.feedback")
+
+#manually coded according to whether any mention of using sample size
+briefcode <- c(1,0,0,0,1,1,1,1,0,0,1,0,1,0,0,1,0,1,1,0,1,1,1,0,0,1)
 # list
-print(strat.dat$Response)
+mysymbol<-c('-','+')
+print(paste(mysymbol[(briefcode+1)],strat.dat$Response))
+
+sublookup <- read.csv("sublookup2.csv") #these are codes from training session - need to be matched to same people
+strat.dat$subID <-NA
+for (i in 1:nrow(sublookup)){
+  w<-which(strat.dat$Participant.Public.ID ==sublookup$code[i] )
+  strat.dat$subID[w] <- paste0('s',sublookup$Number[i])
+}
+pilot2summary$strategy<-NA
+pilot2summary$strategycode <- NA
+
+  for (i in 1:nrow(strat.dat)){
+    w<-which(pilot2summary$ID==strat.dat$subID[i])
+    pilot2summary$strategy[w]<-strat.dat$Response[i]
+    pilot2summary$strategycode[w]<-briefcode[i]
+  }
+
 
 ```
 
-21 participants reported that they had improved over time, with 1 saying they did not and 4 saying they were unsure. As we can see from the qualitative questions a few participants didn't employ a strategy, but several mentioned that they learned to wait longer.  
 
+
+21 participants reported that they had improved over time, with 1 saying they did not and 4 saying they were unsure. The qualitative questions were coded as 0 or 1 depending on whether or not they indicated an awareness that waiting and/or sample size was important. A few participants didn't employ a strategy, but `r sum(briefcode)` of 26 gave responses indicating they had learned to use sample size to guide their responses. On a one-tailed t-test, earnings in the final block were higher for those whse subjective report was coded as using sample size.  
+
+```{r briefcodet,echo=F,include=T}
+t.test(pilot2summary$earn4~pilot2summary$strategycode,alternative='less')
+
+```
 
 # Pilot data 3 
 
@@ -891,13 +928,17 @@ table(improve$Response)
 # filter
 strat.dat <- strat.dat %>%
   filter(Question.Key== "approach.feedback")
+  
+  #manually coded according to whether any mention of using sample size
+briefcode <- c(0,0,1,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,1)
 # list
-print(strat.dat$Response)
+mysymbol<-c('-','+')
+print(paste(mysymbol[(briefcode+1)],strat.dat$Response))
+
 
 ```
-Responses suggested more of a focus on trying to infer the result from the single display that was selected, rather than appreciating any systematic effect of sample size. 
-
+Responses were again coded according to whether they indicated any appreciation of sample size impact (shown as +). Only `r sum(briefcode)` participants scored +, and other responses suggested more of a focus on trying to infer the result from the single display that was selected. It was also interesting to note that some participants tried using larger samples but then went back to smaller samples if they made an error, suggesting that, in contrast to Pilot 2, they did not appreciate that the displayed means very seldom were closer to the true effect when sample size was small.  
 
 ## Overview of results, comparison of pilots. 
 
-Comparison of the three versions of the task indicate that performance improved across blocks only in Pilot 2. This was the only version of the task where the participant saw an evolving display that showed how means varied with sample size.  Clearly, further modifications of the task would be worth exploring, but before doing so, we propose to test whether there is any evidence that improvement on the version used in Pilot 2 predicts improvement on quiz items that test understanding of the impact of sample size on stability of estimates of the mean. 
+Comparison of the three versions of the task indicate that performance improved across blocks only in Pilot 2. This was the only version of the task where the participant saw an evolving display that showed how means varied with sample size.  Clearly, further modifications of the task would be worth exploring, but before doing so, we propose to test whether there is any evidence that learning on the version used in Pilot 2 predicts improvement on quiz items that test understanding of the impact of sample size on stability of estimates of the mean. 
