@@ -49,13 +49,13 @@ assignresponse <-function(mysheet,thisarray,thistrial,lowLLcut,hiLLcut,learner,m
         if(LLval<(-hiLLcut)) #rows where LL less than -hiLLcut
         { myresp <- 0} #response set to zero
         if(LLval>hiLLcut) #rows where LL greater than LLcut
-       { myresp <- 1} #response set to zero
+       { myresp <- 1} #response set to one
         
         if (is.na(myresp)&&(learner==0)){ #for nonlearners use lower cutoff
-        if(LLval<(-lowLLcut)) #rows where LL less than -lowLLcut
-        { myresp <- 0} #response set to zero
-        if(LLval>lowLLcut) #rows where LL greater than lowLLcut
-       { myresp <- 1} #response set to zero
+         if(LLval<(-lowLLcut)) #rows where LL less than -lowLLcut
+         { myresp <- 0} #response set to zero
+         if(LLval>lowLLcut) #rows where LL greater than lowLLcut
+         { myresp <- 1} #response set to zero
         }
 return(myresp) #will either be 0 or 1, if cutoff exceeded, or still NA
 }
@@ -66,26 +66,25 @@ return(myresp) #will either be 0 or 1, if cutoff exceeded, or still NA
 #Function to make a generic spreadsheet. NB this simulation originally just compared 2 halves of training (blocks 1-2 and blocks 3-4).  But later on we just focus on comparing 1 and 4 - this allows for possibility that some learning might occur in blocks 1-2 and/or that best performance may only be seen in block 4. Since we will ignore blocks 2-3 in analysis, this method of simulation will be OK.
 
 makesim<-function(mysheet,nsub,p.learn,errrate,earnc,earne,bonus,allarrayvals,lowLLcut,hiLLcut){
- 
 
   nperhalf<-nrow(mysheet)/2 #number of trials for each half
   
   hvals<-matrix(c(1,nperhalf,(nperhalf+1),(2*nperhalf)),byrow=T,nrow=2)#range of rows for each half
-  simdataA1<-data.frame(matrix(NA,nrow=nsub,ncol=10))
-  colnames(simdataA1)<-c('ID','strategy','learn1','mean.array1','p.corr1','earn1','learn2','mean.array2','p.corr2','earn2')
+  simdatL<-data.frame(matrix(NA,nrow=nsub,ncol=10))
+  colnames(simdatL)<-c('ID','strategy','learn1','mean.array1','p.corr1','earn1','learn2','mean.array2','p.corr2','earn2')
   #simulate each subject one at a time by going through blocks 1 then 4 (here labelled 1 and 2)
   
-  simdataA1$ID<-1:nsub #this is simulated sheet with summary data for one sub per row
-  simdataA1$strategy <- 'LL'
-    #simdataA1 holds summary data with percent correct etc across all trials per half, and also has column to indicate if learner or not in 2nd half.
-    simdataA1$learn1<-0 #all those with zero here use 1.5 LL to start
-    simdataA1$learn2<-0 # this index will identify learners - those where LL increases to 3.5 in 2nd half
+  simdatL$ID<-1:nsub #this is simulated sheet with summary data for one sub per row
+  simdatL$strategy <- 'LL'
+    #simdatL holds summary data with percent correct etc across all trials per half, and also has column to indicate if learner or not in 2nd half.
+    simdatL$learn1<-0 #all those with zero here use 1.5 LL to start
+    simdatL$learn2<-0 # this index will identify learners - those where LL increases to 3.5 in 2nd half
 
     
   for (i in 1:nsub){
     learnp <- runif(1)
     if(learnp<p.learn){
-      simdataA1$learn2[i] <- 1 #for the specified proportion of subjects, learn2 is now set to 1 for learners
+      simdatL$learn2[i] <- 1 #for the specified proportion of subjects, learn2 is now set to 1 for learners
     }
 
     neworder<-sample(1:nrow(mysheet),nrow(mysheet),replace=F) #randomise the order of trials for each sub
@@ -112,25 +111,43 @@ makesim<-function(mysheet,nsub,p.learn,errrate,earnc,earne,bonus,allarrayvals,lo
       myresp <- NA  #initialise response
       
       learner <-0
-      if (h>1 && simdataA1$learn2[i]==1){learner <- 1}
+      if (h>1 && simdatL$learn2[i]==1){learner <- 1}
       
+      ########################################################
+ 
+      #THIS BLOCK WAS DESIGNED TO DIFFERENTIATE LEARNERS AND NONLEARNERS IN TERMS OF HOW THEY USED
+      #LOG LIKELIHOOD TO SELECT RESPONSES
+      #HOWEVER - IT HAS NO EFFECT!!
+      #THE ONLY WAY TO GET SENSIBLE DIFFERENTIATION BETWEEN THESE TWO IS BY HAVING A PROPORTION OF 
+      #NONLEARNER RESPONSES SET TO BE ERRORS - see below
+      #This chunk still used to assign responses and is retained in case we want to revisit this approach
       while(thisarray<7 && is.na(myresp)){
         myresp<-assignresponse(mysheet,thisarray,thistrial,lowLLcut,hiLLcut,learner,myresp)
         if (is.na(myresp)){    #still no response assigned
-          if(learner==1 && h==2 && thisarray < 6) {thisarray <- thisarray+1}  # Need to increase array index for learner in 2nd half 
+          if(learner==1 && thisarray < 6) {thisarray <- thisarray+1}  # Need to increase array index for learner in 2nd half 
           
           else{lowLLcut <-0
           hiLLcut <- 0} #for nonlearner just respond depending on whether LL is + or -
           #ALSO if get to array 6 and hiLLcut not met, just set to zero as well
         }
       }
+      ########################################################
       
       correctresp<-0
       if (correctans==myresp)
       {correctresp<-1}
-      
+      ########################################################
+ 
+      #ADD ERRORS TO RESPONSES!
+     thisprob <- runif(1)
+          #add additional errors for nonlearners at error rate!
+      if((thisprob<errrate[1]) && (learner==0)) {correctresp <- 0}
+       if((thisprob<errrate[2]) && (learner==1)) {correctresp <- 0}
+      mysheet$correctresponse[thistrial] <-correctresp
+      ########################################################
       #now we have to work out reward for this trial
       if(correctresp==1){
+        
         mysheet$reward[thistrial]<-earnc[thisarray]
         if(mysheet$bonus[thistrial]==thisarray){
           mysheet$reward[thistrial]<-mysheet$reward[thistrial]+bonus}}
@@ -139,46 +156,41 @@ makesim<-function(mysheet,nsub,p.learn,errrate,earnc,earne,bonus,allarrayvals,lo
       
       mysheet$arrayindex[thistrial] <- thisarray
       mysheet$response[thistrial] <- myresp
-      #add random error at errrate : this just flips 0 to 1 or vice versa
-    #  if(runif(1)<errrate) {correctresp <- abs(correctresp-1)}
-  
-      #add additional errors for nonlearners at error rate!
-      if((runif(1)<errrate) && (learner==0)) {correctresp <- 0}
-      mysheet$correctresponse[thistrial] <-correctresp
+ 
       mysheet$half[thistrial] <- h
     }
     
-    
-
-simdataA1$mean.array1[i] <- mean(mysheet$arrayindex[mysheet$half==1])
-simdataA1$mean.array2[i] <- mean(mysheet$arrayindex[mysheet$half==2])
-simdataA1$p.corr1[i] <- mean(mysheet$correctresp[mysheet$half==1])
-simdataA1$p.corr2[i] <- mean(mysheet$correctresp[mysheet$half==2])
-simdataA1$earn1[i] <- mean(mysheet$reward[mysheet$half==1])
-simdataA1$earn2[i] <- mean(mysheet$reward[mysheet$half==2])
+simdatL$mean.array1[i] <- mean(mysheet$arrayindex[mysheet$half==1])
+simdatL$mean.array2[i] <- mean(mysheet$arrayindex[mysheet$half==2])
+simdatL$p.corr1[i] <- mean(mysheet$correctresp[mysheet$half==1])
+simdatL$p.corr2[i] <- mean(mysheet$correctresp[mysheet$half==2])
+simdatL$earn1[i] <- mean(mysheet$reward[mysheet$half==1])
+simdatL$earn2[i] <- mean(mysheet$reward[mysheet$half==2])
 
 }
-simdataA1$arraydiff<-simdataA1$mean.array2-simdataA1$mean.array1
-simdataA1$pcorrdiff<-simdataA1$p.corr2-simdataA1$p.corr1
+simdatL$arraydiff<-simdatL$mean.array2-simdatL$mean.array1
+simdatL$pcorrdiff<-simdatL$p.corr2-simdatL$p.corr1
+simdatL$earndiff<-simdatL$earn2-simdatL$earn1
 #Now check if differences between 1st and 2nd half are evident on t-test
-t.array<- t.test(simdataA1$mean.array1,simdataA1$mean.array2)
-t.p.corr<-  t.test(simdataA1$p.corr1,simdataA1$p.corr2)
+t.array<- t.test(simdatL$mean.array1,simdatL$mean.array2)
+t.p.corr<-  t.test(simdatL$p.corr1,simdatL$p.corr2)
 
-return(simdataA1)
+return(simdatL)
 }
 ```
 
 
 Use makesim to check how earnings schedule works for those who do and don't learn.
-```{r checkearnings}
-p.learn <- 1 #set to 1 to just compare 1st and 2nd half assuming all learn
-origarrayfreqs <- c(11,54,246,570,860,659) #probabilities of each array index as observed in Pilot 2
-#but because simulation allows arrays to increase, need to adjust so fewer high
-allarrayfreqs <- c(5,10,25,40,30,20)
-allarrayvals<-c(rep(1,4),rep(2,19),rep(3,64), rep(4,144), rep(5,203),rep(6,166))
+```{r setparameters}
+setparameters<-function(){
+  p.learn <- 1 #set to 1 to just compare 1st and 2nd half assuming all learn
+allarrayfreqs <- c(11,54,246,570,860,659) #probabilities of each array index as observed in Pilot 2
+
+#allarrayfreqs <- c(5,10,30,50,40,20) #alternative simpler format
+allarrayvals<-c(rep(1,allarrayfreqs[1]),rep(2,allarrayfreqs[2]),rep(3,allarrayfreqs[3]), rep(4,allarrayfreqs[4]), rep(5,allarrayfreqs[5]),rep(6,allarrayfreqs[6]))
 #make a long vector with all array values based on Pilot 2 blpck 1
-nsub=100
-errrate=.4
+nsub=1000
+errrate=c(.25,.025) #add error responses to learners and nonlearners at this rate
 earnc<-rep(4,6)
 earne<--rep(4,6)
 bonus<-2
@@ -186,14 +198,19 @@ mysheet<-loadspreadsheet('spreadsheet1.csv')
 mysheet<-mysheet[1:40,] #we'll just consider 2 blocks which we'll designate as first and last
 lowLLcut <- 0 #very low LL for nonlearners
 hiLLcut <-3.65
-nudat<- makesim(mysheet,nsub,p.learn,errrate,earnc,earne,bonus,allarrayvals,lowLLcut,hiLLcut)
+return(list('p.learn'=p.learn,'allarrayvals'=allarrayvals,'nsub'=nsub,'errrate'=errrate,'earnc'=earnc,
+            'earne'=earne,'bonus'=bonus,'mysheet'=mysheet,'lowLLcut'=lowLLcut,'hiLLcut'=hiLLcut))
+}
+```
 
-mean(nudat$mean.array1)
-mean(nudat$mean.array2)
-mean(nudat$earn1)
-mean(nudat$earn2)
-mean(nudat$p.corr1)
-mean(nudat$p.corr2)
+```{r checksimulation}
+allparams<-setparameters()
+nudat<- makesim(allparams$mysheet,allparams$nsub,allparams$p.learn,allparams$errrate,
+                allparams$earnc,allparams$earne,allparams$bonus,allparams$allarrayvals,
+                allparams$lowLLcut,allparams$hiLLcut)
+
+colMeans(nudat[,c(4:6,8:10)])
+
 
 ```
 
@@ -202,9 +219,9 @@ We would then aim to use difference score as predictor of gains in quiz.
  The array index difference is used in these simulated data.
 
 ```{r quizsim}
-#Functrion to simulate quiz data for S-items
-#Assume pcorr on quiz initially 3/12
-#Those in learning=1 group increase by 2 pts.
+# Function to simulate quiz data for S-items
+# Assume pcorr on quiz initially 3/12
+# Those in learning=1 group increase by 2 pts.
 # Again, need to have binomial distribution
 quizsim <- function(simdata,pbad,pgood){
   binomq1 <- pbinom(0:6,6,pbad) #cumulative probabilities for scores of 1-6 out of 6, prob pass =.3
@@ -239,156 +256,71 @@ quizsim <- function(simdata,pbad,pgood){
 
 ```{r makebigsummary,warnings=F}
 #Now simulate lots of runs
-mysheet<-loadspreadsheet('spreadsheet1.csv')
+allparams<-setparameters() #get the constant parameters for the simulation
+errrate=allparams$errrate #add error responses to learners and nonlearners at this rate
+earnc<-allparams$earnc#earning for correct at each array size
+earne<- allparams$earne #earning for error at each array size
+bonus<-allparams$bonus
+mysheet <-allparams$mysheet
+allarrayvals <- allparams$allarrayvals
+lowLLcut <- allparams$lowLLcut
+hiLLcut <- allparams$hiLLcut
 
-firstlast<-1
-if(firstlast==1){ #Rather than compariong two halves (each of 2 blocks) we can just take 1st and last block
-  #In this case  we just compare 2 blocks.
-  #this is simulated by first shuffling blocks, as different subjects get different orders; then just taking 2 of them.
-  #In effect, subject would do all blocks, but we just compare first and last, so only need two
-  #Need to check power for this scenario, as small N items will make less reliable}
-  blockbits<-matrix(c(1, 20,
-                      21, 40,
-                      41, 60,
-                      61, 80),byrow=1,nrow=4)
-  theseblocks<-sample(1:4,2,replace=FALSE) #select 2 blocks at random
-  myrows<-(1+(theseblocks[1]-1)*20):(theseblocks[1]*20)
-  myrows2<-(1+(theseblocks[2]-1)*20):(theseblocks[2]*20)
-  
-  mysheet<-mysheet[c(myrows,myrows2),]
-}
-
-nperhalf<-nrow(mysheet)/2
+#now specify the variable parameters
 nsubvals <- c(50,75,100)
 subbits<-paste0(nsubvals,collapse="_")
 plearnvals <- c(0,.25,.33,.5)
 pbits<-paste0(plearnvals,collapse="_")
 quizgoodvals<-c(.5,.66) #posttest proportion correct on s items for those who learned
 qbits<-paste0(quizgoodvals,collapse='_')
-errrate<-0.5/nperhalf #random errs per 40 items
 pbad <- .33 #probability of answering q correctly prior to learning (avg 2/6 correct)
 pgood <- .66 #probability of answering q for those who learned - now treated as variable, see below
-  allarrayvals <- c( 1,1,2,2,2,2,3,3,3,3,3,3,4,4,4,5,5,5,6,6) #this can be converted to distribution of probabilities for each array index. 2 to 5 are equally likely - 1 and 6 half as common. Can vary this.
- 
 
-
-niter<-1000
+niter<-500
 thisrow<-0
 quizgoodvals<-c(.5,.66) #posttest proportion correct on s items for those who learned
 quizbits<-paste0(quizgoodvals,collapse='_')
-bigsummary<-data.frame(matrix(NA,nrow=niter*length(nsubvals)*length(plearnvals)*length(quizgoodvals)*2,ncol=14))
-colnames(bigsummary)<-c('run','nsub','plearn','A','p.t.below5','p.t.array','quiz.pbad','quiz.pgood','ptquiz','lmpre.p','lmarraydiff.p',
-                        'binpost.p','binarraydiff.p','bin.interact.p')
-earnc<-rep(4,6) #earning for correct at each array size
-earne<- rep(-4,6) #earning for error at each array size
-bonus<-2
+bigsummary<-data.frame(matrix(NA,nrow=niter*length(nsubvals)*length(plearnvals)*length(quizgoodvals),ncol=11))
+colnames(bigsummary)<-c('run','nsub','plearn','p.t.array','p.t.pcorr','p.t.earn','quiz.pbad','quiz.pgood','ptquiz','lmpre.p','lmearndiff.p')
+
 for (i in 1:niter){
   nsub<-max(nsubvals)
   print(i)
-
-    for (p.learn in plearnvals){
-      for (A in 1:2){ #this is amount of gain in array index for those who learn
-        for (pgood in quizgoodvals){
+  for (p.learn in plearnvals){
+    for (pgood in quizgoodvals){
+      simdata<- makesim(mysheet,nsub,p.learn,errrate,
+                        earnc,earne,bonus,allarrayvals,
+                        lowLLcut,hiLLcut)
       
-      simdata<-makesim(mysheet, nsub,p.learn,errrate,A,earnc,earne,bonus, allarrayvals) 
-       for (thissub in nsubvals){
-       thisrow<-thisrow+1
-      bigsummary$run[thisrow]<-i
-     
-      bigsummary$nsub[thisrow]<-thissub
-      bigsummary$plearn[thisrow]<-p.learn
-      bigsummary$A[thisrow]<-A
-      bigsummary$quiz.pbad[thisrow]<-pbad #percent correct for nonlearners
-      bigsummary$quiz.pgood[thisrow]<-pgood#percent correct for learners
-      bigsummary$p.t.below5[thisrow]<-t.test(simdata$mean.array1[1:thissub],mu=5)$p.value
-      bigsummary$p.t.array[thisrow]<-t.test(simdata$mean.array1[1:thissub],simdata$mean.array2)$p.value #pvalue for t-test comparing arrays for 1st and last block
-      simdata<-quizsim(simdata,pbad,pgood) #adds questionnaire scores
-      bigsummary$ptquiz[thisrow]<-t.test(simdata$quizSpre[1:thissub],simdata$quizSpost[1:thissub])$p.value
-      regsim <- lm(quizSpost ~ quizSpre + arraydiff, data=simdata[1:thissub,])
-      s<-summary(regsim)
-      bigsummary$lmpre.p[thisrow]<-s$coefficients[2,4]
-      bigsummary$lmarraydiff.p[thisrow]<-s$coefficients[3,4]
-      dobin<-0 #set to 1 to include binomial MLL indices
-      if(dobin==1){
-      b<-binsim(simdata[1:thissub,])
-      bigsummary$binpost.p[thisrow]<-b$coefficients[2,4]
-      bigsummary$binarraydiff.p[thisrow]<-b$coefficients[3,4]
-      bigsummary$bin.interact.p[thisrow]<-b$coefficients[4,4]
-      }
+      for (thisNsub in nsubvals){
+        thisrow<-thisrow+1
+        bigsummary$run[thisrow]<-i
+        
+        bigsummary$nsub[thisrow]<-thisNsub
+        bigsummary$plearn[thisrow]<-p.learn
+        bigsummary$quiz.pbad[thisrow]<-pbad #percent correct for nonlearners
+        bigsummary$quiz.pgood[thisrow]<-pgood#percent correct for learners
+        bigsummary$p.t.array[thisrow]<-t.test(simdata$mean.array1[1:thisNsub],simdata$mean.array2)$p.value #pvalue for t-test comparing arrays for 1st and last block
+        bigsummary$p.t.pcorr[thisrow]<-t.test(simdata$p.corr1[1:thisNsub],simdata$p.corr2)$p.value #pvalue for t-test comparing pcorr for 1st and last block
+       bigsummary$p.t.earn[thisrow]<-t.test(simdata$earn1[1:thisNsub],simdata$earn2)$p.value #pvalue for t-test comparing earnings for 1st and last block
+        simdata<-quizsim(simdata,pbad,pgood) #adds questionnaire scores
+        bigsummary$ptquiz[thisrow]<-t.test(simdata$quizSpre[1:thisNsub],simdata$quizSpost[1:thisNsub])$p.value
+        regsim <- lm(quizSpost ~ quizSpre + earndiff, data=simdata[1:thisNsub,])
+        s<-summary(regsim)
+        bigsummary$lmpre.p[thisrow]<-s$coefficients[2,4]
+        bigsummary$lmearndiff.p[thisrow]<-s$coefficients[3,4]
+        
       }
     }
-  }
+    
   }
 }
 #The name incorporates most of the variables used to create the simulated data
-bigname<-paste0('powsummary_1000_A12_pgood',qbits,'_props',pbits,'_N',subbits,'.csv')
+bigname<-paste0('powsummary_1000_L_pgood',qbits,'_props',pbits,'_N',subbits,'.csv')
 write.csv(bigsummary,bigname,row.names=F)
 
 ```
 
 This file is then read for the power calculations that are in the main Rmd file.
-
-
-## Checking regression to the mean if subjects are omitted.
-Reviewer of stage1 submission noted that bias would be introduced if we excluded those who scored 90% or more at time 1, because of regression to the mean.  
-This bit of script just confirms that this is the case.  
-
-Start with little function that just computes means so we can compare cropped and original files.
-```{r checkmean}
-checkmeans<-function(df,thisdf){
-  
-ma1<-mean(as.vector(df$mean.array1))
-ma2<-mean(as.vector(df$mean.array2))
-mp1 <- mean(as.vector(df$p.corr1))
-mp2 <-mean(as.vector(df$p.corr2))
-print(thisdf)
-print(c('Meanarray1','Meanarray2','Mean% 1','Mean% 2'))
-print(c(ma1,ma2,mp1,mp2))
-}
-```
-
-```{r regmean}
-p.learn=.5 #assume half are true learners
-  allarrayvals <- c( 1,1,2,2,2,2,3,3,3,3,3,3,4,4,4,5,5,5,6,6) #this can be converted to distribution of probabilities for each array index. 2 to 5 are equally likely - 1 and 6 half as common. Can vary this.
- 
-nsub=1000
-errrate=.025
-A=2
-earnc<-rep(4,6)
-earne<--rep(4,6)
-bonus<-2
-mysheet<-loadspreadsheet('spreadsheet1.csv')
-mysheet<-mysheet[1:40,]
-
-nudat<- makesim(mysheet,nsub,p.learn,errrate,A,earnc,earne,bonus,allarrayvals)
-
-
-
-nudat1<-nudat[nudat$learn2==0,]  #nonlearners
-nudat2<-nudat[nudat$learn2==1,]  #learners
-plot(jitter(nudat1$p.corr1,1),jitter(nudat1$p.corr2,1))
-plot(jitter(nudat2$p.corr1,1),jitter(nudat2$p.corr2,1))
-#Not v informative - but why few values of .75 - something wrong?
-
-table(nudat1$p.corr1,nudat1$p.corr2)
-table(nudat2$p.corr1,nudat2$p.corr2)
-
-# For both null and true learning, now check impact of omitting those with initial score > .9
-
-nudat1x <- nudat1[nudat1$p.corr1<.9,]
-nudat2x <- nudat2[nudat2$p.corr1<.9,]
-
-checkmeans(nudat1,'No learn; all')
-checkmeans(nudat1x,'No learn; cropped')
-checkmeans(nudat2,'learn; all')
-checkmeans(nudat2x,'learn; cropped')
-
-```
-
-This confirms that omitting cases with initial high scores (i.e. cropped file) will create false increase in % correct from time 1 to time 2.
-
-
-
-
 
 
