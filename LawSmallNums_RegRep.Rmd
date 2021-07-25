@@ -178,18 +178,10 @@ Participants will initially be presented with underpowered samples: they can eit
 
 We will also examine the potential of this task to enhance participants' statistical reasoning by administering a pre- and post-training quiz, testing statistical reasoning using questions that assess sample size neglect.  The quiz also includes questions testing understanding of basic probability,  which act as positive controls: if participants score below 66% on the positive control questions, then this would indicate they either have little training in statistics, or are not taking the task seriously.
 
-Specific hypotheses are:  
-_Hypothesis 1_: In line with early work by Tversky and Kahneman (1971), people will be overconfident about estimates based on small samples.  We predict that we will demonstrate this in the estimation quiz, where performance will be poorer on questions that focus on sample size neglect (S-items) than on questions testing understanding of probablity (P-items). 
-  
-_Hypothesis 2_: Repeated exposure to a training task with feedback can reduce overconfidence in small samples. Accordingly, we predict that, in the course of training, a proportion of participants will achieve higher levels of accuracy.  
-
-_Hypothesis 3_:  Accuracy on the training task will be correlated with the array index at point of response, particularly in the final block, as participants become more adept at interpreting the information in larger arrays.  
-  
-_Hypothesis 4_: Participants who report that they became aware of the importance of sample size during training will show better learning than those who do not. 
-
-_Hypothesis 5_:  Learning will generalize beyond the training task. Individual differences in learning on the training task will predict improvement specifically on sample size neglect items (S-items) on the estimation quiz, but not affect performance on probability items (P-items).
- 
-
+We plan to test five predictions (see below) from a three-step hypothesis:    
+a) Even statistically-trained people suffer from sample size neglect.  
+b) This neglect can be ameliorated by providing training that involves exposure to different sample sizes drawn from a population.  
+c) Training will change understanding of how sample size affects accuracy of estimates, and this will be evident beyond the training task.  
 
 ## Ethics statement
 The protocol has been approved by the University of Oxford’s Medical Sciences Interdivisional Research Ethics Committee, approval number (R60658/RE001).
@@ -325,36 +317,39 @@ We will also exclude from the main analysis any participants who score 5 or 6 co
 For the regression analysis, we use an index of learning which corresponds to the difference in earnings between first and last blocks. 
 
 
-## Data analysis
-_Hypothesis 1_:  Responses will reflect overconfidence in small samples. If this hypothesis is not confirmed, then this would undermine the rationale of the study, so this may be regarded as a form of positive control. This hypothesis will be tested using data from the pre-training estimation quiz,  where it is expected that the mean correct will be lower for S-items than for P-items. In addition, a qualitative analysis of error responses will be conducted to test the expectation that participants will either tend to respond that sample size is not important, or, when asked to select an optimal sample size, will select one that is smaller than required. 
+## Data analysis  
+Analyses are designed to test 5 predictions that follow from the three-step hypothesis outlined above:  
 
-_Hypothesis 2_: Accuracy will increase with training.  
-We anticipate replicating the results of Pilot 2, showing improved performance, as reflected in earnings, with exposure to the training task. 
+_Prediction 1_:  Responses will reflect overconfidence in small samples. A simple preliminary check will be made using a one-tailed t-test to check whether the mean number of S-items correct on the pre-training quiz is less than 5/6. If this prediction is not confirmed, then this would undermine hypothesis (a) and hence the rationale of the study. Thus this test may be regarded as a form of positive control.  In addition, a chi-square analysis of error responses will be conducted on pre-training S-items to test the expectation that errors on S-items will not be random, but will cluster on responses that indicate either that sample size is not important, or, if asked to select an optimal sample size, involve selecting one that is smaller than required. (These responses are marked x in the Appendix). 
 
-_Hypothesis 3_: Increased accuracy will be associated with selection of larger array sizes as learning proceeds  
-Based on Pilot 2 data, we postulate that although training did not lead participants to  wait for larger arrays, it was effective because it showed participants what reliable evidence looked like, and how it could change with sample size. We therefore predict that, as found in Pilot 2, there will be a significant association between mean array size and mean earnings, such that those who earn most will be those who select larger array sizes, and that this will be more pronounced in the last block than in the first block. 
+_Prediction 2_: Accuracy will increase with training.  
+We anticipate replicating the results of Pilot 2, showing improved performance, as reflected in earnings, with exposure to the training task. A one-tailed matched pairs t-test will be used to compare earnings on block 4 with earnings on block 1, with the prediction that the block 4 score will be higher. 
 
-_Hypothesis 4_: Self-reported strategy will be predictive of learning  
-We will divide the self-reported responses into those that do and do not indicate awareness that larger sample sizes (or longer waiting) gives more reliable estimates. Consistent with Pilot 2, we predict that those who show such awareness will obtain higher earnings in the final block than those who do not. 
+_Prediction 3_: Increased accuracy will be associated with selection of larger array sizes as learning proceeds  
+We will test the prediction that, as found in Pilot 2, there will be a significant association between mean array size and mean earnings, such that those who earn most will be those who select larger array sizes (tested by significance of Pearson correlation between these variables in block 4).  Furthermore if is predicted that the correlation will be stronger in the last block than in the first block. This will be tested by computing the Pearson correlation coefficient between array index and earnings for the first block and the final block; the *cocor.dep.groups.nonoverlap* function from the cocor package in R (@diedenhofen2015) will be used to test the significance of the difference in correlations. 
 
-_Hypothesis 5_: Generalisation of learning  
-Here the prediction is that individual differences in learning on the training task will predict improvement on the estimation quiz, specifically for items that are designed to assess sample size neglect. Individual differences in learning will be characterised by earn.diff, the difference in earnings for last and first blocks. 
+_Prediction 4_: Self-reported strategy will be predictive of learning  
+We will divide the self-reported responses into those that do and do not indicate awareness that larger sample sizes (or longer waiting) gives more reliable estimates. This will be tested using a one-tailed independent groups t-test. Consistent with Pilot 2, we predict that those who show such awareness will obtain higher earnings in the final block than those who do not. 
+
+_Prediction 5_: Generalisation of learning  
+Individual differences in learning on the training task will predict improvement on the estimation quiz, specifically for items that are designed to assess sample size neglect. 
+
 The prediction will be tested using linear regression:  
 _postS ~ preS + earn.diff_,    
-where postS and preS are posttest and pretest scores on S- quiz items, and earn.diff is the difference in earnings between the last and first block of training. This simple approach to analysis was settled upon after using simulated data to conduct power analysis comparing linear regression versus a linear mixed models approach. The script for simulation is available on OSF (https://osf.io/kcrvw/files/).
+where postS and preS are post-training and pre-training scores on S- quiz items, and earn.diff is the difference in earnings (a measure of success on the task) between the last and first block of training. This simple approach to analysis was settled upon after using simulated data to conduct power analysis comparing linear regression versus a linear mixed models approach. The script for simulation is available on OSF (https://osf.io/kcrvw/files/).
 
 Further exploratory analysis will be used to scrutinise the response profiles on the training task for those participants who do show learning, as well as their self-report of strategies, with the aim of determining which cues they rely on when making a response (see Exploratory analyses, below). 
 
-The positive control P-items from the quiz will be scrutinised to check that the participants are competent in their knowledge of basic probability and motivated to respond accurately. If this is not the case, then it would undermine the interpretation of poor performance on S-items. 
+The positive control P-items from the quiz will be scrutinised to check that the participants are competent in their knowledge of basic probability and motivated to respond accurately. If more than half the participants score less than 50% on P-items, then it would undermine the interpretation of poor performance on S-items. 
 
 ## Stopping rule  
-We will do an initial check after testing 30 participants to see whether the predictions from Hypothesis 1 are supported, indicating that participants on average show sample size neglect. If not, then we will halt data collection, and not proceed with the Registered Report as currently designed, as the basic premise of the study would not be supported. In effect, Hypothesis 1 acts as a positive control.
+We will do an initial check after testing 30 participants to see whether Prediction 1 is supported, indicating that participants on average show sample size neglect. If not, then we will halt data collection, and not proceed with the Registered Report as currently designed, as the basic premise of the study would not be supported. As noted above, Prediction 1 acts as a positive control.
 
 Assuming the study continues, we will stop and check results after testing 50 participants, and then after each increment of 25 participants. Because power depends crucially on the proportion showing learning, and the increase in percent correct with learning, both of which are unknown at this point, we will adopt a Bayesian stopping rule at sequential stages in data collection, starting with a sample of `r subn[1]`, and then increasing to `r subn[2]` and `r subn[3]` if necessary to meet our prespecified criteria. We will compute Bayes Factors for the t-test analysis testing hypothesis 2, and the linear regression for testing hypothesis 5.  While Bayes Factors fall between 1/3 or 3 we will continue with data collection. If the Bayes Factors yield evidence in favor of the alternative or null hypothesis for both analyses, we will stop data collection.  
 
 
 ## Exploratory analyses  
-To complement the analysis of self-reported strategies (Hypothesis 4), the pattern of responses on the training task will be explored to see whether individual participants adopt specific strategies. Accuracy scores will be used to compute signal detection indices, d prime and beta, for each block of training, based on the number of hits (respond yes when there is a true effect); the number of misses (respond no when there is a true effect), the number of false alarms (respond yes when there is a null effect) and the number of correct negatives (respond no when there is a null effect). Calculations of these indices will be conducted using the _dprime_ function from the _psycho_ package (version 0.5.0; Makowski,2018). The beta values will allow us to detect cases of response bias, i.e. a tendency to always respond 'blue=pink' or 'blue>pink'.  
+To complement the analysis of self-reported strategies (Prediction 4), the pattern of responses on the training task will be explored to see whether individual participants adopt specific strategies. Accuracy scores will be used to compute signal detection indices, d prime and beta, for each block of training, based on the number of hits (respond yes when there is a true effect); the number of misses (respond no when there is a true effect), the number of false alarms (respond yes when there is a null effect) and the number of correct negatives (respond no when there is a null effect). Calculations of these indices will be conducted using the _dprime_ function from the _psycho_ package (version 0.5.0; Makowski,2018). The beta values will allow us to detect cases of response bias, i.e. a tendency to always respond 'blue=pink' or 'blue>pink'.  
 
 As shown in the power values in Figure `r keepfignumber`, with an effect size (Cohen's d) of .3, participants need to wait for an array of at least 80 per group (index 4) to have a reasonable chance of success (above 50%) for detecting a true effect, and would be well-advised to wait for the largest array (index 6), which would virtually guarantee success.  However, the trial by trial variation allows us to do a rather more sensitive analysis, testing how the evidence available on each specific trial is used.  
 
@@ -414,7 +409,7 @@ To simulate data, we used our best judgement combined with insights from the pil
 
 Where L is equal to one (i.e. the participant is a learner), the participant waits until an array index where the display corresponds to an absolute log likelihood of at least 3.65. For non-learners, the response is made on the basis of whether log likelihood is positive or negative, regardless of the strength of evidence. In addition, a proportion of all responses for both learners and non-learners are coded as errors, with the proportion being higher for nonlearners. A simulated sample of participants is created by applying these rules to the stimulus set used in training, with response on each trial being then scored as correct or incorrect.
 
-Hypothesis 2 focuses on whether there is evidence of learning, with higher accuracy/earnings on the last block than for the first block. The sample size (N subs) was varied from `r subn[1]`, to `r subn[2]`, to `r subn[3]`. The proportion of participants who learn (prop.learned) could take values of 0, .25, .33 or .5. `r tabnumber <- tabnumber+1` Table `r tabnumber` shows the power for detecting an overall change in mean earnings from block 1 to block 4, using a matched-pairs one-tailed t-test, with alpha of .0322 (.1/3, for one-tailed test administered at each of three sample sizes). A one-tailed test is used because the prediction is directional. These figures were derived from 500 iterations of the simulation.  
+Prediction 2 focuses on whether there is evidence of learning, with higher earnings on the last block than the first block. The sample size (N subs) was varied from `r subn[1]`, to `r subn[2]`, to `r subn[3]`. The proportion of participants who learn (prop.learned) could take values of 0, .25, .33 or .5. `r tabnumber <- tabnumber+1` Table `r tabnumber` shows the power for detecting an overall change in mean earnings from block 1 to block 4, using a matched-pairs one-tailed t-test, with alpha of .0322 (.1/3, for one-tailed test administered at each of three sample sizes). A one-tailed test is used because the prediction is directional. These figures were derived from 500 iterations of the simulation.  
 
 The case where no participants learn corresponds to a test of the null hypothesis, and so here the power value corresponds to the false positive rate. As expected, this is close to to .03. At our smallest sample size (`r subn[1]`), even when only 25% of participants learn, power is above .8, even for the case where learning increases array size by only one index point. 
 
@@ -496,7 +491,7 @@ ftab
 
 ```
 
-To address Hypothesis 5, quiz data were simulated using the binomial distribution, by assuming the mean number of S-items correct on the pretest is 2/6 (.33), improving by either one item (3/6 = .5) or two items (4/6 = .66) for the subgroup of participants who showed learning on training (where the latent variable, L = 1).  
+To address Prediction 5, quiz data were simulated using the binomial distribution, by assuming the mean number of S-items correct on the pretest is 2/6 (.33), improving by either one item (3/6 = .5) or two items (4/6 = .66) for the subgroup of participants who showed learning on training (where the latent variable, L = 1).  
 
 `r tabnumber <- tabnumber+1`Results are shown in Table `r tabnumber`, again looking at scenarios with 50, 75 or 100 participants, and where the proportion showing learning ranges from 0, .25, .33 and .5. One other parameter is considered for the quiz data, namely the amount of improvement in quiz scores seen in learners - a mean gain of either 1 quiz item, or 2 quiz items.  
 
