@@ -12,8 +12,9 @@ Incorporating previous scripts by Adam Parker, June 2021
 
 ## Pilot study 1  
 For Pilot 1, 21 participants recruited via Prolific were given a version of the task that used gifs to show increasing sample sizes at 2 s intervals. Their task was to select a response (blue=pink or blue>pink) as soon as they were confident in their decision.  
+<!--- https://ezgif.com/loop-count/ezgif-1-3270ca93d243.gif used to make gif play 100 times-->
 
-!["Example of an item where there is a true difference"](gifpilot1.gif)
+!["Example of an item where there is a true difference. In the training game, the gif plays once only, stopping at largest array size."](gifpilot1a.gif)
 
 There were 80 trials divided into 4 blocks of 20. They also did the original versions of pre- and post-test quizzes. 
 There were 3 key differences in the training task between Pilot 1 and the final version of the task (which corresponds to Pilot 2):  
@@ -693,7 +694,7 @@ A revised version of the training task was given to 30 participants recruited vi
 
 * Points earned in the game were converted to pennies that were added to the baseline payment. (But negative points were not subtracted). 
 
-!["Example of an item from Pilot 2 where there is no true difference"](pilot2_demo.gif)
+!["Example of an item from Pilot 2 where there is no true difference. In the training game, the gif plays once only, stopping at the largest array size."](gifpilot2a.gif)
   
 
 These participants were not given the quiz, as we felt we had already evaluated it adequately.  We did, however, ask them for subjective report of how they approached the task at the end of the session. 
