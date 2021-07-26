@@ -179,7 +179,7 @@ Participants will initially be presented with underpowered samples: they can eit
 We will also examine the potential of this task to enhance participants' statistical reasoning by administering a pre- and post-training quiz, testing statistical reasoning using questions that assess sample size neglect.  The quiz also includes questions testing understanding of basic probability,  which act as positive controls: if participants score below 66% on the positive control questions, then this would indicate they either have little training in statistics, or are not taking the task seriously.
 
 We plan to test five predictions (see below) from a three-step hypothesis:    
-a) Even statistically-trained people suffer from sample size neglect.  
+a) Even people who have a reasnable grasp of probability theory suffer from sample size neglect.  
 b) This neglect can be ameliorated by providing training that involves exposure to different sample sizes drawn from a population.  
 c) Training will change understanding of how sample size affects accuracy of estimates, and this will be evident beyond the training task.  
 
@@ -326,10 +326,10 @@ _Prediction 2_: Accuracy will increase with training.
 We anticipate replicating the results of Pilot 2, showing improved performance, as reflected in earnings, with exposure to the training task. A one-tailed matched pairs t-test will be used to compare earnings on block 4 with earnings on block 1, with the prediction that the block 4 score will be higher. 
 
 _Prediction 3_: Increased accuracy will be associated with selection of larger array sizes as learning proceeds  
-We will test the prediction that, as found in Pilot 2, there will be a significant association between mean array size and mean earnings, such that those who earn most will be those who select larger array sizes (tested by significance of Pearson correlation between these variables in block 4).  Furthermore if is predicted that the correlation will be stronger in the last block than in the first block. This will be tested by computing the Pearson correlation coefficient between array index and earnings for the first block and the final block; the *cocor.dep.groups.nonoverlap* function from the cocor package in R (@diedenhofen2015) will be used to test the significance of the difference in correlations. 
+This is a subsidiary prediction to prediction 2, which may throw light on the heuristics used by successful participants, if learning is observed. We predict that, as found in Pilot 2, there will be a significant association between mean array size and mean earnings, such that those who earn most will be those who select larger array sizes (tested by significance of Pearson correlation between these variables in block 4). 
 
 _Prediction 4_: Self-reported strategy will be predictive of learning  
-We will divide the self-reported responses into those that do and do not indicate awareness that larger sample sizes (or longer waiting) gives more reliable estimates. This will be tested using a one-tailed independent groups t-test. Consistent with Pilot 2, we predict that those who show such awareness will obtain higher earnings in the final block than those who do not. 
+Again, this is a subsidiary prediction to prediction 2, with potential to clarify which cues are used by successful learners. We will divide the self-reported responses into those that do and do not indicate awareness that larger sample sizes (or longer waiting) gives more reliable estimates. This will be tested using a one-tailed independent groups t-test. Consistent with Pilot 2, we predict that those who show such awareness will obtain higher earnings in the final block than those who do not. 
 
 _Prediction 5_: Generalisation of learning  
 Individual differences in learning on the training task will predict improvement on the estimation quiz, specifically for items that are designed to assess sample size neglect. 
@@ -608,7 +608,9 @@ We may find that we find significant improvements with training, but null or inc
 
 The converse pattern might be obtained, with improvement on the S-items of the quiz but null or inconclusive findings on the training task. This might justify a further study which uses two training sessions, making it possible to look for gains due to training that occur after a delay.  
 
-Finally, if we are able to show an improvement with this short training session, with generalisation to S-items on the quiz, then this would lead us to conclude that the game might be a useful adjunct to statistical training courses for scientists. This could motivate further studies with modified forms of presentation, to identify the optimum conditions for training, and with different effect sizes. It would also be of interest to evaluate the training for longer-term impact on subsequent experimental practices of the trainees.   
+Finally, if we are able to show an improvement with this short training session, with generalisation to S-items on the quiz, then this would lead us to conclude that the game might be a useful adjunct to statistical training courses for scientists. This could motivate further studies with modified forms of presentation, to identify the optimum conditions for training, and with different effect sizes. It would also be of interest to evaluate the training for longer-term impact on subsequent experimental practices of the trainees.  
+
+Tests of predictions 3 and 4 have potential to provide converging evidence on whether sensitivity to array size is a factor determining learning. If neither prediction is confirmed, but the training is effective, this would suggest we should explore alternative heuristics that might be used by participants to support successful performance. 
 
 ## Pilot data  
 `r tabnumber <- tabnumber+1`
