@@ -38,6 +38,7 @@ library(flextable)
 library(stats)
 library(psych)
 library(psycho) #for d prime
+library(cocor) #comparing correlations
 ```
 
 
@@ -681,6 +682,12 @@ cors1 <- checkcorrel(pilot1summary)
 ft<-autofit(flextable(cors1))
 ft <- set_caption(ft, caption = "Pilot 1: Correlation of proportion correct with array index by block")
 ft
+#test difference between block 1 and block 4 correlation
+#see https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0131499
+
+cocor.result <- cocor(~pcorr1 + array1 | pcorr4 + array4,
+                      pilot1summary)
+
 ```
 
 # Pilot data 2  
@@ -765,6 +772,12 @@ cors2 <- checkcorrel(pilot2summary)
 ft<-autofit(flextable(cors2))
 ft <- set_caption(ft, caption = "Pilot 2: Correlation of proportion correct with array index by block")
 ft
+#test difference between block 1 and block 4 correlation
+#see https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0131499
+
+cocor.result <- cocor(~pcorr1 + array1 | pcorr4 + array4,
+                      pilot2summary)
+
 ```
 
 ### What strategies did participants employ?
@@ -909,11 +922,20 @@ learn3[[3]]
 ```
 ### Correlations between percent correct and accuracy across blocks  
 
+
+
 ```{r corpilot3, echo=F,include=T}
 cors3 <- checkcorrel(pilot3summary)
 ft<-autofit(flextable(cors3))
 ft <- set_caption(ft, caption = "Pilot 3: Correlation of proportion correct with array index by block")
 ft
+
+#test difference between block 1 and block 4 correlation
+#see https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0131499
+
+cocor.result <- cocor(~pcorr1 + array1 | pcorr4 + array4,
+                      pilot3summary)
+
 ```
 ### Subjective report of strategies  
 As for pilot 2, we asked participants for subjective report of how they approached the task at the end of the session. 
