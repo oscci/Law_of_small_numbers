@@ -1,6 +1,6 @@
 ---
 title: 'Stage 2 Registered Report: Can we shift belief in the ''Law of Small Numbers''?'
-author: D V M Bishop^1, Jackie Thompson^2 & Adam Parker^1
+author: D V M Bishop^1^, Jackie Thompson^1,2^ & Adam Parker^1^
 date: 
 output:
   word_document: default
@@ -1035,7 +1035,7 @@ agqwide <- spread(myagq2,dummy,p.correct)
 On P-items, the mean pre-training score was `r round(100*myagq2[1,3],1)` % correct, and on S-items it was  `r round(100*myagq2[1,3],3)` % correct.  The maximum score on P-items was `r round(100*max(agqwide$PreP),1)` and on S-items it was `r round(100*max(agqwide$PreS),1)`. Table `r tabnumber` shows pattern of responses on individual items on the pre-training quiz. It is clear that on the one hand, performance on S-items is poor, and worse than on P-items, but on the other hand, the errors on S-items do not generally cluster on the foils that were designed to pick up sample size neglect. The most common error response varied across these items, and was not necessarily consistent across the parallel forms, suggesting that the specific item content and wording of options could exert a stronger impact than any particular cognitive bias. 
 
 <!-- we'd said we'd do a chi square test but now I'm not sure what that should even look like!-->
-<!-- also, although we do have more than 50% of people scoring 50% or more on P-items, there is a substantial minority scoring below that level - we said that if there were a lot of them, this was problematic, as we need to have pepole who are competent in basic stats-->
+<!-- also, although we do have more than 50% of people scoring 50% or more on P-items, there is a substantial minority scoring below that level - we said that if there were a lot of them, this was problematic, as we need to have people who are competent in basic stats. Could possibly do an exploratory analysis excluding poor performers-->
 
  
 
@@ -1124,16 +1124,19 @@ tabnumber <- tabnumber+1
 
 As shown in Table `r tabnumber`, there was no hint of any effect of the learning index on the percentage of S-items correct at post-training. 
 
+# Exploratory analyses - to be done  
 
+__We originally said that if we got this pattern of results "we would explore individual S-items in the quiz, to see whether there is any indication of improvement on a subset of items, and whether they have particular characteristics. We may, for instance, see evidence of selective improvement on items assessing understanding of the relationship between sample size and statistical power, which could be tested in a replication study."__
 
+# Discussion  
 
+The results clearly showed significant improvements on the training task over sessions but no associated improvement on the quiz, indicating a lack of generalisation of learning. 
 
-Further exploratory analysis will be used to scrutinise the response profiles on the training task for those participants who do show learning, as well as their self-report of strategies, with the aim of determining which cues they rely on when making a response (see Exploratory analyses, below). 
 
 # Appendix 1
 ## Judgement and Reasoning Quiz
 
-Participants receive version A or B (counterbalanced) at pre-test and post-test. P-items and S-items are presented intermixed: P-items test understanding of probability, S-items test sample size neglect. Items with the same number in version A and B are intended to be analogous but use different contexts. The brief descriptor accompanying each item below is not presented as part of the quiz. An asterisk denotes the correct response.  For S-items, x denotes the anticipated response(s) for those susceptible to sample size neglect.
+Participants receive version A or B (counterbalanced) at pre-test and post-test. P-items and S-items are presented intermixed:<!--- I think this did not happen!-->  P-items test understanding of probability, S-items test sample size neglect. Items with the same number in version A and B are intended to be analogous but use different contexts. The brief descriptor accompanying each item below is not presented as part of the quiz. An asterisk denotes the correct response.  For S-items, x denotes the anticipated response(s) for those susceptible to sample size neglect.
 
 <!---modified from Probqs_edit_from_feedback.rmd--->
 ### Initial queries (Pre-training only)
