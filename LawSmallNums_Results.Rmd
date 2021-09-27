@@ -1191,6 +1191,15 @@ __We originally said that if we got this pattern of results "we would explore in
 Training game: looking at dprime and use of log likelihood
 
 ```{r exploreLL,echo=F}
+
+# Core wrapping function
+wrap.it <- function(x, len)
+{ 
+  sapply(x, function(y) paste(strwrap(y, len), 
+                              collapse = "\n"), 
+         USE.NAMES = FALSE)
+}
+
 #First we'll plot for each subject accuracy vs ObsE or LL, trial by trial.
 
 for (i in 1:nsub){
@@ -1199,7 +1208,7 @@ for (i in 1:nsub){
   mysub$row<-1:nrow(mysub)
   mycolor<-c('pink','lightblue')
   mypch<-c(22,23)
-  par(mfrow=c(2,1))
+  par(mfrow=c(3,1))
   for (j in 1:2){
     myy <- mysub$ObsE
     limy <- c(-.8,.8)
@@ -1223,6 +1232,8 @@ for (i in 1:nsub){
   text(66,maxx,round(mysum$Correct[4],2),cex=.9)
   text(myy ~mysub$row, labels=mysub$array, cex=0.75)
   }
+  plot(mysub$LL,mysub$ObsE,col=mysub$block,pch=16,ylim=c(-.8,.8),xlim=c(-30,30))
+  text(-20,.6,wrap.it(qualresp$Response[i],40),cex=.7)
 }
 
 #Response colour coded: blue greater shown as blue; blue=pink shown as pink
