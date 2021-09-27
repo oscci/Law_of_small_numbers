@@ -3,17 +3,14 @@ title: 'Stage 2 Registered Report: Can we shift belief in the ''Law of Small Num
 author: D V M Bishop^1^, Jackie Thompson^1,2^ & Adam Parker^1^
 date: 
 output:
-  word_document: default
-  html_document:
-    df_print: paged
+  word_document:
+    reference_docx: mystyle.docx
+    keep_md: true
 
 bibliography: LawSmallNums.bib 
+csl: apa.csl
 ---
-output:
-  word_document:
-    reference_docx: StylesTemplate.docx
-    keep_md: true
-csl:apa
+
 ```{r setup, include=FALSE,echo=FALSE}
 
 # Based on script from stage 1 - updated 17 Sep 2021
@@ -43,26 +40,25 @@ library(pwr)
 library(flextable)
 library(table1)
 library(stringr)
+require(psycho) #for dprime
 tabnumber <- 0 #for counting tables.
 fignumber <- 0 #for counting figures
 subn <- c(50,75,100)
 allarrayvals <- c( 1,1,2,2,2,2,3,3,3,3,3,3,4,4,4,5,5,5,6,6) #distribution of array values used in simulation for block 1
 options(scipen=999)
-authorversion <- 1 #this has extra tables and figures for the authors to look at - set authorversion to 0 for submitted stage 2 RR.
+authorversion <- 0 #this has extra tables and figures for the authors to look at - set authorversion to 0 for submitted stage 2 RR.
 
 ```
 Affiliations:  
-1: Department of Experimental Psychology, University of Oxford, Anna Watts Building, Woodstock Road, Oxford, OX2 6GG. 
+^1^ Department of Experimental Psychology, University of Oxford, Anna Watts Building, Woodstock Road, Oxford, OX2 6GG. 
 
-2: School of Experimental Psychology, University of Bristol, The Priory Road Complex, Priory Road, Clifton, BS8 1TU.  
+^2^ School of Experimental Psychology, University of Bristol, The Priory Road Complex, Priory Road, Clifton, BS8 1TU.  
   
 Acknowledgment: This work was supported by Wellcome Trust Programme Grant no. 082498/Z/07/Z.
 
 ## Abstract 
 <!---200 word limit for RSOS  - Interesting! It was 100 words when we submitted RR and I complained --->
-Even statistically-trained people show ‘sample size neglect,’ i.e. they underestimate how much the variability of mean estimates increases as sample size decreases. We considered whether judging whether simulated datasets come from different populations can help people overcome this bias. Before and after training with simulated datasets, participants were given parallel forms of a 12-item quiz testing statistical knowledge, including six items (S-items) testing sample size neglect. Participants were incentivised to respond thoughtfully by bonus payments for correct responses on both the quiz and the training game. We hypothesised that the training will counteract sample size neglect in some participants, and those who show learning will also show improvement on quiz items relating to sample size neglect.  
-Data were obtained from 51 participants with science or social science backgrounds, whose educational training ranged from undergraduate to postdoctoral. Prior to the training task, the quiz confirmed sample size neglect, with mean scores of 24.8% correct; 25% of participants scored zero on S-items,and no participant achieved more than 4/6 items correct. There was no significant improvement on S-items on the post-training quiz, even though the training led to significant improvement in overall performance, and 43% of participants reported that they had learned to wait for larger samples before responding. Self-reported skill in statistics in general, and understanding of statistical power bore no relationship to performance on the training or on the quiz. Improvement on the training task was not predictive of post-training quiz scores. 
-A brief session of training with visualised data distributions can help generate understanding of the relationship between accuracy of estimates and sample size, but the lack of generalisation to understanding of quiz items suggests that such training would need to be accompanied by explicit instruction to be effective. Our study confirms the original work of Tversky and Kahneman, showing that sample size neglect is widespread, even in people with statistical training and in those who report they are confident in statistical understanding. 
+‘Sample size neglect’ is a tendency to underestimate how the variability of mean estimates changes with sample size.  We studied 51 participants, all from science or social science, to test whether exposure to simulated data with different sample sizes can help people overcome this bias. Before and after training, participants completed a 12-item quiz testing statistical knowledge, including items testing sample size neglect (S-items). Participants were incentivised with bonus payments for correct responses. The quiz confirmed sample size neglect: 25% of participants scored zero on S-items,and no participant achieved more than 4/6 items correct. There were significant gains on the training task, and 43% of participants reported that they had learned to wait for larger samples before judging if two samples came from the same population. Although this brief session of training led to improved understanding of the relationship between accuracy of estimates and sample size, there was no generalisation to understanding of quiz items. Our study confirms that sample size neglect is widespread, even in people with statistical training. We suggest that training with simulated data might need to be accompanied by explicit instruction to be effective in counteracting sample size neglect.
  
 #### Keywords:  statistical reasoning, power, online training, sample size neglect
 
@@ -105,13 +101,14 @@ Compared to laypeople, scientists receive extensive training to help them unders
 
 ![Figure `r fignumber`. Six independent samples of simulated male height, each with sample size of 10 or 60. Each point represents the height of one male, drawn from a population with mean 178 cm and SD 10 cm, and the red bar is the mean for that sample. The horizontal blue line represents the population mean.](Fig1.tiff)
 
-In 1962, @cohen1962 embarked on a project of improving psychologists' understanding of statistical power, providing tools to help people compute power and documenting the extent of underpowered studies in social psychology, with the aim of reducing waste in research efforts. He analysed 70 studies published in the Journal of Abnormal and Social Psychology and found that mean power to detect small effects was 0.18, to detect medium effects was 0.48 and to detect large effects was 0.83. Given that most effects in this field are small or medium, this indicated serious limitations of study design.  However, 27 years later, @sedlmeier1989 reported that things had not changed at all. And in 2016, similar conclusions were drawn from a large review of studies in social and behavioral sciences up to 2011 (@smaldino2016). In 2018 a review concluded that low power remains a major factor explaining poor replicability of highly cited studies in psychology (@stanley2018). A wide range of areas are affected, from neuroscience (@poldrack2017), to infancy research (@oakes2017). Why, despite years of attempts to improve the dismal record of low power in psychology, do researchers persist in performing underpowered studies? We suspect the explanation may go beyond lack of training, and reflect the influence of sample size neglect, which leads us to have intuitions about sample size that are at odds with reality. Consider this example (@tversky1971, p.105):
+More than half a century ago, @cohen1962 embarked on a project of improving psychologists' understanding of statistical power, providing tools to help people compute power and documenting the extent of underpowered studies in social psychology, with the aim of reducing waste in research efforts. He analysed 70 studies published in the Journal of Abnormal and Social Psychology and found that mean power to detect small effects was 0.18, to detect medium effects was 0.48 and to detect large effects was 0.83. Given that most effects in this field are small or medium, this indicated serious limitations of study design.  However, 27 years later, @sedlmeier1989 reported that things had not changed at all. And in 2016, similar conclusions were drawn from a large review of studies in social and behavioral sciences up to 2011 [@smaldino2016]. In 2018 a review concluded that low power remains a major factor explaining poor replicability of highly cited studies in psychology [@stanley2018]. A wide range of areas are affected, from neuroscience [@poldrack2017], to infancy research [@oakes2017]. Why, despite years of attempts to improve the dismal record of low power in psychology, do researchers persist in performing underpowered studies? We suspect the explanation may go beyond lack of training, and reflect the influence of sample size neglect, which leads us to have intuitions about sample size that are at odds with reality. Consider this example [@tversky1971]:
 
 _‘Suppose you have run an experiment on 20 participants, and have obtained a significant result which confirms your theory (z= 2.23, p < .05, two-tailed). You now have cause to run an additional group of 10 participants. What do you think the probability is that the results will be significant, by a one-tailed test, separately for this group?_
+p.105.  
 
 Tversky and Kahneman reported that the majority of researchers who responded to this question were wrong in stating that the probability is somewhere around .85, while only 9 out of 84 researchers gave a more accurate answer (i.e. between .40 and .60). This is thought to reflect inaccurate beliefs in sampling that have unfortunate consequences in the course of scientific enquiry. Researchers view randomly drawn samples as highly representative of the population to a greater extent than theory predicts, at least for small samples.  
 
-If we are to tackle the problem of wasteful and misleading underpowered studies, we need to find ways to overcome sample size neglect. There is some evidence that debiasing training can help: @yoon2021 showed improvements on a scale measuring this construct after either direct instruction, direct playing of a game designed to train awareness, or observing another person play the game. However, the scale items assessed rather broad aspects of generalising from a few instances, e.g. respond on a 7-point scale: "Micah's 10-year-old daughter Felicia scores two goals in her very first soccer game. Based on this, Micah proudly predicts that Felicia will be the top scorer for her team for the year (25 games). How confident are you in Micah's prediction?" Our goal was to go beyond a general appreciation of the dangers of relying on small samples to help scientists obtain a more intuitive understanding of statistical power, 
+If we are to tackle the problem of wasteful and misleading underpowered studies, we need to find ways to overcome sample size neglect. There is some evidence that debiasing training can help: @yoon2021 showed improvements on a scale measuring this construct after either direct instruction, direct playing of a game designed to train awareness, or observing another person play the game. However, the scale items assessed rather broad aspects of generalising from a few instances, e.g. respond on a 7-point scale: __"Micah's 10-year-old daughter Felicia scores two goals in her very first soccer game. Based on this, Micah proudly predicts that Felicia will be the top scorer for her team for the year (25 games). How confident are you in Micah's prediction?"__ Our goal was to go beyond a general appreciation of the dangers of relying on small samples to help scientists obtain a more intuitive understanding of statistical power, 
 
 Informally, we have found that exposing students to simulations that allow them to visualize the variation between samples of different sizes can help counteract over-reliance on small samples to evaluate hypotheses. By generating datasets with known effect sizes and drawing random samples and subjecting them to statistical tests, students can learn to appreciate the ease with which we miss a true effect if the sample size is small. Simulations are a core aspect of a course outlined by @steel2019 which trains statistical thinking in undergraduates, using simulations to help interpret patterns in data and to evaluate statistical power. Although their course appears successful in training statistical thinking in the long term, they did not specifically evaluate the utility of simulations in counteracting sample size neglect. That is the goal of the current study.  
 
@@ -119,7 +116,7 @@ In addition to training, simulations have been used to examine the decisions mad
 
 
 ## Online training task
-To explore whether exposing people to simulated datasets can help develop a more intuitive sense of the relationship between variability of estimates and sample size, we created an online task that mimics the real-world process of gathering and interpreting data in the life and social sciences. In this task, participants (i.e. scientists)  visually compare the distribution of simulated datasets and assess whether the samples come from a population where there is either a true effect (samples drawn from populations with differing means) or null effect (samples drawn from the same population). Potentially, the size of the effect in the population can be experimentally manipulated, but for the current study we focus on cases where the true effect size is Cohen’s _d_ = .3 (equivalent to _r_ = .15). This effect size was selected because, it is on the one hand fairly typical of the kind of effect size obtained in many areas of psychology, biomedicine (@meyer2001) and education (@dietrichson2021), and on the other hand there is a dramatic increase in the confidence with which results can be interpreted as favouring the true or null hypothesis as sample size increases (Figure `r (fignumber+1)`).  
+To explore whether exposing people to simulated datasets can help develop a more intuitive sense of the relationship between variability of estimates and sample size, we created an online task that mimics the real-world process of gathering and interpreting data in the life and social sciences. In this task, participants (i.e. scientists)  visually compare the distribution of simulated datasets and assess whether the samples come from a population where there is either a true effect (samples drawn from populations with differing means) or null effect (samples drawn from the same population). Potentially, the size of the effect in the population can be experimentally manipulated, but for the current study we focus on cases where the true effect size is Cohen’s _d_ = .3 (equivalent to _r_ = .15). This effect size was selected because, it is on the one hand fairly typical of the kind of effect size obtained in many areas of psychology, biomedicine [@meyer2001] and education [@dietrichson2021], and on the other hand there is a dramatic increase in the confidence with which results can be interpreted as favouring the true or null hypothesis as sample size increases (Figure `r (fignumber+1)`).  
 
 ```{r makerNdata,echo=FALSE,include=FALSE}
 fignumber <- fignumber+1
@@ -182,7 +179,7 @@ Participants were initially presented with underpowered samples: they could eith
 We also examined the potential of this task to enhance participants' statistical reasoning by administering a pre- and post-training quiz, testing statistical reasoning using questions that assess sample size neglect.  The quiz also included questions testing understanding of basic probability,  which act as positive controls: if participants score below 66% on the positive control questions, then this would indicate they either have little training in statistics, or are not taking the task seriously.
 
 We pre-registered five predictions (see below) from a three-step hypothesis:    
-a) Even people who have a reasnable grasp of probability theory suffer from sample size neglect.  
+a) Even people who have a reasonable grasp of probability theory suffer from sample size neglect.  
 b) This neglect can be ameliorated by providing training that involves exposure to different sample sizes drawn from a population.  
 c) Training will change understanding of how sample size affects accuracy of estimates, and this will be evident beyond the training task.  
 
@@ -197,7 +194,7 @@ Criteria for participants were: (1) age of 18 years or over, (2) have studied li
 
 ## Procedure  
 After providing informed consent, participants completed the estimation and judgement quiz online at a time and place of their choosing, followed (after training) by an alternative form of the post-training  quiz. Participants were paid £7.50 for their time, but could earn a further bonus linked to the number of correct items on the quiz (3p per correctly answered item on each version), and their score on the training game to bring the payment up to a theoretical maximum of £12.  
-Training was divided into four blocks, and after each block, participants were told that they could take a break if they wish. The study was implemented using Gorilla @anwyl-irvine2020, a cloud-based research tool for behavioral studies. The study took around one hour to complete.
+Training was divided into four blocks, and after each block, participants were told that they could take a break if they wish. The study was implemented using Gorilla [@anwyl-irvine2020], a cloud-based research tool for behavioral studies. The study took around one hour to complete.
 <!---we could check this by looking at timings-->
   
 ## Design
@@ -296,7 +293,7 @@ At the end of training they are asked if they thought they had got better at the
 **Training items**  
 Gifs for training items were generated by a purpose-designed script which is available on Open Science Framework (https://osf.io/rnkhq/?view_only=b0fcb097cc3044aaa942f15136441c49). For each item, samples of observations were selected in a cumulative fashion, such that, for instance, the sample with 20 observations per group included the sample with 10 observations per group, plus an additional 10 observations.  The array sizes doubled with each step, corresponding to 10, 20, 40, 80, 160 and 320 observations per group.  
 
-All items included a pink sample from a population with mean of zero and SD of one, plus a blue sample. For the blue sample, half the items were drawn from the same population as the pink sample (i.e. null effect) and half were drawn from a population with mean of 0.3 and SD of one (i.e., true effect). `r fignumber <- fignumber+1` Figure `r fignumber` illustrates a set of samples shown side by side for a trial with a true effect. Figures were created using the R programming language (R Core Team, 2020) using the _geom_beeswarm()_ function from the _ggbeeswarm_ package (version 0.6.0; Clarke & Sherrill-Mix, 2017) in conjunction with _ggplot2()_ (version 3.2.1; Wickham, 2016). Each plot was combined into a gif using the _transition_states()_ function from the _gganimate_ package (version 1.0.7; Pederson & Robinson, 2020). In Pilot 1 (see below) we showed only the data points corresponding to the two datasets, but, as discussed below, for Pilot 2 we added the sample mean shown as a horizontal bar with the aim of improving accuracy.  
+All items included a pink sample from a population with mean of zero and SD of one, plus a blue sample. For the blue sample, half the items were drawn from the same population as the pink sample (i.e. null effect) and half were drawn from a population with mean of 0.3 and SD of one (i.e., true effect). `r fignumber <- fignumber+1` Figure `r fignumber` illustrates a set of samples shown side by side for a trial with a true effect. Figures were created using the R programming language [@rcoreteam2020] using the _geom_beeswarm()_ function from the _ggbeeswarm_ package (version 0.6.0) [@clarke2017] in conjunction with _ggplot2()_ (version 3.2.1) [@wickham2016]. Each plot was combined into a gif using the _transition_states()_ function from the _gganimate_ package (version 1.0.7); [@pederson2020]. In Pilot 1 (see below) we showed only the data points corresponding to the two datasets, but, as discussed below, for Pilot 2 we added the sample mean shown as a horizontal bar with the aim of improving accuracy.  
 
 ![Figure `r fignumber`. Sample item from the training set. The pair of distributions corresponding to each sample size is presented in a gif one at a time sequentially for 2 seconds, so the display builds up from left to right over time.](demoitem.jpg)
 
@@ -324,36 +321,36 @@ For the regression analysis, we use an index of learning which corresponds to th
 ## Data analysis  
 Preregistered analyses were designed to test 5 predictions that follow from the three-step hypothesis outlined above:  
 
-_Prediction 1_:  Responses will reflect overconfidence in small samples. A simple preliminary check will be made using a one-tailed _t_-test to check whether the mean number of S-items correct on the pre-training quiz is less than 5/6. If this prediction is not confirmed, then this would undermine hypothesis (a) and hence the rationale of the study. Thus this test may be regarded as a form of positive control.  In addition, a chi-square analysis of error responses will be conducted on pre-training S-items to test the expectation that errors on S-items will not be random, but will cluster on responses that indicate either that sample size is not important, or, if asked to select an optimal sample size, involve selecting one that is smaller than required. (These responses are marked x in the Appendix). <!--need to check Appendix as some items did not have x marked-->
+_Prediction 1_:  Responses will reflect overconfidence in small samples. A simple preliminary check will be made using a one-tailed _t_-test to check whether the mean number of S-items correct on the pre-training quiz is less than 5/6. If this prediction is not confirmed, then this would undermine hypothesis (a) and hence the rationale of the study. Thus this test may be regarded as a form of positive control.  In addition, a chi-square analysis of error responses is conducted on pre-training S-items to test the expectation that errors on S-items will not be random, but will cluster on responses that indicate either that sample size is not important, or, if asked to select an optimal sample size, involve selecting one that is smaller than required. (These responses are marked x in the Appendix). <!--need to check Appendix as some items did not have x marked-->
 
 _Prediction 2_: Accuracy will increase with training.  
-We anticipate replicating the results of Pilot 2, showing improved performance, as reflected in earnings, with exposure to the training task. A one-tailed matched pairs _t_-test will be used to compare earnings on block 4 with earnings on block 1, with the prediction that the block 4 score will be higher. 
+We anticipated replicating the results of Pilot 2, showing improved performance, as reflected in earnings, with exposure to the training task. A one-tailed matched pairs _t_-test was used to compare earnings on block 4 with earnings on block 1, with the prediction that the block 4 score will be higher. 
 
 _Prediction 3_: Increased accuracy will be associated with selection of larger array sizes as learning proceeds  
-This is a subsidiary prediction to prediction 2, which may throw light on the heuristics used by successful participants, if learning is observed. We predict that, as found in Pilot 2, there will be a significant association between mean array size and mean earnings, such that those who earn most will be those who select larger array sizes (tested by significance of Pearson correlation between these variables in block 4). 
+This is a subsidiary prediction to prediction 2, which may throw light on the heuristics used by successful participants, if learning is observed. We predicted that, as found in Pilot 2, there would be a significant association between mean array size and mean earnings, such that those who earn most would be those who selected larger array sizes (tested by significance of Pearson correlation between these variables in block 4). 
 
 _Prediction 4_: Self-reported strategy will be predictive of learning  
-Again, this is a subsidiary prediction to prediction 2, with potential to clarify which cues are used by successful learners. We will divide the self-reported responses into those that do and do not indicate awareness that larger sample sizes (or longer waiting) gives more reliable estimates. This will be tested using a one-tailed independent groups _t_-test. Consistent with Pilot 2, we predict that those who show such awareness will obtain higher earnings in the final block than those who do not. 
+Again, this was a subsidiary prediction to prediction 2, with potential to clarify which cues are used by successful learners. We divided the self-reported responses into those that did and did not indicate awareness that larger sample sizes (or longer waiting) gives more reliable estimates. This was tested using a one-tailed independent groups _t_-test. Consistent with Pilot 2, we predicted that those who showed such awareness will obtain higher earnings in the final block than those who do not. 
 
 _Prediction 5_: Generalisation of learning  
 Individual differences in learning on the training task will predict improvement on the estimation quiz, specifically for items that are designed to assess sample size neglect. 
 
-The prediction is tested using linear regression:  
+The prediction was tested using linear regression:  
 _postS ~ preS + earn.diff_,    
 where postS and preS are post-training and pre-training scores on S- quiz items, and earn.diff is the difference in earnings (a measure of success on the task) between the last and first block of training. This simple approach to analysis was settled upon after using simulated data to conduct power analysis comparing linear regression versus a linear mixed models approach. The script for simulation is available on OSF (https://osf.io/kcrvw/files/).
 
-Further exploratory analysis are used to scrutinise the response profiles on the training task for those participants who do show learning, as well as their self-report of strategies, with the aim of determining which cues they rely on when making a response (see Exploratory analyses, below). 
+Further exploratory analysis were used to scrutinise the response profiles on the training task for those participants who do show learning, as well as their self-report of strategies, with the aim of determining which cues they rely on when making a response (see Exploratory analyses, below). 
 
 The positive control P-items from the quiz were scrutinised to check that the participants were competent in their knowledge of basic probability and motivated to respond accurately. A preregistered criterion was that if more than half the participants scored less than 50% on P-items, then this would undermine the interpretation of poor performance on S-items. 
 
 ## Stopping rule  
-We proposed to do an initial check after testing 30 participants to see whether Prediction 1 is supported, indicating that participants on average show sample size neglect. If not, then we would halt data collection, and not proceed with the Registered Report, as the basic premise of the study would not be supported. As noted above, Prediction 1 acts as a positive control.
+We proposed an initial check after testing 30 participants to see whether Prediction 1 was supported, indicating that participants on average show sample size neglect. This was confirmed. If it had not been, then we would have halted data collection, and not proceeded with the Registered Report, as the basic premise of the study would not be supported. As noted above, Prediction 1 acted as a positive control. 
 
 Assuming the study continued, we proposed to stop and check results after testing 50 participants, and then after each increment of 25 participants. Because power depends crucially on the proportion showing learning, and the increase in percent correct with learning, both of which were unknown, we adopted a Bayesian stopping rule at sequential stages in data collection, starting with a sample of `r subn[1]`, and then increasing to `r subn[2]` and `r subn[3]` if necessary to meet our pre-specified criteria. We planned to compute Bayes Factors for the _t_-test analysis testing hypothesis 2, and the linear regression for testing hypothesis 5.  When Bayes Factors yield evidence in favor of the alternative or null hypothesis for both analyses, we plan to stop data collection.  
 
 
 ## Exploratory analyses  
-To complement the analysis of self-reported strategies (Prediction 4), the pattern of responses on the training task was explored to see whether individual participants adopt specific strategies. Accuracy scores were used to compute signal detection indices, d prime and beta, for each block of training, based on the number of hits (respond yes when there is a true effect); the number of misses (respond no when there is a true effect), the number of false alarms (respond yes when there is a null effect) and the number of correct negatives (respond no when there is a null effect). Calculations of these indices was conducted using the _dprime()_ function from the _psycho_ package (version 0.5.0; Makowski,2018). The beta values allow us to detect cases of response bias, i.e. a tendency to always respond 'blue=pink' or 'blue>pink'.  
+To complement the analysis of self-reported strategies (Prediction 4), the pattern of responses on the training task was explored to see whether individual participants adopted specific strategies. Accuracy scores were used to compute signal detection indices, d prime and beta, for each block of training, based on the number of hits (respond yes when there is a true effect); the number of misses (respond no when there is a true effect), the number of false alarms (respond yes when there is a null effect) and the number of correct negatives (respond no when there is a null effect). Calculations of these indices was conducted using the _dprime()_ function from the _psycho_ package (version 0.5.0) [@makowski2018]. The beta values allow us to detect cases of response bias, i.e. a tendency to always respond 'blue=pink' or 'blue>pink'.  
 
 As shown in the power values in Figure `r keepfignumber`, with an effect size (Cohen's _d_) of .3, participants need to wait for an array of at least 80 per group (index 4) to have a reasonable chance of success (above 50%) for detecting a true effect, and would be well-advised to wait for the largest array (index 6), which would virtually guarantee success.  However, the trial by trial variation allows us to do a rather more sensitive analysis, testing how the evidence available on each specific trial is used.  
 
@@ -541,7 +538,7 @@ write.csv(table2,'table2.csv',row.names=F)
 ftab2 <- flextable(table2)
 
 ftab2 <- set_caption(ftab2, paste0("Table ",tabnumber,": Power for comparison of quiz pre and post test, in relation to number of participants (N), proportion of learners (plearn) and increase in quiz score in learners (Quiz gain)"))
-#ftab2<-autofit(ftab2)
+ftab2<-autofit(ftab2)
 ftab2
 
 ```
@@ -636,17 +633,27 @@ At the suggestion of a reviewer, we conducted Pilot 3 with 20 participants, usin
 
 
 
+## Demographics
+
+<!--__Table for individual subjects here just for our interest - has subjects rank-ordered by stats knowledge. For the paper we can report summary stats on these columns.__ -->
+
+Summary data for participants are shown in Table `r (tabnumber+1)`. There was a wide spread in terms of self-rated statistical competence, educational level and field of study.  
 
 
-```{r readdata,echo=F}
 
+```{r readdata,echo=F,warning=F}
 
 #datpilot<-read.csv("https://osf.io/2jube//download",na.strings = c("NA", "")) #pilot data with RR settings
 all.dat <- read.csv("https://osf.io/uz3jb/download",stringsAsFactors = F) #all gorilla files bolted together
 
+#First just fix a typo in Question key
+w<-which(qdata$all.dat=='P1B -quantised') 
+all.dat$Question.Key[w]<-'P1B-quantised'
 ```
 
-```{r makesubjects, echo=F}
+
+
+```{r makesubjects, echo=F,warning=F}
 #create easy to manage subject ID
 w<-which(is.na(all.dat$Participant.Private.ID))
 sublist <- unique(all.dat$Participant.Private.ID[-w])
@@ -658,7 +665,7 @@ nsub<-length(sublist)
 ```
 
 
-```{r collectdemog,echo=F}
+```{r collectdemog,echo=F,warning=F}
 wantcols <- c('subject','Question.Key','Response')
 wantvals <- c('Age','Sex','Ed_level-quantised','field','Stats_ability_self_rating','interpeting_t-quantised', 'power_knowledge-quantised')
 
@@ -717,13 +724,7 @@ ft
 ```
 
 
-## Demographics
-
-__Table for individual subjects here just for our interest - has subjects rank-ordered by stats knowledge. For the paper we can report summary stats on these columns.__ 
-
-Summary data for participants are shown in Table `r tabnumber`. There was a wide spread in terms of self-rated statistical competence, educational level and field of study.  
-
-```{r analyselearning,echo=F}
+```{r analyselearning,echo=F,warning=F}
 #remove all but learning trials (defined by display 'beeswarms')
 short.dat<-all.dat[all.dat$display=='beeswarms',]
 
@@ -776,17 +777,31 @@ table(short.dat$subject,short.dat$block)
 }
 short.dat$adiff<-short.dat$array-short.dat$bonus
 
+#add LL and ObsES for selected array - first compute offset for col number
+wE <- which(colnames(short.dat)=="ObsE1")-1
+wL <- which(colnames(short.dat)=="LL1")-1
+short.dat$LL<-NA
+short.dat$ObsE <- NA
+for (i in 1:nrow(short.dat)){
+  short.dat$ObsE[i] <-short.dat[i,(wE+short.dat$array[i])]
+  short.dat$LL[i] <-short.dat[i,(wL+short.dat$array[i])]
+}
+w<-which(short.dat$LL==Inf)
+short.dat$LL[w] <-100
+
+
+
 ```
 
 ```{r makeaggregate,echo=FALSE}
-mycols<-c('Correct','bonus','array','earn','adiff')
+mycols<-c('Correct','bonus','array','earn','adiff','ObsE','LL')
 colnums<-which(colnames(short.dat)%in% mycols)
-colnums<-colnums[c(1,2,3,5,4)] #reorder so easier to read
+colnums<-colnums[c(1,2,3,5,4,7,6)] #reorder so easier to read
 mytab <- aggregate(short.dat[,colnums],by=list(short.dat$subject,short.dat$block),FUN=mean)
 colnames(mytab)[1:2]<-c('subject','block')
 
 #means by block
-mymeans <- aggregate(mytab[,3:6], by = list(mytab$block),FUN=mean)
+mymeans <- aggregate(mytab[,3:9], by = list(mytab$block),FUN=mean)
 colnames(mymeans)[1]<-'block'
 
 if(authorversion==1){
@@ -916,11 +931,7 @@ qdata$prepost <- as.factor(qdata$whichq)
 levels(qdata$prepost) <- c("Pre", "Post")
 ```
 
-```{r fixtypo,echo=F}
-#First just fix a typo in Question key
-w<-which(qdata$Question.Key=='P1B -quantised') 
-qdata$Question.Key[w]<-'P1B-quantised'
-```
+
 
 ```{r scoreQs,echo=F}
 correctA <- c(1,4,4,1,3,2,3,2,4,1,3,1) #list A, P then S
@@ -1021,7 +1032,7 @@ tabnumber <- tabnumber+1
 ftab <- flextable(qdf)
 
 ftab <- set_caption(ftab, paste0("Table ",tabnumber,": Distribution of responses to quiz items"))
-#ftab<-autofit(ftab)
+ftab<-fit_to_width(ftab,max_width=15)
 ftab
 
 #convert to wide
@@ -1031,8 +1042,35 @@ myagq2<-myagq[,-c(2,3)] #drop the cols combined into dummy
 agqwide <- spread(myagq2,dummy,p.correct)
 
 ```
+```{r qerrors,echo=F,warning=F}
+qerr <- qdf[13:24,c(1,4:7)]
+qerr<-qerr[-c(5:6),]
+colnames(qerr)[2:5]<-c('Correct','Bias','Other1','Other2')
+colcorr<-qdf[13:24,'Correct.Ans']
+colbias <-qdf[13:24,'Bias.Ans']
+colbias<-as.numeric(colbias[-c(5:6)])
+colcorr<-colcorr[-c(5:6)]
+qerr$chisq <- NA #initialise cols to hold result of chi sq test
+qerr$p <- NA
+for (i in 1:nrow(qerr)){ #sort cols so that they are in order of qerr colnames
+  thisrow<-qerr[i,2:5]
+  myindex <-1:4
+  indexlist <- c(colcorr[i],colbias[i])
+  restlist <-myindex[-c(indexlist)]
+  allindex <- 1+c(indexlist,restlist)
+  qerr[i,2:5]<-qerr[i,allindex]
+  mychi<-chisq.test(qerr[i,3:5]) #omit correct col: interest is in whether errors are equally distributed across foils
+  qerr$chisq[i]<-round(mychi$statistic,2)
+  qerr$p[i] <- round(mychi$p.value,3)
+  
+}
+tabnumber<-tabnumber+1
+ft<-flextable(qerr[,-2])
+ft <- set_caption(ft, paste0("Table ",tabnumber,": Distribution of error responses on quiz S-items"))
+ft
+```
 
-On P-items, the mean pre-training score was `r round(100*myagq2[1,3],1)` % correct, and on S-items it was  `r round(100*myagq2[1,3],3)` % correct.  The maximum score on P-items was `r round(100*max(agqwide$PreP),1)` and on S-items it was `r round(100*max(agqwide$PreS),1)`. Table `r tabnumber` shows pattern of responses on individual items on the pre-training quiz. It is clear that on the one hand, performance on S-items is poor, and worse than on P-items, but on the other hand, the errors on S-items do not generally cluster on the foils that were designed to pick up sample size neglect. The most common error response varied across these items, and was not necessarily consistent across the parallel forms, suggesting that the specific item content and wording of options could exert a stronger impact than any particular cognitive bias. 
+On P-items, the mean pre-training score was `r round(100*myagq2[1,3],1)` % correct, and on S-items it was  `r round(100*myagq2[1,3],3)` % correct.  The maximum score on P-items was `r round(100*max(agqwide$PreP),1)` and on S-items it was `r round(100*max(agqwide$PreS),1)`. Table `r tabnumber` shows pattern of responses on individual items on the pre-training quiz. It is clear that on the one hand, performance on S-items is poor, and worse than on P-items, but on the other hand, the errors on S-items do not generally cluster on the foils that were designed to pick up sample size neglect. Table `r tabnumber` shows errors categorised as to whether they were categorised as reflecting sample size neglect (bias) or not (other 1 and 2). Items S3A and S3B are omitted from this table, as there is no obvious foil that corresponds to this bias. For each item, the distribution of error responses was subjected to chi square test, to test the hypothesis that all foils were equally likely to be selected. For many items, the chi square value was significant, indicating nonrandom choice of foils, but more often than not the most common choice was not the foil designated as reflecting sample size neglect. Furthermore, choice of foil was not necessarily consistent across the parallel forms, suggesting that the specific item content and wording of options could exert a stronger impact than any particular cognitive bias. 
 
 <!-- we'd said we'd do a chi square test but now I'm not sure what that should even look like!-->
 <!-- also, although we do have more than 50% of people scoring 50% or more on P-items, there is a substantial minority scoring below that level - we said that if there were a lot of them, this was problematic, as we need to have people who are competent in basic stats. Could possibly do an exploratory analysis excluding poor performers-->
@@ -1124,9 +1162,74 @@ tabnumber <- tabnumber+1
 
 As shown in Table `r tabnumber`, there was no hint of any effect of the learning index on the percentage of S-items correct at post-training. 
 
+```{r checkqitems,echo=F}
+
+
+mycolsA<-c(paste0('S',1:6,'A'))
+mycolsB<-c(paste0('S',1:6,'B'))
+allcols<-c(mycolsA,mycolsB)
+
+qcols <-c(paste0(allcols,'-quantised'))
+qu <- all.dat[all.dat$Question.Key %in% c(allcols,qcols),c('Question.Key','Response')]
+
+w<-which(qu$Question.Key %in% qcols)
+qux <- cbind(qu[-w,],qu[w,])
+colnames(qux)[3:4] <- c('Quant','ResponseNum')
+qux$quizrep<-paste0(qux$Question.Key,'.',qux$ResponseNum,' ',qux$Response)
+qux1<-qux[order(qux$quizrep),]
+quitems <- unique(qux1$quizrep)
+write.csv(quitems,'quitemcheck.csv',row.names=F)
+
+#Confirms correct assignment of S-item responses
+```
+
 # Exploratory analyses - to be done  
 
+
 __We originally said that if we got this pattern of results "we would explore individual S-items in the quiz, to see whether there is any indication of improvement on a subset of items, and whether they have particular characteristics. We may, for instance, see evidence of selective improvement on items assessing understanding of the relationship between sample size and statistical power, which could be tested in a replication study."__
+
+Training game: looking at dprime and use of log likelihood
+
+```{r exploreLL,echo=F}
+#First we'll plot for each subject accuracy vs ObsE or LL, trial by trial.
+
+for (i in 1:nsub){
+  mysub <- short.dat[short.dat$subject==i,]
+  mysum <- mytab[mytab$subject==i,]
+  mysub$row<-1:nrow(mysub)
+  mycolor<-c('pink','lightblue')
+  mypch<-c(22,23)
+  par(mfrow=c(2,1))
+  for (j in 1:2){
+    myy <- mysub$ObsE
+    limy <- c(-.8,.8)
+    meany <- .15
+    mylab <- 'Observed ES'
+    if(j==2){
+      myy<- mysub$LL
+      limy <- c(-20,20)
+      meany <- 0
+      mylab <- 'LL'
+    }
+
+  plot(mysub$row,myy,pch=mypch[(1+mysub$Correct)],bg=mycolor[as.factor(mysub$Response)],main=paste0("Subject ",i),ylim=limy,cex=2,col=(1+(-1*mysub$Correct)),
+       xlab='trial',ylab=mylab)
+  abline(h=meany)
+  abline(v=c(20,40,60))
+  maxx=limy[2]
+  text(3,maxx,round(mysum$Correct[1],2),cex=.9)
+  text(24,maxx,round(mysum$Correct[2],2),cex=.9)
+  text(45,maxx,round(mysum$Correct[3],2),cex=.9)
+  text(66,maxx,round(mysum$Correct[4],2),cex=.9)
+  text(myy ~mysub$row, labels=mysub$array, cex=0.75)
+  }
+}
+
+#Response colour coded: blue greater shown as blue; blue=pink shown as pink
+# Black border from wrong responses; number corresponds to array index
+# Figures at top are % correct per block
+```
+
 
 # Discussion  
 
