@@ -644,6 +644,9 @@ At the suggestion of a reviewer, we conducted Pilot 3 with 20 participants, usin
 <!--- NEW FOR STAGE 2--->
 <!---Data wrangling and analysis based on pilot2_processing.Rmd--->
 
+In a departure from our pre-registered plan, we present here results from two samples of participants. Sample 1 (N = 51) was recruited as planned, but, owing to a coding error, the estimation quiz items were administered in a non-random order, with the six P-items followed by the six S-items. As we could not be sure of the effect of this procedural change on performance, we recruited Sample 2 (N = 50), who were administered the estimation quiz with items randomised as intended. Preliminary analyses (see below) indicated no meaningful differences on quiz scores between the two samples. 
+
+On the basis of the Bayesian stopping rule that we pre-registered, the 50 participants in Sample 2 gave only anecdotal evidence of learning on the training game. As there was no differences between the two samples in administration of the training game, we therefore combined Samples 1 and 2 to give a total sample of 101 participants for our main analysis. 
 
 
 ## Demographics
@@ -912,7 +915,7 @@ t.test(mytab$eslope,alternative='greater')  #slope based on earnings
 t.test(mytab$absLLdiff,alternative='greater')  #slope based on abs LL
 
 #We preregistered analysis based on ediff, as this gave strongest effect in the pilot data. 
-#Slope is a bit better here, but difference is not v large; stick with preregistered
+
 }
 ```
 
@@ -922,7 +925,7 @@ t.test(mytab$absLLdiff,alternative='greater')  #slope based on abs LL
 
 _Prediction 1_:  Responses on quiz items will reflect overconfidence in small samples.   
 
-We first checked the pre-test quiz data against two prespecified criteria: (a) that mean number of S-items correct is less than 5/6 (83%), and (b) that fewer than 50% of participants score below 50% correct on P-items. Both predictions were confirmed.  
+ 
 ```{r readquiz, echo=F,include=T,warning=F}
 #Now analyse quiz data and create table with both task and quiz
 qdata <- all.dat[!is.na(all.dat$Question.Key),] #this subset has quiz items and self-ratings etc
@@ -955,7 +958,7 @@ levels(qdata$prepost) <- c("Pre", "Post")
 
 
 ```{r obsoletechunk,echo=F,warning=F}
-do.obsolete <- 0 #just retain in case we want to redo the earlier cases
+do.obsolete <- 0 # because of confusion re randomisation, this analysis was done to double-check which version was given to which participants in Sample 1. We set do.obsolete to 0 to skip this chunk.
 if(do.obsolete==1){
 #This bit not needed: was used for initial 50 cases where randomisation not done propertly.
 ##relevant bits are identified in Task Name - we will compare timings for the two sets of probability qus for each subject to just check that list A is always first.
@@ -1063,10 +1066,22 @@ myagq3a <- aggregate(qdata$correctp.ans,by=list(qdata$prepost,qdata$PostList,qda
 myagq3<-cbind(myagq3,myagq3a[,5])
 colnames(myagq3)<-c('PrePost','List','Item.type','Sample','Mean','SD')
 myagq3[,5:6]<-round(myagq3[,5:6],3)
+
+#Count N below 50% correct on P-items and N 
+temp1S<- filter(myagq,sample==1,itemtype=='S',prepost=='Pre')
+temp1P<- filter(myagq,sample==1,itemtype=='P',prepost=='Pre')
+tS1 <- t.test(temp1S$p.correct,mu=.83)
+pP1 <- length(which(temp1P$p.correct<.5))/nrow(temp1P)
+temp2S<- filter(myagq,sample==2,itemtype=='S',prepost=='Pre')
+temp2P<- filter(myagq,sample==2,itemtype=='P',prepost=='Pre')
+tS2 <- t.test(temp2S$p.correct,mu=.83)
+pP2 <- length(which(temp2P$p.correct<.5))/nrow(temp2P)
+
 ```
+We first checked the pre-test quiz data against two prespecified criteria: (a) that mean number of S-items correct is less than 5/6 (83%), and (b) that fewer than 50% of participants score below 50% correct on P-items. Both predictions were confirmed. In Sample 1, the pre-training mean on S-items was `r round(tS1$estimate,2)`, t-test of difference of mean from .83 = `r round(tS1$statistic,2)`, `p.format(tS1)`; In Sample 2, the pre-training mean on S-items was `r round(tS2$estimate,2)`, t-test of difference of mean from .83 = `r round(tS2$statistic,2)`, `r p.format(tS2)`.   The proportion of participants scoring less than 50% on the pre-training P-items was `r round(pP1,3)` for Sample 1 and `r round(pP2,3)` for Sample 2.  
 
 
-```{r inspectquizfactors,echo=T}
+```{r inspectquizfactors,echo=F}
 myagq$subjectf <- as.factor(myagq$subject)
 myagq$samplef <- as.factor(myagq$sample)
 levels(myagq$samplef)<-c("Sample 1","Sample 2")
@@ -1074,7 +1089,7 @@ myagq$itemf <- as.factor(myagq$itemtype)
 
 bxp <- ggboxplot(
   myagq, x = "prepost", y = "p.correct",
-  color = "itemf", palette = "jco",
+  color = "itemf",
   facet.by =  "samplef"
   )
 bxp2 <- ggboxplot(
@@ -1083,10 +1098,25 @@ bxp2 <- ggboxplot(
   )
 
 
-mymod <- lmer(p.correct ~ itemf+prepost+samplef+PostList+(1|subjectf),data=myagq)
-summary(mymod)
+mymod <- lmer(p.correct ~ itemf+prepost+samplef+(1|subjectf),data=myagq)
+#summary(mymod)
+mymodnullsample <-lmer(p.correct ~ itemf+prepost+(1|subjectf),data=myagq)
+BF_BIC_sample = exp((BIC(mymodnullsample) - BIC(mymod))/2)  # From BICs to Bayes factor
 
+s<-round(summary(mymod)$coefficients,3)
+s<- as.data.frame(s)
+Source<-c('(Intercept)','Item type','Pre/Post','Sample')
+s<- cbind(Source,s)
+ftquiz <- flextable(s)
+ftquiz <- set_caption(ftquiz, paste0("Table ",tabnumber,": Estimates of effects of item type, pre/post administration and sample on quiz accuracy"))
+ftquiz
 ```
+
+`r tabnumber <- tabnumber+1`
+Next we checked if the two samples differed in their responses to the quiz items, by running a linear mixed model predicting proportion correct from item type, pre/post testing, and sample, with the formula:  
+__lmer(p.correct ~ itemtype+prepost+sample+(1|subject) __  
+where itemtype was whether S- or P-item, prepost specified whether the quiz was before or after training, sample was Sample 1 or 2, and subject was a random effect.  This model was compared with a model where the sample term was omitted, to give a Bayes Factor of `r round(BF_BIC_sample,2)`, giving extreme evidence for the null hypothesis of no difference between samples.  As shown in Table `r tabnumber`,the analysis also indicated a substantial effect of item type, reflecting the superior performance on P-items, but no effect of whether the quiz was administered pre- or post-training.  The two samples were treated together for subsequent analyses.  
+
 
 ```{r qdatainspect, include=T,echo=F}
 
@@ -1170,9 +1200,8 @@ ft <- set_caption(ft, paste0("Table ",tabnumber,": Distribution of error respons
 ft
 ```
 
-On P-items, the mean pre-training score was `r round(100*mean(agqwide$PreP),1)` % correct, and on S-items it was  `r round(100*mean(agqwide$PreS),1)` % correct.  The maximum score on P-items was `r round(100*max(agqwide$PreP),1)`% and on S-items it was `r round(100*max(agqwide$PreS),1)`%. The mean score on the S-items was well below the pre-registered criterion of .83: one sample t-test, t = `r round(abs(t_on_preS$statistic),2)`, `p.format(t_on_preS)`. The proportion of participants scoring less than 50% correct on P-items was `r length(which(agqwide$PreP < .5))/nrow(agqwide)`.  
 
-Table `r tabnumber` shows errors categorised as to whether they reflected sample size neglect (bias) or not (other 1 and 2). Items S3A and S3B are omitted from this table, as there is no obvious foil that corresponds to this bias. For each item, the distribution of error responses was subjected to chi square test, to test the hypothesis that all foils were equally likely to be selected. For many items, the chi square value was statistically significant, indicating nonrandom choice of foils, but for most items the most common choice was not the foil designated as reflecting sample size neglect. Furthermore, choice of foil was not necessarily consistent across the parallel forms, suggesting that the specific item content and wording of options could exert a stronger impact than any particular cognitive bias. 
+Table `r tabnumber` shows errors categorised as to whether they reflected sample size neglect (bias) or not (other 1 and 2). Items S3A and S3B are omitted from this table, as there is no specific foil that corresponds to this bias. For each item, the distribution of error responses was subjected to chi square test, to test the hypothesis that all foils were equally likely to be selected. For most items, the chi square value was statistically significant, indicating nonrandom choice of foils, but only for items 5 and 6 was the most common choice the foil designated as reflecting sample size neglect. Item 5 was based on Tversky and Kahneman's classic example of 'law of small numbers' (likelihood of best player winning increasing with number of games) and item 6 illustrated how type II errors decrease with sample size. Choice of foil was not necessarily consistent across the parallel forms, suggesting that the specific item content and wording of options could exert a stronger impact than any particular cognitive bias. 
 
 
 _Prediction 2_: Accuracy on the beeswarm task will increase with training.  
@@ -1180,7 +1209,12 @@ _Prediction 2_: Accuracy on the beeswarm task will increase with training.
 ```{r Prediction2,echo=F,figleg = 'Beeswarm plot of earnings by block; bars show means'}
 
 beedat <- filter(mytab,block %in% c(1,4))
+
+beedat4 <- beedat[beedat$block==4,] #Used later on for correlation plot
+
+
 beeswarm(beedat$earn~beedat$block+beedat$sample,pch=16,col='red',xlab='Block',ylab='Earnings',xaxt="n")
+
 beedat1 <- filter(beedat,sample==1)
 beedat2 <- filter(beedat,sample==2)
 y1 <- mean(beedat1$earn[beedat1$block==1])
@@ -1195,22 +1229,53 @@ axis(1, at = 1:4,
        labels = c(1,4,1,4))
 text(1.5,-1.5,'Sample 1')
 text(3.5,-1.5,'Sample 2')
+
+
 #One tailed matched pairs t-test compare earnings on block 4 with earning on block 1
-tearn1 <- t.test(beedat1$earn[beedat1$block==1],beedat1$earn[beedat1$block==4],paired=T,alternative='less')
-tearn2 <- t.test(beedat2$earn[beedat2$block==1],beedat2$earn[beedat2$block==4],paired=T,alternative='less')
+#Do analysis for each sample and combined, and compute BF
+
+ 
+beedat<-beedat[!is.na(beedat$ediff),]
+mybee<-beedat
+  for (m in 1:3){
+  if (m<3){
+    mybee<-filter(beedat,sample==m)
+   }
+  
+tearn <- t.test(mybee$ediff,alternative='greater')
+
+BF <- ttestBF(mybee$ediff,alternative='greater')
+#Bayes factors computed by model comparison
+full_lm<-lm(mybee$ediff~1)
+null_lm <-lm(mybee$ediff~0)
+BF_BIC=exp((BIC(null_lm)-BIC(full_lm))/2)
+BF_BIC
+
+if(m==1){BF1 <- BF_BIC
+tearn1 <- tearn}
+if(m==2){BF2 <- BF_BIC
+tearn2 <- tearn}
+
+}
+
+
 fignumber <- fignumber+1
+
+
+
 ```
 
-Figure `r fignumber` shows the distribution of earnings for the first and last blocks in the two samples. A matched pairs _t_-test was used to compare earnings on block 4 with earnings on block 1, using a one-tailed test, as the prediction that the block 4 score will be higher.  This confirmed that learning had occurred in both samples: Sample 1: t (`r tearn1$parameter`) = `r round(tearn1$statistic,2)`, `p.format(tearn1)`; Sample 2: t (`r tearn2$parameter`) = `r round(tearn2$statistic,2)`, `p.format(tearn2)`.  
+Figure `r fignumber` shows the distribution of earnings for the first and last blocks in the two samples. A matched pairs _t_-test was used to compare earnings on block 4 with earnings on block 1, using a one-tailed test, as the prediction that the block 4 score will be higher.  This confirmed that learning had occurred in both samples: Sample 1: t (`r tearn1$parameter`) = `r round(tearn1$statistic,2)`, `p.format(tearn1)`;  Sample 2: t (`r tearn2$parameter`) = `r round(tearn2$statistic,2)`, `p.format(tearn2)`.  However, for Sample 2, the Bayes Factor (`r BF2`) provided only anecdotal evidence against the null hypothesis, whereas for Sample 1, the evidence was solidly in favour of the alternative hypothesis (that the improvement in earnings was greater than zero), Bayes Factor = `BF1`.  With data from both samples combined, the Bayes Factor was `r BF_BIC`, giving extreme evidence of learning. 
 
 _Prediction 3_: Increased accuracy will be associated with selection of larger array sizes as learning proceeds  
 We predicted a significant association between mean array index and mean earnings, such that those who earn most will be those who select larger array sizes (tested by significance of Pearson correlation between these variables in block 4). 
 
 ```{r Prediction3,echo=F,figlegend='Relationship between mean array index and earnings in block 4'}
 #One tailed matched pairs t-test compare earnings on block 4 with earning on block 1
-mycor2 <- cor.test(beedat2$array[beedat2$block==4],beedat2$earn[beedat2$block==4])
-mycor1 <- cor.test(beedat1$array[beedat1$block==4],beedat1$earn[beedat1$block==4])
-plot(beedat$array[beedat$block==4],beedat$earn[beedat$block==4],pch=16,xlab='Mean array index',ylab='Mean earnings',col=beedat$sample)
+mycor1 <- cor.test(beedat4$array[beedat4$sample==1],beedat4$earn[beedat4$sample==1])
+mycor2 <- cor.test(beedat4$array[beedat4$sample==2],beedat4$earn[beedat4$sample==2])
+mycorall <- cor.test(beedat4$array,beedat4$earn)
+plot(beedat4$array,beedat4$earn,pch=16,xlab='Mean array index',ylab='Mean earnings',col=beedat4$sample)
 text(3,4.8,paste0('r = ',round(mycor1$estimate,3)),cex=.8)
 text(3,4.3,p.format(mycor1),cex=.8)
 text(3,3.8,paste0('r = ',round(mycor2$estimate,3)),col='red',cex=.8)
@@ -1222,7 +1287,7 @@ legend("topleft", legend=c(1,2),title="Sample",
 fignumber <- fignumber+1
 ```
 
-As shown in Figure `r (fignumber-1)`, this prediction was confirmed in both samples. 
+As shown in Figure `r (fignumber-1)`, this prediction was confirmed in both samples. For the combined sample, r (`r mycorall$parameter`) = `r round(mycorall$estimate,3)`, `r p.format(mycorall)`. 
 
 
 ```{r Prediction4,echo=F}
@@ -1247,19 +1312,19 @@ mytab2<-mytab[mytab$sample==2,]
 waitt1<-t.test (mytab1$earn~mytab1$wait)
 waitt2<-t.test (mytab2$earn~mytab2$wait)
 
-
+waitt<-t.test (mytab$earn~mytab$wait)
 ```
 
 
 _Prediction 4_: Self-reported strategy will be predictive of learning  
 We divided the self-reported responses into those that did and did not indicate awareness that larger sample sizes (or longer waiting) gives more reliable estimates. See Appendix x for response coding by two of the authors - this agreed for all but one participant in each sample; analysis was based on coding by JT.  Consistent with Pilot 2, we confirmed the prediction that there would be higher earnings for those who showed such awareness: one-tailed t-test in sample 1: 
-t (`r round(waitt1$parameter,1)`) = `r round(waitt1$statistic,2)`, `r p.format(waitt1)`, and in sample 2: t (`r round(waitt2$parameter,1)`) = `r round(waitt2$statistic,2)`, `r p.format(waitt2)`.
+t (`r round(waitt1$parameter,1)`) = `r round(waitt1$statistic,2)`, `r p.format(waitt1)`, and in sample 2: t (`r round(waitt2$parameter,1)`) = `r round(waitt2$statistic,2)`, `r p.format(waitt2)`, and in the combined sample t (`r round(waitt$parameter,1)`) = `r round(waitt$statistic,2)`, `r p.format(waitt)`. 
 
 _Prediction 5_: Generalisation of learning  
 
-Note that there was no indication of improvement on the post-training estimation quiz in either sample, making it unlikely that the pre-registered analysis would find any generalisation of learning gains on the training task to the S-items on the quiz. 
+As noted above, there was no indication of improvement on the post-training estimation quiz in either sample, making it unlikely that the pre-registered analysis would find any generalisation of learning gains on the training task to the S-items on the quiz. 
 
-The results of the linear regression confirmed this was the case for both samples: individual differences in learning on the training task did not predit improvement on the S-items of the estimation quiz. The model was specified as:  
+The results of the linear regression confirmed this was the case for both samples: individual differences in learning on the training task did not predict improvement on the S-items of the estimation quiz. The model was specified as:  
 _postS ~ preS + earn.diff_      
 where postS and preS are post-training and pre-training scores on S-items, and earn.diff is the difference in earnings (a measure of success on the task) between the last and first block of training.  
 
@@ -1275,10 +1340,31 @@ quizag <- aggregate(qdata$correctresp,by=list(qdata$itemtype,qdata$prepost,qdata
 ```{r prediction5,echo=F}
 
 
-#The variables we want are now in mytab and agqwide, with subs in same order. So...
 
-model <- lm(agqwide$PostS~agqwide$PreS+mytab$ediff[1:nsub])
-mysummary <- as.data.frame(summary(model)$coefficients)
+#The variables we want are now in mytab and agqwide, with subs in same order. #BF calculation based on https://rpubs.com/lindeloev/bayes_factors
+
+
+  
+
+moddatfull <- agqwide[!is.na(agqwide$PostS),]
+moddatfull <- cbind(moddatfull,mytab$ediff[1:nsub],mytab$wait[1:nsub],mytab$absLLdiff[1:nsub])
+#We bolt on the self-report strategy and LLdiff code as well as ediff, as it will be used in later exploratory analysis
+nc <- ncol(moddatfull) #get index for added cols
+colnames(moddatfull)[(nc-2):nc]<-c('ediff','wait','absLLdiff')
+for (m in 1:3){
+moddat<-moddatfull
+
+if (m<3){
+  moddat<-moddatfull[moddatfull$sample==m,]
+}
+myn<-nsub
+if (m==1){myn <- nsub1}
+if(m==2){myn <- nsub-nsub1}
+model1 <- lm(moddat$PostS~moddat$PreS+moddat$ediff)
+modeln <- lm(moddat$PostS~moddat$PreS)
+BF_BIC = exp((BIC(modeln) - BIC(model1))/2)  # From BICs to Bayes factor
+regcor<- cor(moddat$PostS,moddat$ediff)
+mysummary <- as.data.frame(summary(model1)$coefficients)
 mysummary <- round(mysummary,3)
 mysummary<-cbind(c('Intercept','Pre-training S','Learning index'),mysummary)
 colnames(mysummary)[1] <-'Source'
@@ -1287,11 +1373,13 @@ tabnumber <- tabnumber+1
 # ft<-autofit(ft)
  ft <- set_caption(ft, paste0("Table ",tabnumber,": Linear regression results for predicting percent correct on S-items on post-training quiz, from pre-training score and learning index (earnings difference from first to last block)"))
  ft
- 
+}
 #cor(agqwide[,2:5])
 ```
 
-As shown in Table `r tabnumber`, there was no hint of any effect of the learning index on the percentage of S-items correct at post-training. 
+
+The learning index from the training task did not predict the post-test score on the S-items from the quiz, and the Bayes Factor (`r round(BF_BIC,2)`) provided moderate support for the null hypothesis. 
+
 
 ```{r checkqitems,echo=F}
 
@@ -1317,7 +1405,7 @@ write.csv(quitems,'quitemcheck.csv',row.names=F)
 # Exploratory analyses  
 
 We conducted a planned exploratory analysis of quiz items, to see if there was any indication of improvement on a subset of items. 
-```{r explorequizitems}
+```{r explorequizitems, echo=F}
 tabnumber <- tabnumber+1
 ftabquizitems
 ```
@@ -1386,13 +1474,13 @@ mytab$beta[w]<-blockstats$beta
 
 ```{r usequalrating,echo=F}
 #Here we use the self-report strategy coding to see if that predicts S-item learning
-model2 <- lm(agqwide$PostS~agqwide$PreS+mytab$wait[1:nsub])
+model2 <- lm(moddatfull$PostS~moddatfull$PreS+moddatfull$wait)
 mysummary <- as.data.frame(summary(model2)$coefficients)
 mysummary <- round(mysummary,3)
 mysummary<-cbind(c('Intercept','Pre-training S','Learning index'),mysummary)
 colnames(mysummary)[1] <-'Source'
 
-model3 <- lm(agqwide$PostS~agqwide$PreS+mytab$absLLdiff[1:nsub])
+model3 <- lm(moddatfull$PostS~moddatfull$PreS+moddatfull$absLLdiff)
 mysummary <- as.data.frame(summary(model3)$coefficients)
 mysummary <- round(mysummary,3)
 mysummary<-cbind(c('Intercept','Pre-training S','Learning index'),mysummary)
