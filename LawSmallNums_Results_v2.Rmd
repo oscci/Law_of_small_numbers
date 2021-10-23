@@ -58,9 +58,9 @@ authorversion <- 0 #this has extra tables and figures for the authors to look at
 
 ```{r makepvalueformat, echo=F}
 #make format for p-values from t-test or other objects with p.value
-p.format=function(myttest){
-if(myttest$p.value <.001){p.report <- 'p < .001'}
-if(myttest$p.value >.001){p.report <- paste0('p = ',round(myt$p.value,3))}
+p.format=function(mytest){
+if(mytest$p.value <.001){p.report <- 'p < .001'}
+if(mytest$p.value >.001){p.report <- paste0('p = ',round(mytest$p.value,3))}
 return(p.report)
 }
 ```
@@ -960,58 +960,16 @@ levels(qdata$prepost) <- c("Pre", "Post")
 ```
 
 
-```{r obsoletechunk,echo=F,warning=F}
-do.obsolete <- 0 # because of confusion re randomisation, this analysis was done to double-check which version was given to which participants in Sample 1. We set do.obsolete to 0 to skip this chunk.
-if(do.obsolete==1){
-#This bit not needed: was used for initial 50 cases where randomisation not done propertly.
-##relevant bits are identified in Task Name - we will compare timings for the two sets of probability qus for each subject to just check that list A is always first.
-#need to check which session and version of quiz. 
-#Can double check using timings
-qdata$time <-(qdata$Local.Timestamp-qdata$Local.Timestamp[1])/60
-#Pick one subject
-mysub<-2
-mybit <- qdata[qdata$subject==mysub,]
-  
-  myag <- aggregate(qdata$Local.Timestamp,by=list(qdata$subject,qdata$Task.Name),FUN=mean)
-mybit1 <-myag[myag$Group.2=='Probability Questions 2021- List A',]
-mybit2 <-myag[myag$Group.2=='Probability Questions 2021- List B',]
-allbit <- cbind(mybit1,mybit2$x)
-colnames(allbit)<-c('subject','nul','A','B')
-allbit$diff <-allbit$B-allbit$A#time diff is + if list B is 2nd and - otherwise
-allbit$firstlist <- "A"  #default
-w<-which(allbit$diff < 0) 
-allbit$firstlist[w]<-"B"
-#We now have a list indicating which prob questions were given as pretest
-
-#need to add this information to qdata
-
-#add a variable denoting rownumber to qdata before we filter it 
-qdata$whichq <-NA
-qdata$row <- 1:nrow(qdata)
-
-f <- filter(qdata,subject %in% allbit$subject[w],Task.Name=="Probability Questions 2021- List A")
-qdata$whichq[f$row]<-1
-f <- filter(qdata,subject %in% allbit$subject[-w],Task.Name=="Probability Questions 2021- List A")
-qdata$whichq[f$row]<-2
-f <- filter(qdata,subject%in% allbit$subject[-w],Task.Name=="Probability Questions 2021- List B")
-qdata$whichq[f$row]<-1
-f <- filter(qdata,subject %in% allbit$subject[w],Task.Name=="Probability Questions 2021- List B")
-qdata$whichq[f$row]<-2
-
-qdata$prepost <- as.factor(qdata$whichq)
-levels(qdata$prepost) <- c("Pre", "Post")
-}
-
-
-```
-
-
 
 ```{r scoreQs,echo=F,warning=F}
-correctA <- c(1,4,4,1,3,2,3,2,4,1,3,1) #list A, P then S
-correctB <- c(2,1,1,2,3,1,1,3,3,1,3,1) #list B, P then S
-biasA <- c(NA,NA,NA,NA,NA,NA,2,4,-4,2,4,4) #bias for law small N list A; where zero any value below correct
-biasB <- c(NA,NA,NA,NA,NA,NA,4,2,-3,4,4,3) #bias for law small N list B; where zero any value below correct
+correctA <- c(1,4,4,1,3,2,
+              3,2,4,1,3,1) #list A, P then S
+correctB <- c(2,1,1,2,3,1,
+              1,3,3,1,3,1) #list B, P then S
+biasA <- c(NA,NA,NA,NA,NA,NA,
+           4,4,-4,2,4,4) #bias for law small N list A; where zero any value below correct
+biasB <- c(NA,NA,NA,NA,NA,NA,
+           2,2,-3,4,4,3) #bias for law small N list B; where zero any value below correct
 itemsA <- paste0(c('P1A','P2A','P3A','P4A','P5A','P6A','S1A','S2A','S3A','S4A','S5A','S6A'),'-quantised')
 itemsB <- paste0(c('P1B','P2B','P3B','P4B','P5B','P6B','S1B','S2B','S3B','S4B','S5B','S6B'),'-quantised')
 itemtype <- c(rep('P',6),rep('S',6))
@@ -1124,21 +1082,20 @@ where itemtype was whether S- or P-item, prepost specified whether the quiz was 
 ```{r qdatainspect, include=T,echo=F}
 
 ### Create a table showing the distribution of responses to each question. 
+# Pre-training kept separate
 # This is saved as quiz_items. 
 qdata_prepost <- qdata[qdata$Question.Key %in% c(itemsA,itemsB),]
-qdata <- qdata_prepost[qdata$prepost=='Pre',]
-qdata$item <- as.factor(substr(qdata$Question.Key,1,3))
-
-qt <- table(qdata$item,qdata$Response)
+myq <- c('Post','Pre') #we do Post then Pre, as our main focus is on Pre for later analysis
+for (q in 1:2) {
+qdatax <- qdata_prepost[qdata_prepost$prepost==myq[q],]
+qdatax$item <- as.factor(substr(qdatax$Question.Key,1,3))
+qt <- table(qdatax$item,qdatax$Response)
 qdf <- as.data.frame(unclass(qt))
-
-
 
 qdf<-cbind(row.names(qdf),qdf)
 qdf<-qdf[c(seq(1,24,2),seq(2,24,2)),]
 qdf$Correct.Ans <- c(correctA,correctB)
 qdf$Bias.Ans <- c(biasA,biasB)
-
 
 qdf$perc.c<-NA
 for (i in 1:nrow(qdf)){
@@ -1158,10 +1115,11 @@ qdf$Bias.Ans[w]<-'< 4'
 w<-which(qdf$Bias.Ans=='-3')
 qdf$Bias.Ans[w]<-'< 3'
 
-write.csv(qdf,'quiz_items_pre.csv',row.names=F)
+myqname <- paste0('quiz_items_',myq[q],'.csv')
+write.csv(qdf,myqname,row.names=F)
+}
 
-
-ftab <- flextable(qdf)
+ftab <- flextable(qdf) #this is done just for the last run, i.e. Pre items. But Post is saved
 ftabquizitems <- set_caption(ftab, paste0("Table ",tabnumber,": Distribution of responses to quiz items"))
 ftabquizitems<-fit_to_width(ftabquizitems,max_width=15)
 #This table will be printed later with exploratory analyses
@@ -1175,6 +1133,7 @@ agqwide <- spread(myagq2,dummy,p.correct)
 t_on_preS <- t.test(agqwide$PreS, mu = .83, alternative = "less")
 
 ```
+
 ```{r qerrors,echo=F,warning=F}
 qerr <- qdf[13:24,c(1,4:7)]
 qerr<-qerr[-c(5:6),]
@@ -1199,12 +1158,12 @@ for (i in 1:nrow(qerr)){ #sort cols so that they are in order of qerr colnames
 }
 tabnumber<-tabnumber+1
 ft<-flextable(qerr[,-2])
-ft <- set_caption(ft, paste0("Table ",tabnumber,": Distribution of error responses on quiz S-items"))
+ft <- set_caption(ft, paste0("Table ",tabnumber,": Distribution of error responses on quiz pre-training S-items"))
 ft
 ```
 
 
-Table `r tabnumber` shows errors categorised as to whether they reflected sample size neglect (bias) or not (other 1 and 2). Items S3A and S3B are omitted from this table, as there is no specific foil that corresponds to this bias. For each item, the distribution of error responses was subjected to chi square test, to test the hypothesis that all foils were equally likely to be selected. For most items, the chi square value was statistically significant, indicating nonrandom choice of foils, but only for items 5 and 6 was the most common choice the foil designated as reflecting sample size neglect. Item 5 was based on Tversky and Kahneman's classic example of 'law of small numbers' (likelihood of best player winning increasing with number of games) and item 6 focused on how type II errors decrease with sample size. On other items, choice of foil was not necessarily consistent across the parallel forms, suggesting that the specific item content and wording of options could exert a stronger impact than any particular cognitive bias. 
+Table `r tabnumber` shows errors categorised as to whether they reflected sample size neglect (bias) or not (other 1 and 2). The 'bias' foil in each case explicitly mentioned that sample size (or gathering more data) would have no effect. Items S3A and S3B are omitted from this table, as there is no specific foil that corresponds to this bias. For each item, the distribution of error responses was subjected to chi square test, to test the hypothesis that all foils were equally likely to be selected. For most items, the chi square value was statistically significant, indicating nonrandom choice of foils, and for items 1A, 1B, 5A and 6B the most common choice was the foil designated as reflecting sample size neglect. Items 1 and 5 were based two of  Tversky and Kahneman's classic examples of 'law of small numbers' (probability 60% boys being born in a big or small hospital, and likelihood of best player winning increasing with number of games); item 6 focused on how type II error rate is influenced by sample size. On items 2A, 4A and 4B, there was strong bias to select another foil, suggesting that the specific item content and wording of options could exert a stronger impact than any particular cognitive bias. We discuss response patterns to specific items below. 
 
 
 _Prediction 2_: Accuracy on the beeswarm task will increase with training.  
@@ -1646,6 +1605,12 @@ ggplot(data=dagg, aes(x=Block, y=array, group=Waiter)) +
   geom_line(aes(color=as.factor(Waiter)))+
   geom_point()
 
+dagg <- aggregate(mytab$absObsE,by=list(mytab$wait,mytab$block),FUN='mean')
+colnames(dagg)<-c('Waiter','Block','absObsE')
+ggplot(data=dagg, aes(x=Block, y=absObsE, group=Waiter)) +
+  geom_line(aes(color=as.factor(Waiter)))+
+  geom_point()
+
 ```
 
 # Discussion  
@@ -1920,7 +1885,7 @@ n[u]<-length(which(ustring>4))
 A task force is looking at characteristics of schools in its area. They take a measure of mathematical ability, and identify schools as 'failing schools' where 20% or more pupils get scores more than 1 SD below the population average. The smallest schools have on average 100 pupils, middle-sized schools have 250 pupils, and the largest schools have 500 pupils. 
 If there are no real differences between schools, will the size of the school affect whether it is a failing school?  
 `r paste0("[", qdf$R1[qdf$Item=='S1B'],"]")` a) *Yes. The smallest schools will be more likely to be a failing school  
-`r paste0("[", qdf$R2[qdf$Item=='S1B'],"]")` b)  No. All else being equal, school size should make no difference  
+`r paste0("[", qdf$R2[qdf$Item=='S1B'],"]")` b)  xNo. All else being equal, school size should make no difference  
 `r paste0("[", qdf$R3[qdf$Item=='S1B'],"]")` c)  Yes. The largest schools will be more likely to be a failing school  
 
 `r paste0("[", qdf$R4[qdf$Item=='S1B'],"]")` d)  Yes. The middle-sized schools will be more likely to be a failing school  
