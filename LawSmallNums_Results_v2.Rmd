@@ -366,7 +366,7 @@ We proposed an initial check after testing 30 participants to see whether Predic
 Assuming the study continued, we proposed to stop and check results after testing 50 participants, and then after each increment of 25 participants. Because power depends crucially on the proportion showing learning, and the increase in percent correct with learning, both of which were unknown, we adopted a Bayesian stopping rule at sequential stages in data collection, starting with a sample of `r subn[1]`, and then increasing to `r subn[2]` and `r subn[3]` if necessary to meet our pre-specified criteria. We planned to compute Bayes Factors for the _t_-test analysis testing hypothesis 2, and the linear regression for testing hypothesis 5.  When Bayes Factors yield evidence in favor of the alternative or null hypothesis for both analyses, we plan to stop data collection.  
 
 
-## Exploratory analyses  
+## Exploratory analyses: pilot data
 To complement the analysis of self-reported strategies (Prediction 4), the pattern of responses on the beeswarm task was explored to see whether individual participants adopted specific strategies. Accuracy scores were used to compute signal detection indices, d prime and beta, for each block of training, based on the number of hits (respond yes when there is a true effect); the number of misses (respond no when there is a true effect), the number of false alarms (respond yes when there is a null effect) and the number of correct negatives (respond no when there is a null effect). Calculations of these indices was conducted using the _dprime()_ function from the _psycho_ package (version 0.5.0) [@makowski2018]. The beta values allow us to detect cases of response bias, i.e. a tendency to always respond 'blue=pink' or 'blue>pink'.  
 
 As shown in the power values in Figure `r keepfignumber`, with an effect size (Cohen's _d_) of .3, participants need to wait for an array of at least 80 per group (index 4) to have a reasonable chance of success (above 50%) for detecting a true effect, and would be well-advised to wait for the largest array (index 6), which would virtually guarantee success.  However, the trial by trial variation allows us to do a rather more sensitive analysis, testing how the evidence available on each specific trial is used.  
@@ -1039,7 +1039,7 @@ tS2 <- t.test(temp2S$p.correct,mu=.83)
 pP2 <- length(which(temp2P$p.correct<.5))/nrow(temp2P)
 
 ```
-We first checked the pre-test quiz data against two prespecified criteria: (a) that mean number of S-items correct is less than 5/6 (83%), and (b) that fewer than 50% of participants score below 50% correct on P-items. Both predictions were confirmed. In Sample 1, the pre-training mean on S-items was `r round(tS1$estimate,2)`, t-test of difference of mean from .83 = `r round(tS1$statistic,2)`, `r p.format(tS1)`; In Sample 2, the pre-training mean on S-items was `r round(tS2$estimate,2)`, t-test of difference of mean from .83 = `r round(tS2$statistic,2)`, `r p.format(tS2)`.   The proportion of participants scoring less than 50% on the pre-training P-items was `r round(pP1,3)` for Sample 1 and `r round(pP2,3)` for Sample 2.  
+We first checked the pre-test quiz data against two prespecified criteria: (a) that mean number of S-items correct is less than 5/6 (83%), and (b) that fewer than 50% of participants score below 50% correct on P-items. Both predictions were confirmed. In Sample 1, the pre-training mean on S-items was `r round(tS1$estimate,2)`, t-test of difference of mean from .83 = `r round(tS1$statistic,2)`, `r p.format(tS1)`; In Sample 2, the pre-training mean on S-items was `r round(tS2$estimate,2)`, t-test of difference of mean from .83 = `r round(tS2$statistic,2)`, `r p.format(tS2)`.   The proportion of participants scoring less than 50% on the pre-training P-items was `r round(pP1,3)` for Sample 1 and `r round(pP2,3)` for Sample 2.  We also considered which was the most common response for each item on initial testing: for all 12 P-items, the correct response was the most common, whereas this was the case for only 5/12 S-items.
 
 
 ```{r inspectquizfactors,echo=F}
@@ -1375,9 +1375,25 @@ write.csv(quitems,'quitemcheck.csv',row.names=F)
 #Confirms correct assignment of S-item responses
 ```
 
-# Exploratory analyses  
+# Exploratory analyses: quiz data
 
-Given the overall lack of improvement on quiz items, we did not conduct any further analysis to see if specific items improved.
+Given the overall lack of improvement on quiz items, we did not conduct any further analysis to see if specific items improved, but we did look more closely at the errors made on S-items, in an attempt to understand better what was driving responses. 
+
+Items 1A and 1B were somewhat analogous to the "proportion of male births" item from the original @tversky1972 study, although we focused on means rather than proportions, to make the question more relevant to the training. The most common response (both before and after training) was to select a foil that stated that sample size did not matter, even though in training, the participants had been able to see that the mean bars for small samples were far more variable than those of large samples. These items, then, confirmed sample size neglect is commonplace, but that the training with beeswarms showing different sample sizes did not lead to any insight. 
+
+Items 2A and 2B were both designed to test understanding of the fact that a result in the "wrong direction" was more common with small than large samples, but the two items proved to be of very different level of difficulty. For item 2A the majority of participants concluded that a small sample (N = 10) with mean 158 was equally likely to have come from population A (mean 160, SD 6) or B (mean 158, SD 6), rather than the correct answer, which is that B is more likely, but a further 90 samples should be collected. This suggests that respondents may have recognised that the observed difference was not statistically significant, and interpreted this to mean that there was no difference in probability of the result coming from either group.
+Item 2B was analogous to item 2A, but the response options were rather different: there was no foil in which the two options (been poisoned or not been poisoned) were presented as equally likely. The most common response was the correct answer, which indicated that the observed result was inconclusive and more data was needed. 
+
+Items S3A and S3B relate to statistical power by asking directly about sample size needed to be confident in an effect. Of course, the correct answer will depend on the interpretation of 'confident': in selecting possible responses, we took this to correspond to power of 95% or higher, so that the correct responses would be to select groups of 300 for item 3A (effect size .3) and groups of 100 for item 3B (effect size .4). For both of these problems, there was a spread of responses, but the most common response was the one we had designated as correct, selected by 32-38% of respondents. Experience with the beeswarm task, however, did not affect responses: the distribution of choices was closely similar before and after training. 
+
+Items 4A and 4B were closely similar to items 2A and 2B in wording, except that the specified sample size was adequate for detecting the effect of interest. Note that because of counterbalancing, each participant saw only one version of each question (kangaroos or achaeology).  Error rates on these items were higher than for any other items, with a pronounced preference for a specific foil. For item 4A, where on statistical test, there was overwhelming evidence for one conclusion (animals poisoned), the most common response was that 100 more animals needed to be tested. 
+For item 4B, the preferred response was the same as for the analogous item 2A - that the sample was equally likely to have come from either population - even though in item 2A there were two samples each of 10, and in item 4B there was two samples each of 160. This preference was equally pronounced after training on the beeswarm task, even though that task had given repeated exposure to samples of 160 per group with effect size of .3, confirming that an effect of this size is strong evidence that the sample came from the group with the lower population mean. 
+
+Items 5A and 5B were modeled on @kahneman1982's squash example: "a game of squash can be played either to 9 or to 15 points. Holding all other rules of the game constant, it A is a better player than B, which scoring system will give A a better chance of winning?" Item 5A simply expanded the available choices to 3 points, 9 points or 21 points, as well as offering the option that the number of points would make no difference. The most common response on pre-training was "makes no difference", consistent with sample size neglect. The pattern changed after training, with the correct response (21 points) being selected most often. However, this seems likely to be a fluke rather than indicating new insight in participants, because for item 5B, an analogous item framed around chess, the opposite trend was seen: an initial tendency to select the correct response, with the "makes no difference" response being preferred post-training. The chess problem had also had the logic switched so the task was to judge which scenario gave the weaker player the better chance of winning. 
+
+Items 6A and 6B focused on risk of type II error with small samples, i.e. a scenario is envisaged where a large difference is seen even though it is known there is no true effect. In both pre-training and post-training data, there was a fairly equal split between correct responses, indicating that this kind of result is more likely in a small sample, and responses indicative of sample size neglect - with an explicit statement that there will be no effect of sample size. 
+
+Possible interpretations of this pattern of results will be considered in the Discussion. 
 
 
 ```{r explorequizitems, echo=F}
@@ -1581,43 +1597,85 @@ dev.off()
 ```
 
 ```{r dprimebywait,echo=F}
-dagg <- aggregate(mytab$dprime,by=list(mytab$wait,mytab$block),FUN='mean')
-colnames(dagg)<-c('Waiter','Block','dprime')
-ggplot(data=dagg, aes(x=Block, y=dprime, group=Waiter)) +
-  geom_line(aes(color=as.factor(Waiter)))+
+
+
+dagg <- aggregate(mytab$array,by=list(mytab$wait,mytab$block),FUN='mean')
+colnames(dagg)<-c('Aware','Block','array')
+dagg$Aware <- as.factor(dagg$Aware)
+p1 <- ggplot(data=dagg, aes(x=Block, y=array, group=Aware)) +
+  geom_line(aes(color=Aware))+
+  theme(legend.position = "none") +
   geom_point()
 
-dagg <- aggregate(mytab$beta,by=list(mytab$wait,mytab$block),FUN='mean')
-colnames(dagg)<-c('Waiter','Block','beta')
-ggplot(data=dagg, aes(x=Block, y=beta, group=Waiter)) +
-  geom_line(aes(color=as.factor(Waiter)))+
+dagg <- aggregate(mytab$dprime,by=list(mytab$wait,mytab$block),FUN='mean')
+colnames(dagg)<-c('Aware','Block','dprime')
+dagg$Aware <- as.factor(dagg$Aware)
+p2 <- ggplot(data=dagg, aes(x=Block, y=dprime, group=Aware)) +
+  geom_line(aes(color=Aware))+
+   theme(legend.position = "none") +
   geom_point()
 
 dagg <- aggregate(mytab$absLL,by=list(mytab$wait,mytab$block),FUN='mean')
-colnames(dagg)<-c('Waiter','Block','absLL')
-ggplot(data=dagg, aes(x=Block, y=absLL, group=Waiter)) +
-  geom_line(aes(color=as.factor(Waiter)))+
-  geom_point()
-
-dagg <- aggregate(mytab$array,by=list(mytab$wait,mytab$block),FUN='mean')
-colnames(dagg)<-c('Waiter','Block','array')
-ggplot(data=dagg, aes(x=Block, y=array, group=Waiter)) +
-  geom_line(aes(color=as.factor(Waiter)))+
+colnames(dagg)<-c('Aware','Block','absLL')
+dagg$Aware <- as.factor(dagg$Aware)
+p3 <- ggplot(data=dagg, aes(x=Block, y=absLL, group=Aware)) +
+  geom_line(aes(color=Aware))+
+   theme(legend.position = "none") +
   geom_point()
 
 dagg <- aggregate(mytab$absObsE,by=list(mytab$wait,mytab$block),FUN='mean')
-colnames(dagg)<-c('Waiter','Block','absObsE')
-ggplot(data=dagg, aes(x=Block, y=absObsE, group=Waiter)) +
-  geom_line(aes(color=as.factor(Waiter)))+
+colnames(dagg)<-c('Aware','Block','absObsE')
+dagg$Aware <- as.factor(dagg$Aware)
+p4 <- ggplot(data=dagg, aes(x=Block, y=absObsE, group=Aware)) +
+  geom_line(aes(color=Aware))+
   geom_point()
 
+grid.arrange(p1, p2, p3, p4, nrow = 2,ncol=2)
+
+
+# dagg <- aggregate(mytab$beta,by=list(mytab$wait,mytab$block),FUN='mean')
+# colnames(dagg)<-c('Aware','Block','beta')
+# ggplot(data=dagg, aes(x=Block, y=beta, group=Aware)) +
+#   geom_line(aes(color=as.factor(Aware)))+
+#   geom_point()
+
+#See how Awareness relates to self-ratings
+w<-which(mytab$wait==1)
+waitsubs <- unique(mytab$subject[w])
+waitrow <- which(demotab2$ID %in% waitsubs)
+demotab2$wait<-0
+demotab2$wait[waitrow]<-1
+
+t.test(demotab2$Stats_self_rating~demotab2$wait)
+t.test(demotab2$Understand_t~demotab2$wait)
+t.test(demotab2$Understand_power~demotab2$wait)
+wilcox.test(as.numeric(demotab2$Ed.level)~demotab2$wait)
+demotab2$getbetter<-0
+demotab2$getbetter[demotab2$better_over_time=='Unsure']<-1
+demotab2$getbetter[demotab2$better_over_time=='Yes']<-2
+
+wilcox.test(as.numeric(demotab2$getbetter)~demotab2$wait)
 ```
+__Beeswarm task__  
+Exploratory analysis on the beeswarm task focussed on visual comparisons between those who were categorised according to self-report as being aware that sample size was important (Aware group), versus those who were not. These two groups were compared for each block in terms of mean array size at point of response, amount of evidence in favour of one hypothesis at the point of response (mean absolute log-likelihood), accuracy (mean d prime), and observable difference between means (mean observed effect size at the point of response).  The first point to note is that the data on array size validate the accuracy of the self-rated strategy, with the Aware group showing an increase in array size over time that is not seen in the Unaware group. On the d-prime measure, the Unaware group does show some evidence of increasing accuracy over blocks, but they lag behind the Aware group. The Aware group show an increase in mean absolute log-likelihood over blocks - this is not surprising, as this value increases with array size. The Unaware group, in contrast, appear to respond more to the observed effect size, i.e. they are influenced more by the difference between blue and pink lines depicting means, ignoring the sample size or variability around the mean. 
 
 # Discussion  
 
-Participants showed significant improvements on the beeswarm task over sessions but no associated improvement on the quiz, indicating a lack of generalisation of learning. Around one third of participants indicated that they had learned to wait for larger arrays before responding, and this tendency was associated with higher levels of accuracy on the beeswarm task. 
+This study may be summed up as showing: a) Participants were poor at making probabilistic judgements where sample size was critical; b) They showed significant improvements on the beeswarm task over sessions, and this was specific to those who were aware of the need to wait for larger samples before responding; c) Improvement on the beeswarm task was not associated with performance on the quiz: scores on parallel forms were similar before and after training.
+
+We will first discuss responses to the quiz, then performance on the beeswarm task, and then the lack of generalisation of learning from the beeswarm task. Results on both tasks should be interpreted bearing in mind that, although participants had some statistical education, we did not mention statistical significance or p-values at any point in the study. In addition, participants received monetary bonuses for correct responses on both the quiz and the beeswarm task, and this appeared to be successful in providing motivation to take the tasks seriously. 
 
 
+__Responses to the quiz__  
+Results confirmed that people were considerably worse at evaluating statements where the correct answer depended on sample size than they were at judging statements that required simple interpretation or manipulation of probabilities. Furthermore, on items that were closely modeled on those of @kahneman1972, response options that stated sample size was immaterial tended to be preferred over the correct option. To that extent, the results could be seen as supporting the original work on the "Law of Small Numbers". Nevertheless, results varied considerably across quiz items, and in some cases there was no preference for foils that were selected to indicate "sample size neglect". Indeed, for some items, participants preferred responses that stated more data should be gathered, even when this was not necessary, suggesting some awareness that sample size could be important. 
+
+A more detailed study of specific items raises questions about the interpretation proposed by Kahneman and Tversky for the "belief in the Law of Small Numbers".  They subsumed this phenomenon under the more general cognitive bias of representativeness, which leads people to assume that the sample is "similar in essential characteristics to its parent population" (p 430). Already in the 1970s, researchers had come up with examples where sample size neglect was not seen. For instance, @bar-hillel1979 found that if the "proportion of male births" question was modified so that respondents had to judge the likelihood that all babies were boys, rather than 60% were boys, they were well able to conclude that this was more likely in small than large samples, especially when the samples were relatively small. 
+
+An alternative interpretation of the results is that people have particular difficulty in understanding how variance relates to sample size, failing to appreciate that the relationship is non-linear. This follows from the fact that 
+
+__Learning on the beeswarm task__  
+Around one third of participants indicated that they had learned to wait for larger arrays before responding, and this tendency was associated with higher levels of accuracy on the beeswarm task. Those who learned to wait for larger arrays showed an increase in accuracy over sessions, whereas those who did not appeared to rely on observed effect sizes, which, in small samples, were an unreliable cue to whether samples came from different populations.
+ 
 # Appendix 1
 ## Judgement and Reasoning Quiz
 
@@ -1870,14 +1928,14 @@ size <- c(5,30,60)
 
 for (u in 1:3){
   ustring<-NA
-  for (v in 1:50){
+  for (v in 1:1000){
 mydat<-rnorm(size[u],3.5,1)
 ustring<-c(ustring,mean(mydat))
 n[u]<-length(which(ustring>4))
 }
 }
 
-
+#Print n to see the N cases scoring above 4 for each sample size
 
 ```
 
