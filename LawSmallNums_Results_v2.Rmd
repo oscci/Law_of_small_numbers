@@ -43,6 +43,7 @@ library(stringr)
 library(psycho) #for dprime
 library(rstatix)
 library(ggpubr)
+library(gridExtra) #multiple plots together
 options(scipen=999)
 load("smallnums.RData")  #reloading variables from previous session so can be referenced in Abstract
 tabnumber <- 0 #for counting tables.
@@ -94,7 +95,7 @@ mymean <- 178 #mean  - can vary this - here this is in raw units
 mysd <- 10 
 nsim <- 6
 plotname <- paste0('Fig1.tiff')
-tiff(plotname, width = 8, height = 5, units = 'in', res = 300)
+tiff(plotname, width = 8, height = 4, units = 'in', res = 300)
 par(mfrow=c(1,2))
 for (i in samplesizes){
     thisdat<-rnorm(i*nsim,mymean,mysd)
@@ -116,7 +117,7 @@ dev.off()
 
 Compared to laypeople, scientists receive extensive training to help them understand and appropriately address the uncertainty of evidence. Yet many scientists fall short in their understanding of statistical concepts. One cognitive bias demonstrated by @tversky1971 is the 'belief in the law of small numbers'. This refers to the tendency to overestimate the stability of estimates that come from small samples - which, following @yoon2021, we shall term 'sample size neglect'. For instance, as shown in Figure 1, if repeatedly sampling `r samplesizes[1]` men from a population, the mean height of the sample will be far more variable than when repeatedly sampling `r samplesizes[2]` men. People understand that sample size does not affect the expected mean value, but they tend not to appreciate that it has a large effect on the standard error of the mean (i.e. variability of the red bars). This has implications for understanding of statistical power, i.e. the numerical relationship between sample size and ability to detect a true effect. Sample size neglect can help explain why so many studies in psychology, and indeed many other scientific disciplines, are underpowered. 
 
-![Figure `r fignumber`. Six independent samples of simulated male height, each with sample size of 10 or 60. Each point represents the height of one male, drawn from a population with mean 178 cm and SD 10 cm, and the red bar is the mean for that sample. The horizontal blue line represents the population mean.](Fig1.tiff)
+![Six independent samples of simulated male height, each with sample size of 10 or 60. Each point represents the height of one male, drawn from a population with mean 178 cm and SD 10 cm, and the red bar is the mean for that sample. The horizontal blue line represents the population mean.](Fig1.tiff)
 
 More than half a century ago, @cohen1962 embarked on a project of improving psychologists' understanding of statistical power, providing tools to help people compute power and documenting the extent of underpowered studies in social psychology, with the aim of reducing waste in research efforts. He analysed 70 studies published in the Journal of Abnormal and Social Psychology and found that mean power to detect small effects was 0.18, to detect medium effects was 0.48 and to detect large effects was 0.83. Given that most effects in this field are small or medium, this indicated serious limitations of study design.  However, 27 years later, @sedlmeier1989 reported that things had not changed at all. And in 2016, similar conclusions were drawn from a large review of studies in social and behavioral sciences up to 2011 [@smaldino2016]. In 2018 a review concluded that low power remains a major factor explaining poor replicability of highly cited studies in psychology [@stanley2018]. A wide range of areas are affected, from neuroscience [@poldrack2017], to infancy research [@oakes2017]. Why, despite years of attempts to improve the dismal record of low power in psychology, do researchers persist in performing underpowered studies? We suspect the explanation may go beyond lack of training, and reflect the influence of sample size neglect, which leads us to have intuitions about sample size that are at odds with reality. Consider this example [@tversky1971]:
 
@@ -145,8 +146,8 @@ sampledat<-data.frame(matrix(NA,nrow=nsub,ncol=nset)) #dummy frame to hold simul
 #prepare plot
 
 ES<-.3
-plotname <- paste0('bees_ES',ES,'_Nall.jpg')
-jpeg(plotname, width = 350, height = 300)
+plotname <- paste0('Fig',fignumber,'.tiff')
+tiff(plotname, units="in", width=6, height=4, res=300)
 
 
 Nsample<-50
@@ -187,7 +188,7 @@ for (samplesize in 1:6){
 dev.off()
 ```
 
-![Figure `r fignumber`. Simulated mean scores from samples of varying size, drawn from populations with either a null effect (pink) or a true effect size, Cohen's _d_, of `r ES` (blue). Power is the probability of obtaining p < .05 on a one-tailed t-test comparing group means for each sample size. ](bees_ES0.3_Nall copy.jpg)
+![Simulated mean scores from samples of varying size, drawn from populations with either a null effect (pink) or a true effect size, Cohen's _d_, of `r ES` (blue). Power is the probability of obtaining p < .05 on a one-tailed t-test comparing group means for each sample size. ](Fig2.tiff)
 
 <!--We use the copy jpg here, as it doesn't have points that overlap the labels-->
 
@@ -211,6 +212,7 @@ Criteria for participants were: (1) age of 18 years or over, (2) have studied li
 
 ## Procedure  
 After providing informed consent, participants completed the estimation and judgement quiz online at a time and place of their choosing, followed (after training) by an alternative form of the post-training  quiz. Participants were paid £7.50 for their time, but could earn a further bonus linked to the number of correct items on the quiz (3p per correctly answered item on each version), and their score on the training game to bring the payment up to a theoretical maximum of £12.  
+
 Training was divided into four blocks, and after each block, participants were told that they could take a break if they wish. The study was implemented using Gorilla [@anwyl-irvine2020], a cloud-based research tool for behavioral studies. The study took around one hour to complete.
 <!---we could check this by looking at timings-->
   
@@ -220,7 +222,7 @@ Within-task learning is assessed in a within-subjects design with one factor wit
 In addition, transfer of training was assessed using the estimation quiz, with parallel forms administered in a within-subject pre-post-test design.  
 
 ### Judgement and reasoning quiz
-The estimation quiz (Appendix 1) was designed for this study, and was presented to participants as a 'Judgement and reasoning quiz' to minimise negative reactions from those who might feel they are poor at statistics. It has two parallel forms, each of which contains 12 multiple-choice items with 4 choices each. Six items test knowledge of general probability (P-items) and six test knowledge of how sample size determines accuracy (S-items). The parallel forms are counterbalanced, so half the participants receive form 1 at pretest and form 2 at post-test, and half receive the opposite order. The main dependent variable is the number of items correct for S-items, but the pattern of error responses is also reported. A previous version of the quiz was piloted with 21 participants (Pilot 1), confirming that the difficulty level is appropriate, avoiding ceiling effects. On the basis of pilot testing and suggestions of reviewers, some items were reworded for clarity and to make S-items more relevant to the training.
+The estimation quiz (Appendix 1) was designed for this study, and was presented to participants as a 'Judgement and reasoning quiz' to minimise negative reactions from those who might feel they are poor at statistics. It has two parallel forms, each of which contains 12 multiple-choice items with 4 choices each. Six items test knowledge of general probability (P-items) and six test knowledge of how sample size determines accuracy (S-items). The parallel forms are counterbalanced, so half the participants received form 1 at pretest and form 2 at post-test, and half received the opposite order. The main dependent variable is the number of items correct for S-items, but the pattern of error responses is also reported. A previous version of the quiz was piloted with 21 participants (Pilot 1), confirming that the difficulty level is appropriate, avoiding ceiling effects. On the basis of pilot testing and suggestions of reviewers, some items were reworded for clarity and to make S-items more relevant to the training.
 
 ### Independent and dependent variables
 On the beeswarm task, the independent variable is block: there are 4 blocks each of 20 items, but our focus is on comparing blocks 1 and 4. The dependent variables are (a) earnings in the game, which reflects both proportion correct for each block, and ability to select the optimal array index at which to respond (see below); (b) mean array index per block, 1 to 6, corresponding to the array size (10, 20, 40, 80, 160, 320 per group) at which the response is made.  In pilot testing we found that the earnings score is highly correlated with percentage correct (r = .989). 
@@ -312,13 +314,13 @@ Gifs for training items were generated by a purpose-designed script which is ava
 
 All items included a pink sample from a population with mean of zero and SD of one, plus a blue sample. For the blue sample, half the items were drawn from the same population as the pink sample (i.e. null effect) and half were drawn from a population with mean of 0.3 and SD of one (i.e., true effect). `r fignumber <- fignumber+1` Figure `r fignumber` illustrates a set of samples shown side by side for a trial with a true effect. Figures were created using the R programming language [@rcoreteam2020] using the _geom_beeswarm()_ function from the _ggbeeswarm_ package (version 0.6.0) [@clarke2017] in conjunction with _ggplot2()_ (version 3.2.1) [@wickham2016]. Each plot was combined into a gif using the _transition_states()_ function from the _gganimate_ package (version 1.0.7); [@pederson2020]. In Pilot 1 (see below) we showed only the data points corresponding to the two datasets, but, as discussed below, for Pilot 2 we added the sample mean shown as a horizontal bar with the aim of improving accuracy.  
 
-![Figure `r fignumber`. Sample item from the training set. The pair of distributions corresponding to each sample size is presented in a gif one at a time sequentially for 2 seconds, so the display builds up from left to right over time.](demoitem.jpg)
+![Sample item from the training set. The pair of distributions corresponding to each sample size is presented in a gif one at a time sequentially for 2 seconds, so the display builds up from left to right over time.](demoitem.jpg)
 
 Items from each figure were animated so that each pair of pink-blue observations at a given array size was shown for 2 s, before the next array size appeared.  With this method, response latencies can be directly converted to the array size at the point of response, i.e. responses under 2 s correspond to array size of 10 per group, those under 4 s to an array size of 20 per group, and so on. For analysis, array is coded as an array index from 1 (10 per sample) to 6 (320 per sample).
 
-Participants receive feedback after each response, in the form of a display showing points earned or lost, plus total points so far, and a violin plot showing the full distribution from which the points were drawn `r fignumber <- fignumber + 1` (see Figure `r fignumber`).  
+Participants received feedback after each response, in the form of a display showing points earned or lost, plus total points so far, and a violin plot showing the full distribution from which the points were drawn `r fignumber <- fignumber + 1` (see Figure `r fignumber`).  
 
-![Figure `r fignumber`. Feedback display for an item with a true effect.](E3_AB copy.png) 
+![Feedback display for an item with a true effect.](E3_AB copy.png) 
 
 Data from the training trials are saved as response latency, which is converted to array size, as described above. For data analysis, array size (10, 20, 40, 80, 160, 320) is converted to array index, ranging from 1 to 6.  In addition, stored with each array is the amount earned, true  effect size in the population on that trial (Null or 0.3), coding of each response as correct (1) or incorrect (0), the observed effect size on that trial, and the log likelihood of a true vs null effect obtained from the observed data. The latter two variables could potentially be used in exploratory analyses when evaluating which cues participants base their responses on.
 
@@ -330,9 +332,9 @@ This basic task evolved over three pilot studies, which led to improvements in t
 ### Exclusionary criteria
 Our pre-registration stated that if participants did not complete the post-task quiz they would still be included in the main analysis of learning effects, but replacement participants will be recruited to ensure a sufficient sample size for the pre-post training analysis of the quiz results. In practice, this was not needed, as all participants completed pre- and post-training quizzes.  
 
-We will also planned to exclude from the main analysis any participants who scored 5 or 6 correct on S-items in the pre-training quiz, as they would be people with a good prior understanding of sample size effects, so would be unlikely to show learning gains. Again, in practice, this was not needed, as the maximum score observed on S-items was 4/6. 
+We also planned to exclude from the main analysis any participants who scored 5 or 6 correct on S-items in the pre-training quiz, as they would be people with a good prior understanding of sample size effects, so would be unlikely to show learning gains. Again, in practice, this was not needed, as the maximum score observed on S-items was 4/6. 
 
-For the regression analysis, we use an index of learning which corresponds to the difference in earnings between first and last blocks. 
+For the regression analysis, we used an index of learning which corresponds to the difference in earnings between first and last blocks. 
 
 
 ## Data analysis  
@@ -371,13 +373,13 @@ To complement the analysis of self-reported strategies (Prediction 4), the patte
 
 As shown in the power values in Figure `r keepfignumber`, with an effect size (Cohen's _d_) of .3, participants need to wait for an array of at least 80 per group (index 4) to have a reasonable chance of success (above 50%) for detecting a true effect, and would be well-advised to wait for the largest array (index 6), which would virtually guarantee success.  However, the trial by trial variation allows us to do a rather more sensitive analysis, testing how the evidence available on each specific trial is used.  
 
-`r fignumber <- fignumber+1`  Figure `r fignumber` illustrates the logic. The figure shows how evidence accumulates over a series of trials, labelled A to G.  
+Figure `r fignumber+1` illustrates the logic. The figure shows how evidence accumulates over a series of trials, labelled A to G.  
 
 ```{r readspreadsheet,include=FALSE,echo=FALSE}
 
-
-plotname <- paste0('accumulateLL.jpg')
-jpeg(plotname, width = 650, height = 350)
+fignumber <- fignumber+1
+plotname <- paste0('Fig',fignumber,'.tiff')
+tiff(plotname, units="in", width=8, height=5, res=300)
 demospread <- read.csv('gorilla_spreadsheets/spreadsheet1.csv')
 demospread$trueES <- demospread$ES+1
 demospread$trueES[demospread$trueES==1.3]<-2
@@ -409,7 +411,7 @@ abline(h=-3.68,lty=2)
 dev.off()
 ```
 
-![Figure `r fignumber`. Changes in observed effect size (left panel) and log likelihood (right panel) as evidence accumulates for 6 trials of the learning task, labelled A to G. Blue denotes trials with true effect size of .3, and red denotes null trials. Array indices 1 to 6 correspond to sample sizes of 10, 20, 40, 80, 160 and 320 per group. ](accumulateLL.jpg)  
+![Changes in observed effect size (left panel) and log likelihood (right panel) as evidence accumulates for 6 trials of the learning task, labelled A to G. Blue denotes trials with true effect size of .3, and red denotes null trials. Array indices 1 to 6 correspond to sample sizes of 10, 20, 40, 80, 160 and 320 per group. ](accumulateLL.jpg)  
 
   
 Figure `r fignumber` shows the contrast between observed effect sizes, which show more variation at small array indices, and log likelihood, where trials with true and null effects diverge as array index increases.  Considering first the observed effect sizes, it is clear that if a participant relied on this information to make decisions at small array indices, they would make many errors. Two of the True trials, B and C, have negative effect sizes at array indices 1 and 2, and one of the Null trials, D, has an effect size greater than .3 in the first array. Log likelihood values are shown in the right-hand panel, with dotted lines denoting cutoff of +/- 3.68, which we used as a criterion for the optimal array size.  A log likelihood of 3.68 indicates that the True Hypothesis is 40 times more likely to have generated the observed data than the Null Hypothesis, and a log likelihood of -3.68 indicates that the Null Hypothesis is 40 times more likely than the True Hypothesis. The trials shown in Figure `r fignumber` indicate that a strategy of responding True when log likelihood exceeds 3.68 and Null when it is less than -3.68 is not infallible (e.g., trial B has log likelihood below -3.68 at array index 3, yet comes from a distribution with true effect size of .3). Nevertheless, we can use this approach to compute accuracy levels that would arise from adopting different strategies over all trials, and it is clear that reliance on responding when absolute log likelihood exceeds 3.68 is a close to optimal strategy for achieving success without needing to wait until the final array. 
@@ -427,12 +429,13 @@ To simulate data, we used our best judgement combined with insights from the pil
 
 Where L is equal to one (i.e. the participant is a learner), the participant waits until an array index where the display corresponds to an absolute log likelihood of at least 3.65. For non-learners, the response is made on the basis of whether log likelihood is positive or negative, regardless of the strength of evidence. In addition, a proportion of all responses for both learners and non-learners are coded as errors, with the proportion being higher for non-learners. A simulated sample of participants is created by applying these rules to the stimulus set used in training, with response on each trial being then scored as correct or incorrect.
 
-Prediction 2 focuses on whether there is evidence of learning, with higher earnings on the last block than the first block. The sample size (N subs) was varied from `r subn[1]`, to `r subn[2]`, to `r subn[3]`. The proportion of participants who learn (prop.learned) could take values of 0, .25, .33 or .5. `r tabnumber <- tabnumber+1` Table `r tabnumber` shows the power for detecting an overall change in mean earnings from block 1 to block 4, using a matched-pairs one-tailed _t_-test, with alpha of .0322 (.1/3, for one-tailed test administered at each of three sample sizes). A one-tailed test is used because the prediction is directional. These figures were derived from 500 iterations of the simulation.  
+Prediction 2 focuses on whether there is evidence of learning, with higher earnings on the last block than the first block. The sample size (N subs) was varied from `r subn[1]`, to `r subn[2]`, to `r subn[3]`. The proportion of participants who learn (prop.learned) could take values of 0, .25, .33 or .5.  Table `r tabnumber+1` shows the power for detecting an overall change in mean earnings from block 1 to block 4, using a matched-pairs one-tailed _t_-test, with alpha of .0322 (.1/3, for one-tailed test administered at each of three sample sizes). A one-tailed test is used because the prediction is directional. These figures were derived from 500 iterations of the simulation.  
 
 The case where no participants learn corresponds to a test of the null hypothesis, and so here the power value corresponds to the false positive rate. As expected, this is close to .03. At our smallest sample size (`r subn[1]`), even when only 25% of participants learn, power is above .8, even for the case where learning increases array size by only one index point. 
 
 
 ```{r powertable,include=TRUE,echo=FALSE}
+tabnumber <- tabnumber+1
 bigname<-"powsummary_1000_L_pgood0.5_0.66_props0_0.25_0.33_0.5_N50_75_100.csv"
 #bigname was created in the Simulate_power_proportions script; keeps track of parameters in simulation
 bigsummary<- read.csv(bigname)
@@ -500,7 +503,7 @@ thatrow=-2
 
 write.csv(table1,'table1.csv',row.names=F)
 ftab <- flextable(table1)
-
+ftab<-autofit(ftab)
 ftab <- set_caption(ftab, paste0("Table ",tabnumber,": Power for comparison of earnings for block 4 vs block 1, in relation to proportion of learners (plearn)"))
 #ftab<-autofit(ftab)
 ftab
@@ -512,16 +515,17 @@ ftab
 
 To address Prediction 5, quiz data were simulated using the binomial distribution, assuming the mean number of S-items correct on the pretest is 2/6 (.33), improving by either one item (3/6 = .5) or two items (4/6 = .66) for the subgroup of participants who showed learning on training (where the latent variable, L, = 1).  
 
-`r tabnumber <- tabnumber+1`Results are shown in Table `r tabnumber`, again looking at scenarios with 50, 75 or 100 participants, and where the proportion showing learning ranges from 0, .25, .33 and .5. One other parameter is considered for the quiz data, namely the amount of improvement in quiz scores seen in learners - a mean gain of either 1 quiz item, or 2 quiz items.  
+Results are shown in Table `r tabnumber+1`, again looking at scenarios with 50, 75 or 100 participants, and where the proportion showing learning ranges from 0, .25, .33 and .5. One other parameter is considered for the quiz data, namely the amount of improvement in quiz scores seen in learners - a mean gain of either 1 quiz item, or 2 quiz items.  
 
 ```{r powerquiz,include=TRUE,echo=FALSE}
 #summary for quiz improvement
+ tabnumber <- tabnumber+1
 quizsum<-powersummary[,c(2,3,8:11)]
 colnames(quizsum) <- c('N subs','prop.learned','learned.quiz2','power.quizdiff','power.quizpre','power.arraydiff')
 quizsum[,4:6]<-round(quizsum[,4:6],2)
 write.csv(quizsum,'quizsum.csv',row.names=F)
 
-tabnumber<-tabnumber+1
+
 #Make table2 for learning effect on quiz
 #For learning effect on task, we just average power across levels of quiz success
 qlearntab <- aggregate(powersummary$ptquiz,by=list(powersummary$nsub,powersummary$plearn,powersummary$quiz.pgood),FUN=mean)
@@ -566,6 +570,7 @@ Power to detect any improvement in the overall sample is generally poor if one j
 #Now do table 3 for power for regression
 #Make table3 for prediction of quiz posttest from earngain
 #For learning effect on task, we just average power across levels of quiz success
+tabnumber<-tabnumber+1
 LMtab <- aggregate(powersummary$lmearndiff.p,by=list(powersummary$nsub,powersummary$plearn,
                                                      powersummary$quiz.pgood),FUN=mean)
 table3<-data.frame(matrix(NA,nrow=10,ncol=4))
@@ -598,12 +603,12 @@ thatrow=-2
   
 }
 
-tabnumber<-tabnumber+1
+
 write.csv(table3,'table3.csv',row.names=F)
 ftab3 <- flextable(table3)
 
 ftab3 <- set_caption(ftab3, paste0("Table ",tabnumber,": Power for  regression coefficient predicting post-training score on S-items from observed increase in earnings on the learning task. Power varies with number of participants (N), proportion of learners (plearn), and quiz gain at post-training for learners (quiz gain)"))
-#ftab3<-autofit(ftab3)
+ftab3<-autofit(ftab3)
 ftab3
 ```
 
@@ -657,7 +662,7 @@ On the basis of the Bayesian stopping rule that we pre-registered, the 50 partic
 
 <!--__Table for individual subjects here just for our interest - has subjects rank-ordered by stats knowledge. For the paper we can report summary stats on these columns.__ -->
 
-Summary data for participants are shown in Table `r (tabnumber+1)`. There was a wide spread in terms of self-rated statistical competence, educational level and field of study.  
+Summary data for participants are shown in Table `r (tabnumber+1)`. There was a wide spread in terms of self-rated statistical competence, and educational level.  
 
 
 
@@ -665,6 +670,7 @@ Summary data for participants are shown in Table `r (tabnumber+1)`. There was a 
 
 
 all.dat <- read.csv("https://osf.io/6qg4h/download",stringsAsFactors = F) #all gorilla files bolted together
+
 all.dat$sample<-2 #sample with correctly ordered quiz
 
 #Now read the original subjects: these were wrongly administered unrandomised quiz
@@ -1069,11 +1075,13 @@ s<- as.data.frame(s)
 Source<-c('(Intercept)','Item type','Pre/Post','Sample')
 s<- cbind(Source,s)
 ftquiz <- flextable(s)
+ftquiz <- autofit(ftquiz)
+tabnumber <- tabnumber+1
 ftquiz <- set_caption(ftquiz, paste0("Table ",tabnumber,": Estimates of effects of item type, pre/post administration and sample on quiz accuracy"))
 ftquiz
 ```
 
-`r tabnumber <- tabnumber+1`
+
 Next we checked if the two samples differed in their responses to the quiz items, by running a linear mixed model predicting proportion correct from item type, pre/post testing, and sample, with the formula:  
 _lmer(p.correct ~ itemtype + prepost + sample + (1|subject)_  
 where itemtype was whether S- or P-item, prepost specified whether the quiz was before or after training, sample was Sample 1 or 2, and subject was a random effect.  This model was compared with a model where the sample term was omitted, to give a Bayes Factor of `r round(BF_BIC_sample,3)`, giving strong evidence for the null hypothesis of no difference between samples.  As shown in Table `r tabnumber`, the analysis also indicated a substantial effect of item type, reflecting the superior performance on P-items, but no effect of whether the quiz was administered pre- or post-training.  We show data separately for the two samples in some subsequent analyses, but they were treated together for the main analysis.  
@@ -1163,17 +1171,18 @@ ft
 ```
 
 
-Table `r tabnumber` shows errors categorised as to whether they reflected sample size neglect (bias) or not (other 1 and 2). The 'bias' foil in each case explicitly mentioned that sample size (or gathering more data) would have no effect. Items S3A and S3B are omitted from this table, as there is no specific foil that corresponds to this bias. For each item, the distribution of error responses was subjected to chi square test, to test the hypothesis that all foils were equally likely to be selected. For most items, the chi square value was statistically significant, indicating nonrandom choice of foils, and for items 1A, 1B, 5A and 6B the most common choice was the foil designated as reflecting sample size neglect. Items 1 and 5 were based two of  Tversky and Kahneman's classic examples of 'law of small numbers' (probability 60% boys being born in a big or small hospital, and likelihood of best player winning increasing with number of games); item 6 focused on how type II error rate is influenced by sample size. On items 2A, 4A and 4B, there was strong bias to select another foil, suggesting that the specific item content and wording of options could exert a stronger impact than any particular cognitive bias. We discuss response patterns to specific items below. 
+Table `r tabnumber` shows errors on the pre-training quiz categorised as to whether they reflected sample size neglect (bias) or not (other 1 and 2). The 'bias' foil in each case explicitly mentioned that sample size (or gathering more data) would have no effect. Items S3A and S3B are omitted from this Table, as there is no specific foil that corresponds to this bias. For each item, the distribution of error responses was subjected to chi square test, to test the hypothesis that all foils were equally likely to be selected. For most items, the chi square value was statistically significant, indicating nonrandom choice of foils, and for items 1A, 1B, 5A and 6B the most common choice was the foil designated as reflecting sample size neglect. Items 1 and 5 were based two of  Tversky and Kahneman's classic examples of 'law of small numbers' (probability 60% boys being born in a big or small hospital, and likelihood of best player winning increasing with number of games); item 6 focused on how type II error rate is influenced by sample size. On items 2A, 4A and 4B, there was strong bias to select another foil. We discuss response patterns to specific items in Exploratory analysis below. 
 
 
 _Prediction 2_: Accuracy on the beeswarm task will increase with training.  
 
-```{r Prediction2,echo=F,figleg = 'Beeswarm plot of earnings by block; bars show means'}
-
+```{r Prediction2,echo=F,warnings=F,figleg = 'Beeswarm plot of earnings by block; bars show means'}
+fignumber <- fignumber+1
 beedat <- filter(mytab,block %in% c(1,4))
 
 beedat4 <- beedat[beedat$block==4,] #Used later on for correlation plot
-
+figname<-paste0("Fig",fignumber,".tiff")
+tiff(figname, units="in", width=5, height=4, res=300)
 
 beeswarm(beedat$earn~beedat$block+beedat$sample,pch=16,col='red',xlab='Block',ylab='Earnings',xaxt="n")
 
@@ -1183,16 +1192,19 @@ y1 <- mean(beedat1$earn[beedat1$block==1])
 y2 <- mean(beedat1$earn[beedat1$block==4])
 y3 <- mean(beedat2$earn[beedat2$block==1])
 y4 <- mean(beedat2$earn[beedat2$block==4])
-segments(.9,y1,1.1,y1,lwd=2)
-segments(1.9,y2,2.1,y2,lwd=2) #x defined in terms of 2 groups 1 and 2 (not 1 and 4)
-segments(2.9,y3,3.1,y3,lwd=2)
-segments(3.9,y4,4.1,y4,lwd=2)
+segments(.8,y1,1.2,y1,lwd=3)
+segments(1.8,y2,2.2,y2,lwd=3) #x defined in terms of 2 groups 1 and 2 (not 1 and 4)
+segments(2.8,y3,3.2,y3,lwd=3)
+segments(3.8,y4,4.2,y4,lwd=3)
 axis(1, at = 1:4,
        labels = c(1,4,1,4))
 text(1.5,-1.4,'Sample 1')
 text(3.5,-1.4,'Sample 2')
 
-
+dev.off()
+```
+![Distribution of earnings in first and last blocks for Samples 1 and 2 ](Fig6.tiff)
+```{r matchedt,echo=F}
 #One tailed matched pairs t-test compare earnings on block 4 with earning on block 1
 #Do analysis for each sample and combined, and compute BF
 
@@ -1221,19 +1233,24 @@ tearn2 <- tearn}
 }
 
 
-fignumber <- fignumber+1
+
 
 
 
 ```
+  
 
-Figure `r fignumber` shows the distribution of earnings for the first and last blocks in the two samples. A matched pairs _t_-test was used to compare earnings on block 4 with earnings on block 1, using a one-tailed test, as the prediction that the block 4 score will be higher.  This confirmed that learning had occurred in both samples: Sample 1: t (`r tearn1$parameter`) = `r round(tearn1$statistic,2)`, `r p.format(tearn1)`;  Sample 2: t (`r tearn2$parameter`) = `r round(tearn2$statistic,2)`, `r p.format(tearn2)`.  However, for Sample 2, the Bayes Factor (`r round(BF2,3)`) provided only anecdotal evidence against the null hypothesis, whereas for Sample 1, the evidence was solidly in favour of the alternative hypothesis (that the improvement in earnings was greater than zero), Bayes Factor = `r round(BF1,3)`.  With data from both samples combined, the Bayes Factor was `r round(BF_BIC,3)`, giving extreme evidence of learning. 
+Figure `r fignumber` shows the distribution of earnings for the first and last blocks in the two samples. A matched pairs _t_-test was used to compare earnings on block 4 with earnings on block 1, using a one-tailed test, as the prediction that the block 4 score will be higher.  This confirmed that learning had occurred in both samples: Sample 1: t (`r tearn1$parameter`) = `r round(tearn1$statistic,2)`, `r p.format(tearn1)`;  Sample 2: t (`r tearn2$parameter`) = `r round(tearn2$statistic,2)`, `r p.format(tearn2)`.  However, for Sample 2, the Bayes Factor (`r round(BF2,3)`) provided only anecdotal evidence against the null hypothesis, whereas for Sample 1, the evidence was solidly in favour of the alternative hypothesis (that the improvement in earnings was greater than zero), Bayes Factor = `r round(BF1,3)`.  With data from both samples combined, the Bayes Factor was `r round(BF_BIC,3)`, giving overwhelming evidence of learning. 
 
 _Prediction 3_: Increased accuracy will be associated with selection of larger array sizes as learning proceeds  
 We predicted a significant association between mean array index and mean earnings, such that those who earn most will be those who select larger array sizes (tested by significance of Pearson correlation between these variables in block 4). 
 
-```{r Prediction3,echo=F,figlegend='Relationship between mean array index and earnings in block 4'}
+```{r Prediction3,echo=F,warnings=F,message=F,figlegend='Relationship between mean array index and earnings in block 4'}
 #One tailed matched pairs t-test compare earnings on block 4 with earning on block 1
+fignumber <- fignumber+1
+figname<-paste0('Fig',fignumber,'.tiff')
+tiff(figname,units="in", width=5, height=5, res=300)
+
 mycor1 <- cor.test(beedat4$array[beedat4$sample==1],beedat4$earn[beedat4$sample==1])
 mycor2 <- cor.test(beedat4$array[beedat4$sample==2],beedat4$earn[beedat4$sample==2])
 mycorall <- cor.test(beedat4$array,beedat4$earn)
@@ -1246,10 +1263,13 @@ legend("topleft", legend=c(1,2),title="Sample",
        col=c("black", "red"), pch=16, cex=0.8)
 
 
-fignumber <- fignumber+1
+
+dev.off()
 ```
 
-As shown in Figure `r (fignumber-1)`, this prediction was confirmed in both samples. For the combined sample, r (`r mycorall$parameter`) = `r round(mycorall$estimate,3)`, `r p.format(mycorall)`. 
+
+![Association between array index and earnings in Samples 1 and 2](Fig7.tiff)  
+As shown in Figure `r (fignumber)`, this prediction was confirmed in both samples. For the combined sample, r (`r mycorall$parameter`) = `r round(mycorall$estimate,3)`, `r p.format(mycorall)`. 
 
 
 ```{r Prediction4,echo=F}
@@ -1289,7 +1309,7 @@ waitt<-t.test (mytab$earn~mytab$wait)
 
 
 _Prediction 4_: Self-reported strategy will be predictive of learning  
-We divided the self-reported responses into those that did and did not indicate awareness that larger sample sizes (or longer waiting) gives more reliable estimates. See Appendix x for response coding by two of the authors - this agreed for all but one participant in each sample; analysis was based on coding by JT.  Consistent with Pilot 2, we confirmed the prediction that there would be higher earnings for those who showed such awareness: one-tailed t-test in sample 1: 
+We divided the self-reported responses into those that did and did not indicate awareness that larger sample sizes (or longer waiting) gives more reliable estimates. See online Appendix 2 (https://osf.io/uej95/) for response coding by two of the authors - this agreed for all but one participant in each sample; analysis was based on coding by JT.  Consistent with Pilot 2, we confirmed the prediction that there would be higher earnings for those who showed such awareness: one-tailed t-test in sample 1: 
 t (`r round(waitt1$parameter,1)`) = `r round(waitt1$statistic,2)`, `r p.format(waitt1)`, and in sample 2: t (`r round(waitt2$parameter,1)`) = `r round(waitt2$statistic,2)`, `r p.format(waitt2)`, and in the combined sample t (`r round(waitt$parameter,1)`) = `r round(waitt$statistic,2)`, `r p.format(waitt)`. 
 
 _Prediction 5_: Generalisation of learning  
@@ -1379,21 +1399,22 @@ write.csv(quitems,'quitemcheck.csv',row.names=F)
 
 Given the overall lack of improvement on quiz items, we did not conduct any further analysis to see if specific items improved, but we did look more closely at the errors made on S-items, in an attempt to understand better what was driving responses. 
 
-Items 1A and 1B were somewhat analogous to the "proportion of male births" item from the original @tversky1972 study, although we focused on means rather than proportions, to make the question more relevant to the training. The most common response (both before and after training) was to select a foil that stated that sample size did not matter, even though in training, the participants had been able to see that the mean bars for small samples were far more variable than those of large samples. These items, then, confirmed sample size neglect is commonplace, but that the training with beeswarms showing different sample sizes did not lead to any insight. 
+Items 1A and 1B were somewhat analogous to the "proportion of male births" item from the original @tversky1971 study, although we focused on means rather than proportions, to make the question more relevant to the training. The most common response (both before and after training) was to select a foil that stated that sample size did not matter, even though in training, the participants had been able to see that the mean bars for small samples were far more variable than those of large samples. These items, then, confirmed sample size neglect is commonplace, but that the training with beeswarms showing different sample sizes did not lead to any insight. 
 
-Items 2A and 2B were both designed to test understanding of the fact that a result in the "wrong direction" was more common with small than large samples, but the two items proved to be of very different level of difficulty. For item 2A the majority of participants concluded that a small sample (N = 10) with mean 158 was equally likely to have come from population A (mean 160, SD 6) or B (mean 158, SD 6), rather than the correct answer, which is that B is more likely, but a further 90 samples should be collected. This suggests that respondents may have recognised that the observed difference was not statistically significant, and interpreted this to mean that there was no difference in probability of the result coming from either group.
+Items 2A and 2B were both designed to test understanding of the fact that a result in the "wrong direction" was more common with small than large samples, but the two items proved to be of very different level of difficulty. For item 2A the majority of participants concluded that a small sample (N = 10) with mean 158 was equally likely to have come from population A (mean 160, SD 6) or B (mean 158, SD 6), rather than the correct answer, which is that B is more likely, but a further 90 samples should be collected. 
 Item 2B was analogous to item 2A, but the response options were rather different: there was no foil in which the two options (been poisoned or not been poisoned) were presented as equally likely. The most common response was the correct answer, which indicated that the observed result was inconclusive and more data was needed. 
+
+We discuss items 4A and 4B next, because they were identical to items 2A and 2B in wording, except that the specified sample size was adequate for detecting the effect of interest. Note that because of counterbalancing, each participant saw only one version of each question (kangaroos or archaeology).  Error rates on these items were higher than for any other items, with a pronounced preference for a specific foil. For item 4A, where a statistical test would indicate overwhelming evidence for one conclusion (animals poisoned), the most common response was that 100 more animals needed to be tested. This was similar to the response to the analogous item 2B, but whereas this response was correct for 2B (where the sample size was 10), it was not appropriate in item 4A (where sample size was 160). 
+
+For item 4B, the preferred response was the same as for the analogous item 2A - that the sample was equally likely to have come from either population - even though in item 2A there were two samples each of 10, and in item 4B there was two samples each of 160. This preference was equally pronounced after training on the beeswarm task, even though that task had given repeated exposure to samples of 160 per group with effect size of .3, confirming that an effect of this size is strong evidence that the sample came from the group with the lower population mean.  
 
 Items S3A and S3B relate to statistical power by asking directly about sample size needed to be confident in an effect. Of course, the correct answer will depend on the interpretation of 'confident': in selecting possible responses, we took this to correspond to power of 95% or higher, so that the correct responses would be to select groups of 300 for item 3A (effect size .3) and groups of 100 for item 3B (effect size .4). For both of these problems, there was a spread of responses, but the most common response was the one we had designated as correct, selected by 32-38% of respondents. Experience with the beeswarm task, however, did not affect responses: the distribution of choices was closely similar before and after training. 
 
-Items 4A and 4B were closely similar to items 2A and 2B in wording, except that the specified sample size was adequate for detecting the effect of interest. Note that because of counterbalancing, each participant saw only one version of each question (kangaroos or achaeology).  Error rates on these items were higher than for any other items, with a pronounced preference for a specific foil. For item 4A, where on statistical test, there was overwhelming evidence for one conclusion (animals poisoned), the most common response was that 100 more animals needed to be tested. 
-For item 4B, the preferred response was the same as for the analogous item 2A - that the sample was equally likely to have come from either population - even though in item 2A there were two samples each of 10, and in item 4B there was two samples each of 160. This preference was equally pronounced after training on the beeswarm task, even though that task had given repeated exposure to samples of 160 per group with effect size of .3, confirming that an effect of this size is strong evidence that the sample came from the group with the lower population mean. 
-
-Items 5A and 5B were modeled on @kahneman1982's squash example: "a game of squash can be played either to 9 or to 15 points. Holding all other rules of the game constant, it A is a better player than B, which scoring system will give A a better chance of winning?" Item 5A simply expanded the available choices to 3 points, 9 points or 21 points, as well as offering the option that the number of points would make no difference. The most common response on pre-training was "makes no difference", consistent with sample size neglect. The pattern changed after training, with the correct response (21 points) being selected most often. However, this seems likely to be a fluke rather than indicating new insight in participants, because for item 5B, an analogous item framed around chess, the opposite trend was seen: an initial tendency to select the correct response, with the "makes no difference" response being preferred post-training. The chess problem had also had the logic switched so the task was to judge which scenario gave the weaker player the better chance of winning. 
+Items 5A and 5B were modeled on @kahneman1982's squash example: "a game of squash can be played either to 9 or to 15 points. Holding all other rules of the game constant, it A is a better player than B, which scoring system will give A a better chance of winning?" Item 5A simply expanded the available choices to 3 points, 9 points or 21 points, as well as offering the option that the number of points would make no difference. The most common response on pre-training was "makes no difference", consistent with sample size neglect. The pattern changed after training, with the correct response (21 points) being selected most often. However, this seems likely to be a fluke rather than indicating new insight in participants, because for item 5B, an analogous item framed around chess, the opposite trend was seen: an initial tendency to select the correct response, with the "makes no difference" response being preferred post-training. The chess problem had had the logic switched so the task was to judge which scenario gave the weaker player the better chance of winning. 
 
 Items 6A and 6B focused on risk of type II error with small samples, i.e. a scenario is envisaged where a large difference is seen even though it is known there is no true effect. In both pre-training and post-training data, there was a fairly equal split between correct responses, indicating that this kind of result is more likely in a small sample, and responses indicative of sample size neglect - with an explicit statement that there will be no effect of sample size. 
 
-Possible interpretations of this pattern of results will be considered in the Discussion. 
+We defer further interpretation of errors on the quiz to the Discussion.  
 
 
 ```{r explorequizitems, echo=F}
@@ -1474,12 +1495,10 @@ colnames(mysummary)[1] <-'Source'
 
 ```
 
-We did consider whether the binary coding of self-reported strategies (Prediction 4) related to quiz scores, but there was no evidence of this: estimated effect = `r mysummary[3,2]`, SE (`r mysummary[3,3]`).  
-
-Training game: looking at dprime and use of log likelihood
 
 ```{r exploreLL,echo=F}
-
+indsubplots <- 0 #option to explore individual subjects with composite plot for each one
+if(indsubplots==1){
 # Core wrapping function - used for putting long text strings into a figure
 wrap.it <- function(x, len)
 { 
@@ -1592,17 +1611,18 @@ axis(1, at =1:4)
 
 
 dev.off()
-
+}
 }
 ```
 
-```{r dprimebywait,echo=F}
+```{r dprimebywait,echo=F,message=F}
 
 
 dagg <- aggregate(mytab$array,by=list(mytab$wait,mytab$block),FUN='mean')
 colnames(dagg)<-c('Aware','Block','array')
 dagg$Aware <- as.factor(dagg$Aware)
 p1 <- ggplot(data=dagg, aes(x=Block, y=array, group=Aware)) +
+   labs(y="Array index")+
   geom_line(aes(color=Aware))+
   theme(legend.position = "none") +
   geom_point()
@@ -1611,6 +1631,7 @@ dagg <- aggregate(mytab$dprime,by=list(mytab$wait,mytab$block),FUN='mean')
 colnames(dagg)<-c('Aware','Block','dprime')
 dagg$Aware <- as.factor(dagg$Aware)
 p2 <- ggplot(data=dagg, aes(x=Block, y=dprime, group=Aware)) +
+  labs(y="d prime")+
   geom_line(aes(color=Aware))+
    theme(legend.position = "none") +
   geom_point()
@@ -1619,6 +1640,7 @@ dagg <- aggregate(mytab$absLL,by=list(mytab$wait,mytab$block),FUN='mean')
 colnames(dagg)<-c('Aware','Block','absLL')
 dagg$Aware <- as.factor(dagg$Aware)
 p3 <- ggplot(data=dagg, aes(x=Block, y=absLL, group=Aware)) +
+   labs(y="Absolute Log Likelihood")+
   geom_line(aes(color=Aware))+
    theme(legend.position = "none") +
   geom_point()
@@ -1627,61 +1649,100 @@ dagg <- aggregate(mytab$absObsE,by=list(mytab$wait,mytab$block),FUN='mean')
 colnames(dagg)<-c('Aware','Block','absObsE')
 dagg$Aware <- as.factor(dagg$Aware)
 p4 <- ggplot(data=dagg, aes(x=Block, y=absObsE, group=Aware)) +
+   labs(y="Absolute Effect Size")+
   geom_line(aes(color=Aware))+
   geom_point()
 
-grid.arrange(p1, p2, p3, p4, nrow = 2,ncol=2)
+
+allp <- grid.arrange(p1, p2, p3, p4, nrow = 2,ncol=2)
+fignumber <- fignumber+1
+figname<-paste0('Fig',fignumber,'.tiff')
+ggsave(figname,allp,units="in", width=6, height=4)
 
 
+#We'll ignore beta: no systematic biases found, and they have been told equal N true and null trials
 # dagg <- aggregate(mytab$beta,by=list(mytab$wait,mytab$block),FUN='mean')
 # colnames(dagg)<-c('Aware','Block','beta')
 # ggplot(data=dagg, aes(x=Block, y=beta, group=Aware)) +
 #   geom_line(aes(color=as.factor(Aware)))+
 #   geom_point()
 
-#See how Awareness relates to self-ratings
-w<-which(mytab$wait==1)
-waitsubs <- unique(mytab$subject[w])
-waitrow <- which(demotab2$ID %in% waitsubs)
-demotab2$wait<-0
-demotab2$wait[waitrow]<-1
-
-t.test(demotab2$Stats_self_rating~demotab2$wait)
-t.test(demotab2$Understand_t~demotab2$wait)
-t.test(demotab2$Understand_power~demotab2$wait)
-wilcox.test(as.numeric(demotab2$Ed.level)~demotab2$wait)
-demotab2$getbetter<-0
-demotab2$getbetter[demotab2$better_over_time=='Unsure']<-1
-demotab2$getbetter[demotab2$better_over_time=='Yes']<-2
-
-wilcox.test(as.numeric(demotab2$getbetter)~demotab2$wait)
 ```
+
+_Figure `r fignumber`. Comparison of Aware and Unaware subgroups over 4 learning blocks, from L to R: mean array index, d prime, absolute log likelihood at point of response, absolute observed effect size at point of response_
+<!---this figure seems to print from chunk even with echo=F--->
+
 __Beeswarm task__  
-Exploratory analysis on the beeswarm task focussed on visual comparisons between those who were categorised according to self-report as being aware that sample size was important (Aware group), versus those who were not. These two groups were compared for each block in terms of mean array size at point of response, amount of evidence in favour of one hypothesis at the point of response (mean absolute log-likelihood), accuracy (mean d prime), and observable difference between means (mean observed effect size at the point of response).  The first point to note is that the data on array size validate the accuracy of the self-rated strategy, with the Aware group showing an increase in array size over time that is not seen in the Unaware group. On the d-prime measure, the Unaware group does show some evidence of increasing accuracy over blocks, but they lag behind the Aware group. The Aware group show an increase in mean absolute log-likelihood over blocks - this is not surprising, as this value increases with array size. The Unaware group, in contrast, appear to respond more to the observed effect size, i.e. they are influenced more by the difference between blue and pink lines depicting means, ignoring the sample size or variability around the mean. 
+Exploratory analysis on the beeswarm task focussed on visual comparisons between those who were categorised according to self-report as being aware that sample size was important (Aware group), versus those who were not (see Figure `r fignumber`. These two groups were compared for each block in terms of mean array size at point of response, amount of evidence in favour of one hypothesis at the point of response (mean absolute log-likelihood), accuracy (mean d prime), and observable difference between means (mean observed effect size at the point of response).  The first point to note is that the data on array size validate the accuracy of the self-rated strategy, with the Aware group showing an increase in array size over time that is not seen in the Unaware group. On the d-prime measure, the Unaware group does show some evidence of increasing accuracy over blocks, but they lag behind the Aware group. The Aware group show an increase in mean absolute log-likelihood over blocks, whereas the Unaware group, in contrast, appear to respond more to the observed effect size, i.e. they are influenced more by the difference between blue and pink lines depicting means, ignoring the sample size or variability around the mean. These trends are not surprising, as absolute log likelihood increases and absolute observed effect size decreases with array size.   
+
+```{r awarenesstable,echo=F}
+
+#See how Awareness relates to self-ratings
+#First order mytab by ID
+mywait<-mytab[mytab$block==1,]
+mywait<-mywait[order(mywait$subject),]
+
+
+mywait$Aware<-factor(mywait$wait,
+                       levels=c(0,1),
+                       labels=c('Unaware','Aware'))
+
+#Add data from questionnaire
+demotab2<-demotab2[order(demotab2$ID),] #subjects in numeric order
+demotab2$Aware <- mywait$Aware
+units(demotab2$Stats_self_rating) <- "self report: 0-100"
+units(demotab2$Understand_t) <- "self report: 1=high, 4=low"
+units(demotab2$Understand_power) <- "self report: 1=high, 4=low"
+
+demotab2$PreP <- agqwide$PreP[seq(1,200,2)]
+demotab2$PostP <- agqwide$PostP[seq(1,200,2)]
+demotab2$PreS <- agqwide$PreS[seq(2,200,2)]
+demotab2$PostS <- agqwide$PostS[seq(2,200,2)]
+
+awaretable <- table1(~Ed.level+Stats_self_rating+ Understand_t+Understand_power+PreP+PostP+PreS+PostS|Aware,data=demotab2)
+
+awtab <- as.data.frame(awaretable)
+awtab<-awtab[,1:3]
+awtab[16,1]<- 'Quiz: Pretraining P'
+awtab[19,1]<- 'Quiz: Posttraining P'
+awtab[22,1]<- 'Quiz: Pretraining S'
+awtab[25,1]<- 'Quiz: Posttraining S'
+w<-which(awtab[,1]==awtab[9,1])
+awtab<-awtab[-w,]
+faw<-flextable(awtab)
+tabnumber<-tabnumber+1
+faw <- set_caption(faw, paste0("Table ",tabnumber,":Characteristics of participants who were aware or unaware of importance of sample size"))
+faw<-autofit(faw)
+faw
+```
+ 
+
+In Table `r tabnumber` we also show mean scores on self-rating of statistical knowledge and on quiz items. The Aware subgroup appears to have better statistical knowledge prior to training, both in terms of self-report, and in terms of performance on the quiz, but there is no indication that their quiz performance improves more with training than the Unaware group. 
 
 # Discussion  
 
-This study may be summed up as showing: a) Participants were poor at making probabilistic judgements where sample size was critical; b) They showed significant improvements on the beeswarm task over sessions, and this was specific to those who were aware of the need to wait for larger samples before responding; c) Improvement on the beeswarm task was not associated with performance on the quiz: scores on parallel forms were similar before and after training.
+Results may be summed up as showing: a) Participants were poor at making probabilistic judgements where sample size was critical; b) They showed significant improvements on the beeswarm task over sessions; c) this was specific to those who were aware of the need to wait for larger samples before responding; d) Improvement on the beeswarm task was not associated with performance on the quiz: scores on parallel forms were similar before and after training.
 
-We will first discuss responses to the quiz, then performance on the beeswarm task, and then the lack of generalisation of learning from the beeswarm task. Results on both tasks should be interpreted bearing in mind that, although participants had some statistical education, we did not mention statistical significance or p-values at any point in the study. In addition, participants received monetary bonuses for correct responses on both the quiz and the beeswarm task, and this appeared to be successful in providing motivation to take the tasks seriously. 
+We will first discuss responses to the quiz, then performance on the beeswarm task, and then the lack of generalisation of learning from the beeswarm task. Results on both tasks should be interpreted bearing in mind that, although participants had some statistical training, we did not mention statistical significance or p-values at any point in the study. In addition, participants received monetary bonuses for correct responses on both the quiz and the beeswarm task, and this appeared to be successful in providing motivation to take the tasks seriously. 
 
 
 __Responses to the quiz__  
-Results confirmed that people were considerably worse at evaluating statements where the correct answer depended on sample size than they were at judging statements that required simple interpretation or manipulation of probabilities. Furthermore, on items that were closely modeled on those of @kahneman1972, response options that stated sample size was immaterial tended to be preferred over the correct option. To that extent, the results could be seen as supporting the original work on the "Law of Small Numbers". Nevertheless, results varied considerably across quiz items, and in some cases there was no preference for foils that were selected to indicate "sample size neglect". Indeed, for some items, participants preferred responses that stated more data should be gathered, even when this was not necessary, suggesting some awareness that sample size could be important. 
+Results confirmed that people were considerably worse at evaluating statements where the correct answer depended on sample size than they were at judging statements that required simple interpretation or manipulation of probabilities. Furthermore, on items that were closely modeled on those of @kahneman1972, response options that stated sample size was immaterial tended to be preferred over the correct option. To that extent, the results support the original work on the "Law of Small Numbers". Nevertheless, results varied considerably across quiz items, and in some cases there was no preference for foils that were selected to detect sample size neglect. Indeed, for some items, participants preferred responses that stated more data should be gathered, even when this was not necessary, suggesting some awareness that sample size could be important. 
 
-A more detailed study of specific items raises questions about the interpretation proposed by Kahneman and Tversky for the "belief in the Law of Small Numbers".  They subsumed this phenomenon under the more general cognitive bias of representativeness, which leads people to assume that the sample is "similar in essential characteristics to its parent population" (p 430). Already in the 1970s, researchers had come up with examples where sample size neglect was not seen. For instance, @bar-hillel1979 found that if the "proportion of male births" question was modified so that respondents had to judge the likelihood that all babies were boys, rather than 60% were boys, they were well able to conclude that this was more likely in small than large samples, especially when the samples were relatively small. 
+A particularly intriguing pattern of results was seen on items 2 and 4, which had identical wording, except that on item 2 the sample size was inadequate to demonstrate an effect, and in item 4 it was adequate. At first glance, these items seem to contradict the idea of sample size neglect, because few participants selected responses that explicitly stated that sample size didn't matter, and indeed, they tended to prefer responses indicating more data should be gathered. However, their tendency to respond this way was the same regardless of whether they were told that sample size was 10 or 160. Furthermore, for the items where they had the opportunity to say that the sample was equally likely to have come from either group, they preferred that option, regardless of sample size.  
 
-An alternative interpretation of the results is that people have particular difficulty in understanding how variance relates to sample size, failing to appreciate that the relationship is non-linear. This follows from the fact that 
+With hindsight, it would have been helpful to ask participants to explain the reasoning behind their responses, as this could have thrown light on the unexpected patterns on these two items. Also, the results on items 2 and 4 suggest there could be interest in following the approach adopted in one study by @kahneman1972, where the sample size specified in a problem was parametrically varied. 
+
 
 __Learning on the beeswarm task__  
 Around one third of participants indicated that they had learned to wait for larger arrays before responding, and this tendency was associated with higher levels of accuracy on the beeswarm task. Those who learned to wait for larger arrays showed an increase in accuracy over sessions, whereas those who did not appeared to rely on observed effect sizes, which, in small samples, were an unreliable cue to whether samples came from different populations.
  
-# Appendix 1
-## Judgement and Reasoning Quiz
+__Failure of learning to generalise__   
+The failure to show any improvement on quiz items after training is not encouraging but perhaps should not surprise us. The training was relatively brief, and the link between the insight - that sample size affected the ability to detect a true difference between groups - and the content of quiz items was not made obvious. To train statistical understanding, it might be necessary to give more explicit instruction: for instance, to ask participants to respond to a quiz item, then get them to simulate data based on that specific problem, to see how variation in sample size affects the parameter of interest. 
 
-Participants receive version A or B (counterbalanced) at pre-test and post-test. P-items and S-items are presented intermixed:<!--- I think this did not happen!-->  P-items test understanding of probability, S-items test sample size neglect. Items with the same number in version A and B are intended to be analogous but use different contexts. The brief descriptor accompanying each item below is not presented as part of the quiz. An asterisk denotes the correct response.  For S-items, x denotes the anticipated response(s) for those susceptible to sample size neglect.
 
-This Appendix has now been updated to show the frequency of endorsement of each option in square brackets.
+# Appendix 1: Questions given before and after training
+
 
 <!---modified from Probqs_edit_from_feedback.rmd--->
 ### Initial queries (Pre-training only)
@@ -1718,21 +1779,41 @@ Did you feel you got better at the task over time?
 
 Did you change how you approached the task?  Please let us know if you adopted any specific strategy to guide your response?  
 [See Appendix 2 for responses]  
+
+## Judgement and Reasoning Quiz  
+
+
+```{r readposttraining, echo=F}
+qdf2 <- read.csv('quiz_items_Post.csv')
+
+
+#function to bolt together N responses of each type for pre and post trainng
+maketext <- function(myitem,resp){
+  respcol<- which(colnames(qdf)==paste0('R',resp))
+  mytext <- paste0("[", qdf[qdf$Item==myitem,respcol],"/", qdf2[qdf2$Item==myitem,respcol],"]")
+  return(mytext)
+}
+```
+
+
+Participants received version A or B (counterbalanced) at pre-test and post-test. P-items test understanding of probability, S-items test sample size neglect. Items with the same number in version A and B are intended to be analogous but use different contexts. The brief descriptor accompanying each item below is not presented as part of the quiz. An asterisk denotes the correct response.  For S-items, x denotes the anticipated response(s) for those susceptible to sample size neglect.
+
+P-items and S-items were inadvertently presented blocked for sample 1, but were randomly intermixed as intended for sample 2. As described in Results, this did not make any difference. This section of the Appendix has now been updated to show the frequency of endorsement of each option in square brackets, first for pre-training and then for post-training administration of the quiz.
    
 ### P-items
 #### P1A (tests elementary knowledge of normal distribution)
 You take a sample of 100 men from the general population and measure their height.  The mean is 70 inches and the standard deviation is 4 inches. What percentage of the sample will be expected to be more than 74 inches tall?  
-`r paste0("[", qdf$R1[qdf$Item=='P1A'],"]")` a) *16%  
-`r paste0("[", qdf$R2[qdf$Item=='P1A'],"]")` b) 2%  
-`r paste0("[", qdf$R3[qdf$Item=='P1A'],"]")` c) 50%  
-`r paste0("[", qdf$R4[qdf$Item=='P1A'],"]")` d) 30%  
+ `r maketext('P1A',1)` a) *16%  
+`r maketext('P1A',2)` b) 2%  
+`r maketext('P1A',3)` c) 50%  
+`r maketext('P1A',4)` d) 30%  
  
 #### P1B  
 A reading test is standardized on 7-year-old children in Scotland. The mean reading age is 84 months with standard deviation of 6 months.  What percentage of 7-year-olds is expected to have a reading age of 72 months or less?  
-`r paste0("[", qdf$R1[qdf$Item=='P1B'],"]")` a) 16%  
-`r paste0("[", qdf$R2[qdf$Item=='P1B'],"]")` b) *2%  
-`r paste0("[", qdf$R3[qdf$Item=='P1B'],"]")` c) 50%  
-`r paste0("[", qdf$R4[qdf$Item=='P1B'],"]")` d) 30%  
+ `r maketext('P1B',1)` a) 16%  
+ `r maketext('P1B',2)` b) *2%  
+ `r maketext('P1B',3)` c) 50%  
+ `r maketext('P1B',4)` d) 30%  
  
 
 ```{r q1a, include=F,echo=F}
@@ -1752,18 +1833,18 @@ print(paste0("The answer is ",ans2))
 #### P2A (Basic probability). 
 A container is full of spare change containing 100 10p coins, 100 5p coins, 200 2p coins, and 100 1p coins. The coins are randomly mixed. You will get a prize every time you pick a 5p coin. If you make 100 selections, replacing the selected coin and shaking the jar each time, how often will you expect to pick a 5p coin?  
 
-`r paste0("[", qdf$R1[qdf$Item=='P2A'],"]")` a) 1 in two occasions  
-`r paste0("[", qdf$R2[qdf$Item=='P2A'],"]")` b) 1 in three occasions  
-`r paste0("[", qdf$R3[qdf$Item=='P2A'],"]")` c) 1 in four occasions   
-`r paste0("[", qdf$R4[qdf$Item=='P2A'],"]")` d) *1 in five occasions  
+ `r maketext('P2A',1)` a) 1 in two occasions  
+ `r maketext('P2A',2)` b) 1 in three occasions  
+ `r maketext('P2A',3)` c) 1 in four occasions   
+ `r maketext('P2A',4)` d) *1 in five occasions  
   
 #### P2B 
 You are choosing marbles from an opaque jar containing 100 red marbles, 100 blue marbles, and 200 white marbles, randomly mixed. You will get a prize every time you pick a marble that is not white. If you make 100 selections, replacing the selected marble and shaking the jar each time, how often will you expect to get a prize?  
 
-`r paste0("[", qdf$R1[qdf$Item=='P2B'],"]")` a) *1 in two occasions  
-`r paste0("[", qdf$R2[qdf$Item=='P2B'],"]")` b) 1 in three occasions  
-`r paste0("[", qdf$R3[qdf$Item=='P2B'],"]")` c) 1 in four occasions   
-`r paste0("[", qdf$R4[qdf$Item=='P2B'],"]")` d) 1 in five occasions 
+ `r maketext('P2B',1)`  a) *1 in two occasions  
+ `r maketext('P2B',2)` b) 1 in three occasions  
+ `r maketext('P2B',3)` c) 1 in four occasions   
+ `r maketext('P2B',4)` d) 1 in five occasions 
  
 
 ```{r P2B,include=F,echo=F}
@@ -1781,10 +1862,10 @@ myt/500
 
 #### P3A (Classic probability including averaging probabilities)
 In the city of Ficticium, there is generally a 10% chance it will rain on any given day in the first half of September, a 50% chance it will rain any given day in the second half of September,  a 25% chance it will rain on any given day in November, and a 30% chance it will rain on any given day in April. (September, November and April are all 30 days long). Which month is likely to have more rainy days?  
-`r paste0("[", qdf$R1[qdf$Item=='P3A'],"]")` a) September   
-`r paste0("[", qdf$R2[qdf$Item=='P3A'],"]")` b)  November    
-`r paste0("[", qdf$R3[qdf$Item=='P3A'],"]")` c)  April   
-`r paste0("[", qdf$R4[qdf$Item=='P3A'],"]")` d) *September and April are equally likely 
+ `r maketext('P3A',1)` a) September   
+ `r maketext('P3A',2)` b)  November    
+ `r maketext('P3A',3)` c)  April   
+ `r maketext('P3A',4)` d) *September and April are equally likely  
    
 
  
@@ -1811,19 +1892,19 @@ print(paste('April ',mean(myrain$Apr)))
 #### P3B. 
 After reviewing sales of coffee, the barista noted there is generally a 50% chance of selling an espresso on any day in the first week of the month. There is a 100% chance of selling an espresso on any day in the second week of the month, and a 75% chance of selling an espresso on any day in the third and fourth week of the month. In what two-week period in the month is there most sales of espresso?  
 
-`r paste0("[", qdf$R1[qdf$Item=='P3B'],"]")` a) *First two weeks and second two weeks are equally likely    
-`r paste0("[", qdf$R2[qdf$Item=='P3B'],"]")` b) First two weeks      
-`r paste0("[", qdf$R3[qdf$Item=='P3B'],"]")` c) Second two weeks  
-`r paste0("[", qdf$R4[qdf$Item=='P3B'],"]")` d) First and fourth weeks 
+`r maketext('P3B',1)` a) *First two weeks and second two weeks are equally likely    
+`r maketext('P3B',2)` b) First two weeks      
+`r maketext('P3B',3)` c) Second two weeks  
+`r maketext('P3B',4)` d) First and fourth weeks  
    
 
 
 #### P4A. (basic probability)
 At a raffle, you can pick from a green bowl with 2 winning raffle tickets and 8 worthless tickets, a yellow bowl with 10 winning tickets and 90 worthless tickets, or a red bowl with 15 winning tickets and 85 worthless tickets.  Which bowl gives you a better chance of winning?  
-`r paste0("[", qdf$R1[qdf$Item=='P4A'],"]")` a) *Green   
-`r paste0("[", qdf$R2[qdf$Item=='P4A'],"]")` b) Yellow     
-`r paste0("[", qdf$R3[qdf$Item=='P4A'],"]")` c) Red    
-`r paste0("[", qdf$R4[qdf$Item=='P4A'],"]")` d) Green and Yellow give the same chance 
+ `r maketext('P4A',1)` a) *Green   
+ `r maketext('P4A',2)` b) Yellow     
+ `r maketext('P4A',3)` c) Red    
+ `r maketext('P4A',4)` d) Green and Yellow give the same chance 
 
  
 ```{r P4A, include=F,echo=F}
@@ -1844,20 +1925,20 @@ print(paste('Red p = ',redcount/1000))
 #### P4B. 
 You find three bags of jelly beans. There is a small bag with 5 red jelly beans and 20 other coloured beans. There is a  medium bag with 12 red jelly beans and 38 other coloured beans. Finally, there is a large bag with 18 red jelly beans and 82 other colour beans. As red jelly beans are your favourite flavour, which size bag gives you the highest percentage of red beans?   
 
-`r paste0("[", qdf$R1[qdf$Item=='P4B'],"]")` a) Small  
-`r paste0("[", qdf$R2[qdf$Item=='P4B'],"]")` b) *Medium      
-`r paste0("[", qdf$R3[qdf$Item=='P4B'],"]")` c) Large   
-`r paste0("[", qdf$R4[qdf$Item=='P4B'],"]")` d) They are all the same  
+ `r maketext('P4B',1)` a) Small  
+`r maketext('P4B',2)` b) *Medium      
+`r maketext('P4B',3)` c) Large   
+`r maketext('P4B',4)` d) They are all the same  
    
 
 
 
 #### P5A. (conjoint probability)
 There are 100 girls in a class, 20% have red hair and 40% are taller than 60 inches.  How many red-headed girls would you expect who are taller than 60 inches?  
-`r paste0("[", qdf$R1[qdf$Item=='P5A'],"]")` a) 60   
-`r paste0("[", qdf$R2[qdf$Item=='P5A'],"]")` b) 16      
-`r paste0("[", qdf$R3[qdf$Item=='P5A'],"]")` c) *8   
-`r paste0("[", qdf$R4[qdf$Item=='P5A'],"]")` d) 5  
+`r maketext('P5A',1)` a) 60   
+`r maketext('P5A',2)` b) 16      
+`r maketext('P5A',3)` c) *8   
+`r maketext('P5A',4)` d) 5  
 
  
 
@@ -1872,19 +1953,19 @@ print(tallred)
 #### P5B
 In a box of 100 CDs, 40% of the disks have been recorded by pop artists and 60% of disks feature female vocalists. Assuming that the female vocalists are equally likely to be pop artists or not, how many CDs have been recorded by female pop vocalists?   
 
-`r paste0("[", qdf$R1[qdf$Item=='P5B'],"]")` a) 12 CDs   
-`r paste0("[", qdf$R2[qdf$Item=='P5B'],"]")` b) 18 CDs     
-`r paste0("[", qdf$R3[qdf$Item=='P5B'],"]")` c) *24 CDs
-`r paste0("[", qdf$R4[qdf$Item=='P5B'],"]")` d) 30 CDs 
+`r maketext('P5B',1)` a) 12 CDs   
+`r maketext('P5B',2)` b) 18 CDs     
+`r maketext('P5B',3)`c) *24 CDs  
+`r maketext('P5B',4)` d) 30 CDs  
 
 
 #### P6A (classic probability - multiplication)
 10 percent of the children in a school have red hair. Their names are put in a hat and you are asked to pull out two of them. What is the probability that you will select two red-headed children?  
 
-`r paste0("[", qdf$R1[qdf$Item=='P6A'],"]")` a)  20 percent    
-`r paste0("[", qdf$R2[qdf$Item=='P6A'],"]")` b) *1 percent      
-`r paste0("[", qdf$R3[qdf$Item=='P6A'],"]")` c)  19 percent     
-`r paste0("[", qdf$R4[qdf$Item=='P6A'],"]")` d)  close to zero  
+`r maketext('P6A',1)` a)  20 percent    
+`r maketext('P6A',2)` b) *1 percent      
+`r maketext('P6A',3)` c)  19 percent     
+`r maketext('P6A',4)` d)  close to zero  
 
 
 
@@ -1896,10 +1977,10 @@ print(paste(100*.1*.1,' percent'))
 
 #### P6B. 
 20 percent of the 500 children in a school have a name beginning with J. Their names are put in a hat and you are asked to pull out two of them. What is the probability that you will select  two children whose name begins with J?  
-`r paste0("[", qdf$R1[qdf$Item=='P6B'],"]")` a) *4 percent       
-`r paste0("[", qdf$R2[qdf$Item=='P6B'],"]")` b)  1 percent      
-`r paste0("[", qdf$R3[qdf$Item=='P6B'],"]")` c)  40 percent  
-`r paste0("[", qdf$R4[qdf$Item=='P6B'],"]")` d)  20 percent  
+`r maketext('P6B',1)` a) *4 percent       
+`r maketext('P6B',2)` b)  1 percent      
+`r maketext('P6B',3)` c)  40 percent  
+`r maketext('P6B',4)` d)  20 percent  
 
 
  
@@ -1915,10 +1996,10 @@ print(paste(100*.2*.2,' percent'))
 
 History courses in the UK are rated on a Student Survey, which has an overall satisfaction rating of 1 (low) to 5 (high). The mean rating overall is 3.5, with SD of 1. Those who have an average rating above 4.0 are given a gold star in league tables. There are 60 courses altogether, which can be divided according to size into small (less than 10 students), medium (between 10-50 students) and large (50+ students). If there are no real differences in student satisfaction, will the number of students affect the likelihood of getting a gold star?  
 
-`r paste0("[", qdf$R1[qdf$Item=='S1A'],"]")` a) Yes. Large courses have a better chance of getting a gold star     
-`r paste0("[", qdf$R2[qdf$Item=='S1A'],"]")` b) Yes. Medium-sized courses have a better chance of getting a gold star       
-`r paste0("[", qdf$R3[qdf$Item=='S1A'],"]")` c) *Yes. Small courses have a better chance of getting a gold star       
-`r paste0("[", qdf$R4[qdf$Item=='S1A'],"]")` d) x No. The number of students makes no difference.
+`r maketext('S1A',1)` a) Yes. Large courses have a better chance of getting a gold star     
+`r maketext('S1A',2)` b) Yes. Medium-sized courses have a better chance of getting a gold star       
+`r maketext('S1A',3)` c) *Yes. Small courses have a better chance of getting a gold star       
+`r maketext('S1A',4)` d) x No. The number of students makes no difference.
 
  
   
@@ -1942,11 +2023,11 @@ n[u]<-length(which(ustring>4))
 #### S1B. 
 A task force is looking at characteristics of schools in its area. They take a measure of mathematical ability, and identify schools as 'failing schools' where 20% or more pupils get scores more than 1 SD below the population average. The smallest schools have on average 100 pupils, middle-sized schools have 250 pupils, and the largest schools have 500 pupils. 
 If there are no real differences between schools, will the size of the school affect whether it is a failing school?  
-`r paste0("[", qdf$R1[qdf$Item=='S1B'],"]")` a) *Yes. The smallest schools will be more likely to be a failing school  
-`r paste0("[", qdf$R2[qdf$Item=='S1B'],"]")` b)  xNo. All else being equal, school size should make no difference  
-`r paste0("[", qdf$R3[qdf$Item=='S1B'],"]")` c)  Yes. The largest schools will be more likely to be a failing school  
+`r maketext('S1B',1)` a) *Yes. The smallest schools will be more likely to be a failing school  
+`r maketext('S1B',2)` b)  xNo. All else being equal, school size should make no difference  
+`r maketext('S1B',3)` c)  Yes. The largest schools will be more likely to be a failing school  
 
-`r paste0("[", qdf$R4[qdf$Item=='S1B'],"]")` d)  Yes. The middle-sized schools will be more likely to be a failing school  
+`r maketext('S1B',4)` d)  Yes. The middle-sized schools will be more likely to be a failing school  
 
 
  
@@ -1980,12 +2061,12 @@ for (j in 1:3){
 A forensic archaeologist has a set of 10 male skeletons from an ancient burial site. Experts are divided as to whether the site was colonised by Tribe A or Tribe B- the only 2 tribes in the region. Previous studies with large samples found that men from Tribe A had an average height of 160 cm, with SD of 6, and men from Tribe B had an average height of 158 cm, with SD of 6. 
 
 The mean height of the sample is 158 cm. What can the archaeologist conclude?  
-`r paste0("[", qdf$R1[qdf$Item=='S2A'],"]")` a)    We can be very confident that the sample comes from Tribe B 
-`r paste0("[", qdf$R2[qdf$Item=='S2A'],"]")` b)  * Tribe B is more likely than Tribe A, but should collect 90 more samples to be sure  
+`r maketext('S2A',1)` a)    We can be very confident that the sample comes from Tribe B  
+`r maketext('S2A',2)` b)  * Tribe B is more likely than Tribe A, but should collect 90 more samples to be sure  
 
-`r paste0("[", qdf$R3[qdf$Item=='S2A'],"]")` c)    Equally likely the sample comes from Tribe A or Tribe B 
+`r maketext('S2A',3)` c)    Equally likely the sample comes from Tribe A or Tribe B  
 
-`r paste0("[", qdf$R4[qdf$Item=='S2A'],"]")` d)  x  Can't be sure: Tribe B is more likely than Tribe A, but collecting more samples won't help  
+`r maketext('S2A',4)` d)  x  Can't be sure: Tribe B is more likely than Tribe A, but collecting more samples won't help  
 
  
 
@@ -2030,10 +2111,11 @@ print(paste0('prob that xsample is .33 SD less than xA mean: ',counter1/niter))
 There are concerns that kangaroos appear unhealthy in a particular area of the Australian bush. There is concern that this may be due to eating poisoned bait that affects the blood. A naturalist has blood samples from 10 kangaroos, and measures a distinctive blood marker that is lowered in poisoned animals. Previous studies have found that the mean blood marker in healthy kangaroos is 130 with SD of 30, whereas the mean is 120 with SD of 30 in poisoned animals. 
 
 The mean blood marker in the sample is 120. Assuming that there is no other explanation than poisoning for an abnormal blood marker, what can the scientist conclude?  
-`r paste0("[", qdf$R1[qdf$Item=='S2B'],"]")` a)    The kangaroos have definitely been poisoned
-`r paste0("[", qdf$R2[qdf$Item=='S2B'],"]")` b)  x  The kangaroos probably have been poisoned but can't be sure. Collecting data from more kangaroos won't help. 
-`r paste0("[", qdf$R3[qdf$Item=='S2B'],"]")` c)  * The kangaroos probably have been poisoned, but would need to collect blood from 90 more kangaroos in the affected area to be sure  
-`r paste0("[", qdf$R4[qdf$Item=='S2B'],"]")` d)    The kangaroos have not been poisoned  
+`r maketext('S2B',1)` a)    The kangaroos have definitely been poisoned     
+
+`r maketext('S2B',2)` b)  x  The kangaroos probably have been poisoned but can't be sure. Collecting data from more kangaroos won't help.  
+`r maketext('S2B',3)` c)  * The kangaroos probably have been poisoned, but would need to collect blood from 90 more kangaroos in the affected area to be sure  
+`r maketext('S2B',4)`d)    The kangaroos have not been poisoned  
 
 
 
@@ -2083,10 +2165,10 @@ for (n in c(10, 50, 100)) {
  
 A fertiliser is trialled to see if it improves crop yields. Without the fertiliser the average yield is 100, with standard deviation of 10. It is expected that the fertiliser will boost yield by 3 points on average.
 How many plants would be needed in the treatment and control groups to be confident of demonstrating whether or not the fertiliser was effective?  
-`r paste0("[", qdf$R1[qdf$Item=='S3A'],"]")`  a)  20 per group  
-`r paste0("[", qdf$R2[qdf$Item=='S3A'],"]")`  b) 50 per group  
-`r paste0("[", qdf$R3[qdf$Item=='S3A'],"]")`  c)  100 per group  
-`r paste0("[", qdf$R4[qdf$Item=='S3A'],"]")` d) *300 per group  
+`r maketext('S3A',1)`  a)  20 per group  
+`r maketext('S3A',2)`  b) 50 per group  
+`r maketext('S3A',3)`  c)  100 per group  
+`r maketext('S3A',4)` d) *300 per group  
 
  
 
@@ -2098,10 +2180,10 @@ pwr.t.test(d = .3, sig.level = .05 , power =.95 , type = "two.sample",alternativ
   
 #### S3B. 
 You have been asked to test a treatment for obesity. People in the trial have a mean body mass index (BMI) of 35, with SD of 5. The developer argues that the treatment will reduce BMI by 2 points on average, but you are dubious as to whether it has any effect. Assuming you have a control group given a placebo and an experimental group given the treatment, what sample size should you select to give a fair test of the treatment?  
-`r paste0("[", qdf$R1[qdf$Item=='S3B'],"]")`  a) x20 per group   
-`r paste0("[", qdf$R2[qdf$Item=='S3B'],"]")`  b) x50 per group   
-`r paste0("[", qdf$R3[qdf$Item=='S3B'],"]")`  c) *100 per group 
-`r paste0("[", qdf$R4[qdf$Item=='S3B'],"]")`  d) 500 per group 
+`r maketext('S3B',1)` a) x20 per group   
+`r maketext('S3B',2)`  b) x50 per group   
+`r maketext('S3B',3)`  c) *100 per group  
+`r maketext('S3B',4)`  d) 500 per group  
  
 
 
@@ -2117,10 +2199,10 @@ myp<-pwr.t.test(d = .4, sig.level = .05 , power =.9 , type = "two.sample",altern
 There are concerns that kangaroos appear unhealthy in a particular area of the Australian bush. There is concern that this may be due to eating poisoned bait that affects the blood. A naturalist has blood samples from 160 kangaroos, and measures a distinctive blood marker that is lowered in poisoned animals. Previous studies have found that the mean blood marker in healthy kangaroos is 130 with SD of 30, whereas the mean is 120 with SD of 30 in poisoned animals. 
 
 The mean blood marker in the sample is 120. Assuming that there is no other explanation than poisoning for an abnormal blood marker, what can the scientist conclude?  
-`r paste0("[", qdf$R1[qdf$Item=='S4A'],"]")`  a)  *  The kangaroos have definitely been poisoned
-`r paste0("[", qdf$R2[qdf$Item=='S4A'],"]")`  b)  x  The kangaroos probably have been poisoned but can't be sure. Collecting data from more kangaroos won't help.  
-`r paste0("[", qdf$R3[qdf$Item=='S4A'],"]")`  c) The kangaroos probably have been poisoned, but would need to collect blood from 100 more kangaroos in the affected area of bush to be sure   
-`r paste0("[", qdf$R4[qdf$Item=='S4A'],"]")`  d) The kangaroos have not been poisoned  
+`r maketext('S4A',1)` a)  *  The kangaroos have definitely been poisoned  
+`r maketext('S4A',2)`   b)  x  The kangaroos probably have been poisoned but can't be sure. Collecting data from more kangaroos won't help.  
+`r maketext('S4A',3)`   c) The kangaroos probably have been poisoned, but would need to collect blood from 100 more kangaroos in the affected area of bush to be sure   
+`r maketext('S4A',4)`   d) The kangaroos have not been poisoned  
 
 
 
@@ -2172,12 +2254,12 @@ A forensic archaeologist has a set of 160 male skeletons from an ancient burial 
 
 The mean height of the sample is 158 cm. What can the archaeologist conclude?  
 
-`r paste0("[", qdf$R1[qdf$Item=='S4B'],"]")` a)   * We can be very confident that the sample comes from Tribe B  
-`r paste0("[", qdf$R2[qdf$Item=='S4B'],"]")` b)    Tribe B is more likely than Tribe A, but should collect 100 more samples to be sure  
+`r maketext('S4B',1)`  a)   * We can be very confident that the sample comes from Tribe B  
+`r maketext('S4B',2)`  b)    Tribe B is more likely than Tribe A, but should collect 100 more samples to be sure  
   
-`r paste0("[", qdf$R3[qdf$Item=='S4B'],"]")`  c)    Equally likely the sample comes from Tribe A or Tribe B 
+`r maketext('S4B',3)`  c)    Equally likely the sample comes from Tribe A or Tribe B 
 
-`r paste0("[", qdf$R4[qdf$Item=='S4B'],"]")`  d)  x Can't be sure: Tribe B is more likely than Tribe A, but collecting more samples won't help
+`r maketext('S4B',4)`   d)  x Can't be sure: Tribe B is more likely than Tribe A, but collecting more samples won't help
 
 
 
@@ -2218,10 +2300,10 @@ print(paste0('prob that xsample is .33 SD less than xA mean: ',counter1/niter))
  
 #### S5A. (classic from Tversky/Kahneman law of small numbers)
 In a squash tournament, the organisers are debating whether to have games of best of 3, 9 or 21 points.  Holding all other rules of the game constant, if A is a slightly better player than B, which scoring will give A a better chance of winning?  
-`r paste0("[", qdf$R1[qdf$Item=='S5A'],"]")`  a) best of 3 points  
-`r paste0("[", qdf$R2[qdf$Item=='S5A'],"]")`  b) best of 9 points   
-`r paste0("[", qdf$R3[qdf$Item=='S5A'],"]")`  c) *best of 21 points  
-`r paste0("[", qdf$R4[qdf$Item=='S5A'],"]")`  d) x Won't make any difference 
+`r maketext('S5A',1)`   a) best of 3 points  
+`r maketext('S5A',2)`   b) best of 9 points   
+`r maketext('S5A',3)`   c) *best of 21 points  
+`r maketext('S5A',4)`    d) x Won't make any difference 
 
  
  
@@ -2251,20 +2333,20 @@ games<-c(3,9,21)
 
 #### S5B. 
 Two chess players are having a tournament. They are considering whether to play the best of 5, 11, or 17 games.  If player A is slightly better than player B, which tournament size should player B argue for, to get the best chance of winning?  
-`r paste0("[", qdf$R1[qdf$Item=='S5B'],"]")`  a) 17 games  
-`r paste0("[", qdf$R2[qdf$Item=='S5B'],"]")`  b) 11 games    
-`r paste0("[", qdf$R3[qdf$Item=='S5B'],"]")`  c) *5 games  
-`r paste0("[", qdf$R4[qdf$Item=='S5B'],"]")`  d) x It doesn't matter: The chances are the same regardless of number of games  
+`r maketext('S5B',1)`    a) 17 games  
+`r maketext('S5B',2)`   b) 11 games    
+`r maketext('S5B',3)`   c) *5 games  
+`r maketext('S5B',4)`   d) x It doesn't matter: The chances are the same regardless of number of games  
 
  
 
 #### S6A. (Risk of type II error with small samples)
 Two scientists are both trying to test whether a certain new drug affects hunger in mice, by giving them the drug (group D) or a placebo (group P) and then measuring their food consumption. At the start of the experiment, the average mouse eats 10g of food pellets, with SD of 3g.  
 Scientist A runs 10 studies with 10 mice in each group, and Scientist B runs 10 studies with 30 mice in each group. Unfortunately for them, a careless lab technician distributed a placebo in place of the new drug, so there should not be any effects except by chance. When the scientists look at the results, a large effect, a difference in food consumption of 3g, is seen between the two groups (D and P) on one run of the experiment. Which scenario is more likely:  
-`r paste0("[", qdf$R1[qdf$Item=='S6A'],"]")`  a)  *The run with a large difference is found in the smaller group  
-`r paste0("[", qdf$R2[qdf$Item=='S6A'],"]")`  b)    The run with a large difference is found in the larger group  
-`r paste0("[", qdf$R3[qdf$Item=='S6A'],"]")`  c)    The group difference shows group D eats more than group P   
-`r paste0("[", qdf$R4[qdf$Item=='S6A'],"]")`  d)   x A large difference is equally likely D>P or P>D, with no effect of sample size  
+`r maketext('S6A',1)`   a)  *The run with a large difference is found in the smaller group  
+`r maketext('S6A',2)`   b)    The run with a large difference is found in the larger group  
+`r maketext('S6A',3)`   c)    The group difference shows group D eats more than group P   
+`r maketext('S6A',4)`   d)   x A large difference is equally likely D>P or P>D, with no effect of sample size  
   
  
  
@@ -2298,10 +2380,10 @@ print('Differences for each run of large group: ')
 
 #### S6B.
 Two researchers are testing the effect of oxytocin on prosocial behaviour. In their experiments, participants are given either a dose of oxytocin or a placebo. Researcher A runs 5 studies with 10 participants in each condition and Researcher B runs 5 studies with 20 participants in each condition. Unknown to the researchers, the oxytocin had been replaced by a placebo, yet a large difference (1 SD) is observed between two groups on one run of the experiment. Which is most likely:  
-`r paste0("[", qdf$R1[qdf$Item=='S6B'],"]")`   a) *The large difference is seen in a study by the researcher using groups of 10 
-`r paste0("[", qdf$R2[qdf$Item=='S6B'],"]")`  b)  The large difference is seen in a study by the researcher using groups of 20  
-`r paste0("[", qdf$R3[qdf$Item=='S6B'],"]")`  c) x The difference is a type II error, and could equally likely be seen with groups of 10 or 20  
-`r paste0("[", qdf$R4[qdf$Item=='S6B'],"]")`  d)  The difference is real - there was confusion between oxytocin and placebo  
+`r maketext('S6B',1)`    a) *The large difference is seen in a study by the researcher using groups of 10 
+`r maketext('S6B',2)`   b)  The large difference is seen in a study by the researcher using groups of 20  
+`r maketext('S6B',3)`   c) x The difference is a type II error, and could equally likely be seen with groups of 10 or 20  
+`r maketext('S6B',4)`  d)  The difference is real - there was confusion between oxytocin and placebo  
 
 ```{r saveworkspace, echo=F}
 save.image('smallnums.RData')
