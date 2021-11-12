@@ -45,7 +45,7 @@ library(rstatix)
 library(ggpubr)
 library(gridExtra) #multiple plots together
 options(scipen=999)
-load("smallnums.RData")  #reloading variables from previous session so can be referenced in Abstract
+load("smallnums.RData")  #reloading variables from previous session that are referenced in Abstract
 tabnumber <- 0 #for counting tables.
 fignumber <- 0 #for counting figures
 subn <- c(50,75,100)
@@ -76,11 +76,11 @@ Acknowledgment: This work was supported by Wellcome Trust Programme Grant no. 08
 
 ## Abstract 
 <!---200 word limit for RSOS  - Interesting! It was 100 words when we submitted RR and I complained --->
-‘Sample size neglect’ is a tendency to underestimate how the variability of mean estimates changes with sample size.  We studied 100 participants, from science or social science backgrounds, to test whether exposure to simulated data with different sample sizes can help people overcome this bias. Before and after training, participants completed a 12-item quiz testing statistical knowledge, including items testing sample size neglect (S-items). Participants were incentivised with bonus payments for correct responses. The quiz confirmed sample size neglect: `r round(100*length(which(agqwide$PreS==0))/(nrow(agqwide)/2),0)`% of participants scored zero on S-items,and only `r length(dropsub)` participants achieved more than 4/6 items correct. There were significant gains on the training task, and `r round(100*length(which(qualresp$waitJ==1))/nrow(qualresp),0)`% of participants reported that they had learned to wait for larger samples before judging if two samples came from the same population. Although this brief session of training led to improved understanding of the relationship between accuracy of estimates and sample size within the training task, there was no generalisation to understanding of quiz items. Our study confirms that sample size neglect is widespread, even in people with statistical training. We suggest that training with simulated data might need to be accompanied by explicit instruction to be effective in counteracting sample size neglect more generally.
+‘Sample size neglect’ is a tendency to underestimate how the variability of mean estimates changes with sample size.  We studied 100 participants, from science or social science backgrounds, to test whether exposure to simulated data with different sample sizes can help people overcome this bias. Before and after training, participants completed a 12-item quiz testing statistical knowledge, including items testing sample size neglect (S-items). Participants were incentivised with bonus payments for correct responses. The quiz confirmed sample size neglect: `r N1`% of participants scored zero on S-items,and only `r N2` participants achieved more than 4/6 items correct. There were significant gains on the training task, and `r N3`% of participants reported that they had learned to wait for larger samples before judging if two samples came from the same population. Although this brief session of training led to improved understanding of the relationship between accuracy of estimates and sample size within the training task, there was no generalisation to understanding of quiz items. Our study confirms that sample size neglect is widespread, even in people with statistical training. We suggest that training with simulated data might need to be accompanied by explicit instruction to be effective in counteracting sample size neglect more generally.
  
 #### Keywords:  statistical reasoning, power, online training, sample size neglect
 
-This manuscript received Stage 1 in-principle acceptance (IPA) on 12 August 2021, prior to data collection and analysis. The approved Stage 1 version of this manuscript, unchanged from the point of IPA, is preregistered at 10.17605/OSF.IO/FERMV.
+This manuscript received Stage 1 in-principle acceptance (IPA) on 12 August 2021, prior to data collection and analysis. The approved Stage 1 version of this manuscript, unchanged from the point of IPA, is preregistered at https://osf.io/fermv.
  
 
 
@@ -331,7 +331,7 @@ This basic task evolved over three pilot studies, which led to improvements in t
 ### Exclusionary criteria
 Our pre-registration stated that if participants did not complete the post-task quiz they would still be included in the main analysis of learning effects, but replacement participants would be recruited to ensure a sufficient sample size for the pre-post training analysis of the quiz results. In practice, this was not needed, as all participants completed pre- and post-training quizzes.  
 
-We also planned to exclude from the main analysis any participants who scored 5 or 6 correct on S-items in the pre-training quiz, as they would be people with a good prior understanding of sample size effects, so would be unlikely to show learning gains. This led to exclusion of `r dropsub`/100 participants. 
+We also specified we would exclude from the main analysis any participants who scored 5 or 6 correct on S-items in the pre-training quiz, as they would be people with a good prior understanding of sample size effects, so would be unlikely to show learning gains. This led to exclusion of `r N2`/100 participants. 
 
 For the regression analysis, we used an index of learning which corresponds to the difference in earnings between first and last blocks. 
 
@@ -1046,7 +1046,7 @@ pP2 <- length(which(temp2P$p.correct<.5))/nrow(temp2P)
 
 
 ```
-We first checked the pre-test quiz data against two prespecified criteria: (a) that mean number of S-items correct is less than 5/6 (83%), and (b) that fewer than 50% of participants score below 50% correct on P-items (see prediction at end of Data Analysis section). Both predictions were confirmed. In Sample 1, the pre-training mean on S-items was `r round(tS1$estimate,2)`, t-test of difference of mean from .83 = `r round(tS1$statistic,2)`, `r p.format(tS1)`; In Sample 2, the pre-training mean on S-items was `r round(tS2$estimate,2)`, t-test of difference of mean from .83 = `r round(tS2$statistic,2)`, `r p.format(tS2)`.   The proportion of participants scoring less than 50% on the pre-training P-items was `r round(pP1,3)` for Sample 1 and `r round(pP2,3)` for Sample 2.  We also considered which was the most common response for each item on initial testing: for all 12 P-items, the correct response was the most common, whereas this was the case for only 5/12 S-items. We found that `r length(dropsub)` participants scored 5 or more on S-items correct prior to training, and they were dropped from the learning analyses, consistent with our pre-registration. 
+We first checked the pre-test quiz data against two prespecified criteria: (a) that mean number of S-items correct is less than 5/6 (83%), and (b) that fewer than 50% of participants score below 50% correct on P-items (see prediction at end of Data Analysis section). Both predictions were confirmed. In Sample 1, the pre-training mean on S-items was `r round(tS1$estimate,2)`, t-test of difference of mean from .83 = `r round(tS1$statistic,2)`, `r p.format(tS1)`; In Sample 2, the pre-training mean on S-items was `r round(tS2$estimate,2)`, t-test of difference of mean from .83 = `r round(tS2$statistic,2)`, `r p.format(tS2)`.   The proportion of participants scoring less than 50% on the pre-training P-items was `r round(pP1,3)` for Sample 1 and `r round(pP2,3)` for Sample 2.  We also considered which was the most common response for each item on initial testing: for all 12 P-items, the correct response was the most common, whereas this was the case for only 5/12 S-items. We found that `r N2` participants scored 5 or more on S-items correct prior to training, and they were dropped from the learning analyses, consistent with our pre-registration. 
 
 
 ```{r inspectquizfactors,echo=F}
@@ -1282,9 +1282,10 @@ legend("topleft", legend=c(1,2),title="Sample",
 
 dev.off()
 ```
+  
 
-
-![Association between array index and earnings in Samples 1 and 2](Fig7.tiff)  
+![Association between array index and earnings in Samples 1 and 2](Fig7.tiff)
+ 
 As shown in Figure `r (fignumber)`, this prediction was confirmed in both samples. For the combined sample, r (`r mycorall$parameter`) = `r round(mycorall$estimate,3)`, `r p.format(mycorall)`. 
 
 
@@ -2439,8 +2440,13 @@ Two researchers are testing the effect of oxytocin on prosocial behaviour. In th
 `r maketext('S6B',4)`  d)  The difference is real - there was confusion between oxytocin and placebo  
 
 ```{r saveworkspace, echo=F}
-#Just saving those variable that are needed in Abstract before they are computed
-save(agqwide,qualresp,dropsub,file='smallnums.RData')
+#Just saving those variables that are needed in Abstract before they are computed
+
+N1 <- round(100*length(which(agqwide$PreS==0))/(nrow(agqwide)/2),0)
+N2 <- length(dropsub)
+N3 <- round(100*length(which(qualresp$waitJ==1))/nrow(qualresp),0)
+
+save(N1,N2,N3,file='smallnums.RData')
 #to reload, load("smallnums.RData") 
 ```
  
