@@ -1,22 +1,24 @@
 ---
 title: 'Stage 2 Registered Report: Can we shift belief in the ''Law of Small Numbers''?'
-author: D V M Bishop^1^, Jackie Thompson^1,2^ & Adam Parker^1^
-date: 
+author: "D V M Bishop^1^, Jackie Thompson^1,2^ & Adam Parker^1^"
+date: "null"
 output:
+  html_document:
+    df_print: paged
   word_document:
     reference_docx: mystyle.docx
-    keep_md: true
-
-bibliography: LawSmallNums.bib 
+    keep_md: yes
 csl: vancouver.csl
+bibliography: LawSmallNums.bib
 ---
 
 ```{r setup, include=FALSE,echo=FALSE}
+# Currently this won't knit because of CiteprocParseError
 
 # Based on script from stage 1 - updated 17 Sep 2021
 # NB This script reads output from two other scripts
 # 'gorilla_spreadsheets/spreadsheet1.csv' (created by make_gifs_datasim_script.R)
-# 'powsummary_1000_A12_pgood0.5_0.66_props0_0.25_0.33_0.5_N50_75_100.csv' (created by simulate_power_proportions.rmd)
+# 'powsummary_1000_A12_pgood0.5_0.66_props0_0.25_0.33_0.5_N50_75_100.csv' (created by simulate_power_earnings.rmd)
 
 #The spreadsheet1.csv sheet should be saved in a subdirectory called 'gorilla_spreadsheets'
 
@@ -436,8 +438,7 @@ The case where no participants learn corresponds to a test of the null hypothesi
 ```{r powertable,include=TRUE,echo=FALSE}
 tabnumber <- tabnumber+1
 bigname<-"powsummary_1000_L_pgood0.5_0.66_props0_0.25_0.33_0.5_N50_75_100.csv"
-#bigname<-"bigsummary_A12nu_pgood0.5_0.66_props0_0.25_0.33_0.5_N50_75_100.csv"
-#bigname was created in the Simulate_power_earnings script; keeps track of parameters in simulation
+
 bigsummary<- read.csv(bigname)
 #bigsummary<-bigsummary[,c(1:4,8,6,9:11)] #final columns 9:11 for array index;
 nsubvals<-c(50,75,100) #values that vary for N participants - should match those in bigname
@@ -1052,7 +1053,7 @@ pP2 <- length(which(temp2P$p.correct<.5))/nrow(temp2P)
 
 #For t-test have now multiplied proportions by 6, as reviewer preferred raw scores here
 ```
-We first checked the pre-test quiz data against two prespecified criteria: (a) that mean number of S-items correct is less than 5/6 (83%), and (b) that fewer than 50% of participants score below 50% correct on P-items (see prediction at end of Data Analysis section). Both predictions were confirmed. In Sample 1, the pre-training mean on S-items was `r round(tS1$estimate,2)`, t-test of difference of mean from 5 = `r round(tS1$statistic,2)`, `r p.format(tS1)`; In Sample 2, the pre-training mean on S-items was `r round(tS2$estimate,2)`, t-test of difference of mean from 5 = `r round(tS2$statistic,2)`, `r p.format(tS2)`.   The percentage of participants scoring less than 3/6 on the pre-training P-items was `r round(100*pP1,1)`% for Sample 1 and `r round(100*pP2,1)`% for Sample 2.  We also considered which was the most common response for each item on initial testing: for all 12 P-items, the correct response was the most common, whereas this was the case for only 5/12 S-items. We found that `r N2` participants scored 5 or more on S-items correct prior to training, and they were dropped from the learning analyses, consistent with our pre-registration. 
+We first checked the pre-test quiz data against two prespecified criteria: (a) that mean number of S-items correct is less than 5/6 (83%), and (b) that fewer than 50% of participants score less than 3/6 correct on P-items (see prediction at end of Data Analysis section). Both predictions were confirmed. In Sample 1, the pre-training mean on S-items was `r round(tS1$estimate,2)`, t-test of difference of mean from 5 = `r round(tS1$statistic,2)`, `r p.format(tS1)`; In Sample 2, the pre-training mean on S-items was `r round(tS2$estimate,2)`, t-test of difference of mean from 5 = `r round(tS2$statistic,2)`, `r p.format(tS2)`.   The percentage of participants scoring less than 3/6 on the pre-training P-items was `r round(100*pP1,1)`% for Sample 1 and `r round(100*pP2,1)`% for Sample 2.  We also considered which was the most common response for each item on initial testing: for all 12 P-items, the correct response was the most common, whereas this was the case for only 5/12 S-items. We found that `r N2` participants scored 5 or more on S-items correct prior to training, and they were dropped from the learning analyses, consistent with our pre-registration. 
 
 
 ```{r inspectquizfactors,echo=F}
@@ -1094,7 +1095,7 @@ s<- cbind(Source,s)
 ftquiz <- flextable(s)
 ftquiz <- autofit(ftquiz)
 tabnumber <- tabnumber+1
-ftquiz <- set_caption(ftquiz, paste0("Table ",tabnumber,": Estimates of effects of item type, pre/post administration and sample on quiz accuracy"))
+ftquiz <- set_caption(ftquiz, paste0("Table ",tabnumber,": Estimates of effects of item type( S- vs P-item), pre/post administration and sample on quiz accuracy"))
 ftquiz
 ```
 
@@ -1191,7 +1192,7 @@ ft<-flextable(qerr[,-c(2,6,7)])
 ft <- set_caption(ft, paste0("Table ",tabnumber,": Distribution of error responses on quiz pre-training S-items"))
 ft
 ```
-*Note: Columns show N selections of each foil (Samples 1 and 2 combined), where Bias indicates a foil that demonstrates sample size neglect, and Other1 and Other2 denote the other two foils. The Chi Square value tests whether the selection of foils is random when an error is made on an item. 
+*Note: Columns show N selections of each foil (Samples 1 and 2 combined), where Bias indicates a foil that demonstrates sample size neglect, and Other1 and Other2 denote the other two foils. The Chi Square value tests whether, for items answered incorrectly,  the selection of foils is random.  
 
 Table `r tabnumber` shows errors on the pre-training quiz categorised as to whether they reflected sample size neglect (bias) or not (other 1 and 2). The 'bias' foil in each case explicitly mentioned that sample size (or gathering more data) would have no effect. Items S3A and S3B are omitted from this Table, as there is no specific foil that corresponds to this bias. For each item, the distribution of error responses was subjected to chi square test, to test the hypothesis that all foils were equally likely to be selected. For most items, the chi square value was statistically significant, indicating nonrandom choice of foils, and for items 1A, 1B, 2B, 5A and 6B the most common choice was the foil designated as reflecting sample size neglect. Items 1 and 5 were based on two of Tversky and Kahneman's classic examples of 'law of small numbers' (probability 60% boys being born in a big or small hospital, and likelihood of best player winning increasing with number of games); item 6 focused on how type II error rate is influenced by sample size. On items 2A, 4A and 4B, there was strong bias to select another foil. We discuss response patterns to specific items in Exploratory analysis below. 
 
@@ -1395,7 +1396,7 @@ BF_BIC = exp((BIC(modeln) - BIC(model1))/2)  # From BICs to Bayes factor
 regcor<- cor(moddat$PostS,moddat$ediff)
 mysummary <- as.data.frame(summary(model1)$coefficients)
 mysummary <- round(mysummary,3)
-mysummary<-cbind(c('Intercept','Pre-training S','Learning index'),mysummary)
+mysummary<-cbind(c('Intercept','Pre-training S-items correct','Learning index'),mysummary)
 colnames(mysummary)[1] <-'Source'
 tabnumber <- tabnumber+1
  ft <- flextable(mysummary)
