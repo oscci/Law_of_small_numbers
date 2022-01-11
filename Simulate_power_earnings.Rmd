@@ -9,6 +9,7 @@ require(here)
 require(flextable) #for nice table output
 require(psycho) #for dprime
 require(lme4)
+set.seed(2)
 ```
 <!-- for stats nb http://journal.sjdm.org/stat.htm-->
 See simulate model based data script for working up to the logic of the simulation
@@ -316,7 +317,7 @@ for (i in 1:niter){
   }
 }
 #The name incorporates most of the variables used to create the simulated data
-bigname<-paste0('powsummary_1000_L_pgood',qbits,'_props',pbits,'_N',subbits,'.csv')
+bigname<-paste0('powsummary_',niter,'_L_pgood',qbits,'_props',pbits,'_N',subbits,'.csv')
 write.csv(bigsummary,bigname,row.names=F)
 
 ```
