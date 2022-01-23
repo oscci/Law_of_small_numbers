@@ -8,8 +8,14 @@ output:
     keep_md: true
 
 bibliography: LawSmallNums.bib 
-csl: apa.csl
+csl: vancouver.csl
 ---
+
+<!--- The csl file determines formatting of references. Here we use a csl file from Zotero. This is obtained thus:
+    Go to the Zotero Style Repository page.
+    Search for the name of the style you need.
+    Download the style (Open the style, right click the page and choose Save As).
+    Open Zotero preferences. Click Cite, then Styles, then the "+" button, and select the style you downloaded (a . CSL file). --->
 
 ```{r setup, include=FALSE,echo=FALSE}
 # Currently this won't knit because of CiteprocParseError
@@ -320,7 +326,7 @@ Items from each figure were animated so that each pair of pink-blue observations
 
 Participants received feedback after each response, in the form of a display showing points earned or lost, plus total points so far, and a violin plot showing the full distribution from which the points were drawn `r fignumber <- fignumber + 1` (see Figure `r fignumber`).  
 
-![Feedback display for an item with a true effect.](E3_AB copy.png) 
+![Feedback display for an item with a true effect.](demoonion_E3_AB copy.png) 
 
 Data from the training trials were saved as response latency, which was converted to array size, as described above. For data analysis, array size (10, 20, 40, 80, 160, 320) was converted to array index, ranging from 1 to 6.  In addition, stored with each array is the amount earned, true  effect size in the population on that trial (Null or 0.3), coding of each response as correct (1) or incorrect (0), the observed effect size on that trial, and the log likelihood of a true vs null effect obtained from the observed data. The latter two variables could potentially be used in exploratory analyses when evaluating which cues participants base their responses on.
 
