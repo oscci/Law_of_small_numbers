@@ -1,15 +1,14 @@
 ---
 title: 'Stage 2 Registered Report: Can we shift belief in the ''Law of Small Numbers''?'
 author: "D V M Bishop^1^, Jackie Thompson^1,2^ & Adam Parker^1^"
-date: "null"
+date: 
 output:
-  html_document:
-    df_print: paged
   word_document:
     reference_docx: mystyle.docx
-    keep_md: yes
-csl: vancouver.csl
-bibliography: LawSmallNums.bib
+    keep_md: true
+
+bibliography: LawSmallNums.bib 
+csl: apa.csl
 ---
 
 ```{r setup, include=FALSE,echo=FALSE}
