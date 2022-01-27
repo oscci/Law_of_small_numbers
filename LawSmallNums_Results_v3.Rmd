@@ -1,6 +1,6 @@
 ---
 title: 'Stage 2 Registered Report: Can we shift belief in the ''Law of Small Numbers''?'
-author: "D V M Bishop^1^, Jackie Thompson^1,2^ & Adam Parker^1^"
+author: "D V M Bishop^1^, Jackie Thompson^1,2^ & Adam J Parker^1,3^"
 date: 
 output:
   word_document:
@@ -14,7 +14,9 @@ csl: vancouver.csl
 <!--- The csl file determines formatting of references. Here we use a csl file from Zotero. This is obtained thus:
     Go to the Zotero Style Repository page.
     Search for the name of the style you need.
-    Download the style (Open the style, right click the page and choose Save As).--->
+    Download the style (Open the style, right click the page and choose Save As).
+    
+    Note that the journal wants DOIs included - these are not currently included in the vancouver.csl file--->
 
 ```{r setup, include=FALSE,echo=FALSE}
 # Currently this won't knit because of CiteprocParseError
@@ -77,6 +79,8 @@ Affiliations:
 ^1^ Department of Experimental Psychology, University of Oxford, Anna Watts Building, Woodstock Road, Oxford, OX2 6GG. 
 
 ^2^ School of Psychological Science, University of Bristol, The Priory Road Complex, Priory Road, Clifton, BS8 1TU.  
+
+^3^ Department of Experimental Psychology, Division of Psychology and Language Sciences, University College London, London, WC1H 0AP.
   
 Acknowledgment: This work was supported by Wellcome Trust Programme Grant no. 082498/Z/07/Z.
 
@@ -644,7 +648,7 @@ Finally, if we are able to show an improvement with this short training session,
 Tests of predictions 3 and 4 have potential to provide converging evidence on whether sensitivity to array size is a factor determining learning. If neither prediction is confirmed, but the training is effective, this would suggest we should explore alternative heuristics that might be used by participants to support successful performance. 
 
 ## Pilot data  
-`r tabnumber <- tabnumber+1`
+
 Three pilot studies were conducted for the Stage 1 Registered Report submission.  Summary results for all three pilots are available on OSF  (https://osf.io/s39qd). Overall performance on Pilot 1 was poor, with mean of only 65% correct, confirming the difficulty that participants had in judging effect sizes from distributions. A score of 85% or above was observed in only 10% of all blocks x participants. Participants in Pilot 1 found the task reasonably straightforward but scrutiny of individual cases for evidence of response strategies suggested that only a few participants had started to wait longer to respond as the session proceeded, and others went in the opposite direction, selecting smaller arrays in later blocks.  In general, high performers were those who waited for large arrays from the outset, rather than those who changed strategy in the course of training. 
 
 Pilot 1 participants also completed the estimation quizzes that preceded and followed the training session. As noted above, modifications were made to wording of some quiz items for the current study on the basis of pilot testing to avoid confusing or over-complicated language. 
@@ -1399,10 +1403,10 @@ modeln <- lm(moddat$PostS~moddat$PreS)
 BF_BIC = exp((BIC(modeln) - BIC(model1))/2)  # From BICs to Bayes factor
 regcor<- cor(moddat$PostS,moddat$ediff)
 mysummary <- as.data.frame(summary(model1)$coefficients)
-mysummary <- round(mysummary,3)
+mysummary <- round(mysummary,3)[1:3]
 mysummary<-cbind(c('Intercept','Pre-training S-items correct','Learning index'),mysummary)
 colnames(mysummary)[1] <-'Source'
-tabnumber <- tabnumber+1
+if(m==3){tabnumber <- tabnumber+1}
  ft <- flextable(mysummary)
 # ft<-autofit(ft)
  ft <- set_caption(ft, paste0("Table ",tabnumber,": Linear regression results for predicting percent correct on S-items on post-training quiz, from pre-training score and learning index (earnings difference from first to last block)"))
@@ -1794,11 +1798,11 @@ We will first discuss responses to the quiz, then performance on the beeswarm ta
 
 
 __Responses to the quiz__  
-Results confirmed that people were considerably worse at evaluating statements where the correct answer depended on sample size than they were at judging statements that required simple interpretation or manipulation of probabilities. Furthermore, on items that were closely modeled on those of @kahneman1972, response options that stated sample size was immaterial tended to be preferred over the correct option. To that extent, the results support the original work on the "Law of Small Numbers". Nevertheless, results varied considerably across quiz items, and in some cases there was no preference for foils that were selected to detect sample size neglect. Indeed, for some items, participants preferred responses that stated more data should be gathered, even when this was not necessary, suggesting some awareness that sample size could be important. 
+Results confirmed that people were considerably worse at evaluating statements where the correct answer depended on sample size than they were at judging statements that required simple interpretation or manipulation of probabilities. Furthermore, on items that were closely modeled on those of Kahneman and Tversky @kahneman1972, response options that stated sample size was immaterial tended to be preferred over the correct option. To that extent, the results support the original work on the "Law of Small Numbers". Nevertheless, results varied considerably across quiz items, and in some cases there was no preference for foils that were selected to detect sample size neglect. Indeed, for some items, participants preferred responses that stated more data should be gathered, even when this was not necessary, suggesting some awareness that sample size could be important. 
 
 A particularly intriguing pattern of results was seen on items 2 and 4, which had identical wording, except that on item 2 the sample size was inadequate to demonstrate an effect, and in item 4 it was adequate. At first glance, these items seem to contradict the idea of sample size neglect, because few participants selected responses that explicitly stated that sample size didn't matter, and indeed, they tended to prefer responses indicating more data should be gathered. However, their tendency to respond this way was the same regardless of whether they were told that sample size was 10 or 160. Furthermore, for the items where they had the opportunity to say that the sample was equally likely to have come from either group, they preferred that option, regardless of sample size.  
 
-With hindsight, it would have been helpful to ask participants to explain the reasoning behind their responses, as this could have thrown light on the unexpected patterns on these two items. Also, the results on items 2 and 4 suggest there could be interest in following the approach adopted in one study by @kahneman1972, where the sample size specified in a problem was parametrically varied. 
+With hindsight, it would have been helpful to ask participants to explain the reasoning behind their responses, as this could have thrown light on the unexpected patterns on these two items. Also, the results on items 2 and 4 suggest there could be interest in following the approach adopted in one study by Kaheman and Tversky @kahneman1972, where the sample size specified in a problem was parametrically varied. 
 
 
 __Learning on the beeswarm task__  
